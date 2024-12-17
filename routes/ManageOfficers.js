@@ -14,5 +14,10 @@ router.get(
     ManageOfficerEP.getForCreateId
 )
 
+router.post(
+    "/create-officer",
+    ManageOfficerEP.createOfficer
+)
+
 
 module.exports = router;

@@ -43,3 +43,29 @@ exports.getAllCollectionCenter = async (req, res) => {
       res.status(500).send("An error occurred while fetching data.");
     }
   };
+
+
+  exports.createOfficer = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const {officerData, companyData, bankData} = req.body   
+        console.log(req.body);
+             
+        const resultsPersonal = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, companyData, bankData);
+        const resultCompany = await ManageOfficerDAO.createCollectionOfficerCompany(companyData,resultsPersonal.insertId);
+        const resultBank = await ManageOfficerDAO.createCollectionOfficerBank(bankData,resultsPersonal.insertId);
+        
+        console.log("Collection Officer created successfully");
+        return res.status(201).json({ message: "Collection Officer created successfully", id: resultBank.insertId, status:true });
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error creating collection officer:", error);
+        return res.status(500).json({ error: "An error occurred while creating the collection officer" });
+    }
+};
