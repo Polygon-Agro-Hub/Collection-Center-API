@@ -5,7 +5,7 @@ const db = require('./startup/database');
 
 //routers
 const AuthRoutes = require('./routes/Auth')
-
+const ManageOffcerRoutes  = require('./routes/ManageOfficers')
 
 
 const app = express();
@@ -30,6 +30,7 @@ app.use('/api/test', (req, res) => {
     res.json("Testing run!")
 })
 app.use('/api/auth', AuthRoutes);
+app.use('/api/manage-officers', ManageOffcerRoutes);
 
 
 app.listen(port, () => {
