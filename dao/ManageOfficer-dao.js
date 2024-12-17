@@ -119,7 +119,7 @@ exports.createCollectionOfficerPersonal = (officerData, companyData, bankData) =
 exports.createCollectionOfficerCompany = (companyData, collectionOfficerId) => {
     return new Promise((resolve, reject) => {
         const sql =
-            "INSERT INTO collectionofficercompanydetails (collectionOfficerId, companyNameEnglish, companyNameSinhala, companyNameTamil, jobRole, IRMname, companyEmail, assignedDistrict, employeeType, empId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "INSERT INTO collectionofficercompanydetails (collectionOfficerId, companyNameEnglish, companyNameSinhala, companyNameTamil, jobRole, companyEmail, assignedDistrict, employeeType, empId, collectionManagerId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         db.query(
             sql,
@@ -129,11 +129,12 @@ exports.createCollectionOfficerCompany = (companyData, collectionOfficerId) => {
                 companyData.companyNameSinhala,
                 companyData.companyNameTamil,
                 companyData.jobRole,
-                companyData.IRMname,
                 companyData.companyEmail,
                 companyData.assignedDistrict,
                 companyData.employeeType,
-                companyData.empId
+                companyData.empId,
+                companyData.collectionManagerId
+
 
             ], (err, results) => {
                 if (err) {
@@ -163,5 +164,18 @@ exports.createCollectionOfficerBank = (bankData, collectionOfficerId) => {
                 }
                 resolve(results); // Resolve the promise with the query results
             });
+    });
+};
+
+
+exports.getManagerIdByCenterIdDAO = (centerID) => {
+    return new Promise((resolve, reject) => {
+        const sql = "SELECT Coff.id, Coff.firstNameEnglish, Coff.lastNameEnglish FROM collectionofficer Coff, collectionofficercompanydetails Ccom WHERE Coff.id = Ccom.collectionOfficerId AND Ccom.empId LIKE 'CCM%' AND Coff.centerId = ?";
+        db.query(sql, [centerID], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
     });
 };

@@ -19,5 +19,10 @@ router.post(
     ManageOfficerEP.createOfficer
 )
 
+router.get(
+    "/get-by-managerID/:centerId",
+    ManageOfficerEP.getManagerIdByCenterId
+)
+
 
 module.exports = router;
