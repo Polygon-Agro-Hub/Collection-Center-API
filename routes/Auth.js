@@ -14,5 +14,10 @@ router.post(
     AuthEP.loginUser
 );
 
+router.post(
+    "/change-passwords/:id",
+    AuthEP.updatePassword
+)
+
 
 module.exports = router;
