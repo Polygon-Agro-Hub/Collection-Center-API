@@ -86,3 +86,133 @@ exports.getManagerIdByCenterId = async (req, res) => {
     res.status(500).send("An error occurred while fetching data.");
   }
 };
+
+
+exports.getAllOfficers = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    // Validate query parameters      
+    const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
+    console.log(validatedQuery);
+
+    const { page, limit, company, role, searchText } = validatedQuery;
+
+    // Call the DAO to get all collection officers
+    const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(page, limit, company, role, searchText);
+
+
+    console.log("Successfully fetched collection officers");
+    return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+exports.getAllCompanyNames = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+    const results = await ManageOfficerDAO.getAllCompanyNamesDao();
+
+    console.log("Successfully retrieved reports");
+    res.status(200).json(results);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving district reports:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the reports" });
+  }
+};
+
+
+exports.deleteOfficer = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+
+    const { id } = await ManageOfficerValidate.deleteOfficerSchema.validateAsync(req.params);
+    const results = await ManageOfficerDAO.DeleteOfficerDao(id);
+
+    console.log("Successfully Delete officer");
+    if (results.affectedRows > 0) {
+      res.status(200).json({ results: results, status: true });
+    } else {
+      res.json({ results: results, status: false });
+
+    }
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message, status: false });
+    }
+
+    console.error("Error delete  officer:", error);
+    return res.status(500).json({ error: "An error occurred while delete officer" });
+  }
+};
+
+
+exports.UpdateStatusAndSendPassword = async (req, res) => {
+  try {
+    const { id, status } = req.params;
+
+    if (!id || !status) {
+      return res.status(400).json({ message: 'ID and status are required.', status: false });
+    }
+
+    const officerData = await ManageOfficerDAO.getCollectionOfficerEmailDao(id);
+    if (!officerData) {
+      return res.status(404).json({ message: 'Collection officer not found.', status: false });
+    }
+
+    // Destructure email, firstNameEnglish, and empId from fetched data
+    const { email, firstNameEnglish, empId } = officerData;
+    console.log(`Email: ${email}, Name: ${firstNameEnglish}, Emp ID: ${empId}`);
+
+    // Generate a new random password
+    const generatedPassword = Math.random().toString(36).slice(-8); // Example: 8-character random password
+
+    // Update status and password in the database
+    const updateResult = await ManageOfficerDAO.UpdateCollectionOfficerStatusAndPasswordDao({
+      id,
+      status,
+      password: generatedPassword,
+    });
+
+    if (updateResult.affectedRows === 0) {
+      return res.status(400).json({ message: 'Failed to update status and password.', status: false });
+    }
+
+    // If status is 'Approved', send the password email
+    if (status === 'Approved') {
+      const emailResult = await ManageOfficerDAO.SendGeneratedPasswordDao(email, generatedPassword, empId, firstNameEnglish);
+
+      if (!emailResult.success) {
+        return res.status(500).json({ message: 'Failed to send password email.', error: emailResult.error });
+      }
+    }
+
+    // Return success response with empId and email
+    res.status(200).json({
+      message: 'Status updated and password sent successfully.',
+      status: true,
+      data: {
+        empId, 
+        email,  
+      },
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'An error occurred.', error });
+  }
+};

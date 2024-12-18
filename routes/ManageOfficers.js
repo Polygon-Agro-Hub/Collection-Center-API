@@ -24,5 +24,24 @@ router.get(
     ManageOfficerEP.getManagerIdByCenterId
 )
 
+router.get(
+    "/get-all-officers",
+    ManageOfficerEP.getAllOfficers
+)
+
+router.get(
+    "/get-all-company-names",
+    ManageOfficerEP.getAllCompanyNames
+)
+
+router.delete(
+    "/delete-officer/:id",
+    ManageOfficerEP.deleteOfficer
+)
+
+router.get(
+    "/update-status/:id/:status",
+    ManageOfficerEP.UpdateStatusAndSendPassword
+)
 
 module.exports = router;

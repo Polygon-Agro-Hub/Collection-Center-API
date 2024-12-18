@@ -882,12 +882,15 @@ const createCollectionOfficerCompanyDetails = () => {
       companyNameSinhala VARCHAR(255) NOT NULL,
       companyNameTamil VARCHAR(255) NOT NULL,
       jobRole VARCHAR(50) NOT NULL,
-      IRMname VARCHAR(75) NOT NULL,
       companyEmail VARCHAR(50) NOT NULL,
       assignedDistrict VARCHAR(25) NOT NULL,
       employeeType VARCHAR(25) NOT NULL,
       empId VARCHAR(10) NOT NULL,
+      collectionManagerId INT,
       FOREIGN KEY (collectionOfficerId) REFERENCES collectionofficer(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+      FOREIGN KEY (collectionManagerId) REFERENCES collectionofficer(id)
         ON DELETE SET NULL
         ON UPDATE CASCADE
     )
