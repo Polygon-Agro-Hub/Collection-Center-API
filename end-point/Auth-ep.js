@@ -78,3 +78,40 @@ exports.loginUser = async (req, res) => {
       res.status(500).json({ error: "An error occurred during login." });
     }
   };
+
+  exports.updatePassword = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('Request URL:', fullUrl);
+
+    try {
+        // Validate request body (ensure id and newPassword are provided)
+        
+
+        const { id, newPassword } = await AuthValidate.logInUpdate.validateAsync(req.body);;
+
+        // Log the incoming values for debugging
+        console.log('Received ID:', id);
+        console.log('Received newPassword:', newPassword);
+
+        if (!newPassword) {
+            return res.status(400).json({ error: "newPassword is required." });
+        }
+
+        // Encrypt the new password using bcrypt
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        console.log('Hashed Password:', hashedPassword);
+
+        // Call the DAO function to update the password
+        const result = await AuthDAO.updatePasswordDAO(id, hashedPassword);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "User not found or no changes were made." });
+        }
+
+        res.status(200).json({ message: "Password updated successfully." });
+    } catch (err) {
+        console.error("Error during password update:", err);
+        res.status(500).json({ error: "An error occurred during password update." });
+    }
+};
+
