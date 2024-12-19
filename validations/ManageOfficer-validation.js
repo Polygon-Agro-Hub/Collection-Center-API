@@ -20,3 +20,7 @@ exports.getAllOfficersSchema = Joi.object({
 exports.deleteOfficerSchema = Joi.object({
     id: Joi.number().required(),
 })
+
+exports.getOfficerByIdSchema = Joi.object({
+    id: Joi.number().required(),
+})

@@ -207,12 +207,49 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
       message: 'Status updated and password sent successfully.',
       status: true,
       data: {
-        empId, 
-        email,  
+        empId,
+        email,
       },
     });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ message: 'An error occurred.', error });
+  }
+};
+
+
+exports.getOfficerById = async (req, res) => {
+  try {
+    // const id = req.params.id;
+    const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.params);
+    const officerData = await ManageOfficerDAO.getOfficerByIdDAO(id);
+
+    if (!officerData) {
+      return res.status(404).json({ error: "Collection Officer not found" });
+    }
+
+    console.log("Successfully fetched collection officer, company, and bank details");
+    res.json({ officerData });
+  } catch (err) {
+    if (err.isJoi) {
+      return res.status(400).json({ error: err.details[0].message });
+    }
+    console.error("Error executing query:", err);
+    res.status(500).send("An error occurred while fetching data.");
+  }
+};
+
+
+exports.updateCollectionOfficer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { officerData, companyData, bankData } = req.body
+    await ManageOfficerDAO.updateOfficerDetails(id, officerData, companyData, bankData);
+
+
+    res.json({ message: 'Collection officer details updated successfully' });
+  } catch (err) {
+    console.error('Error updating collection officer details:', err);
+    res.status(500).json({ error: 'Failed to update collection officer details' });
   }
 };

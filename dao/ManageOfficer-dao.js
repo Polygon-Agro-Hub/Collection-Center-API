@@ -122,9 +122,9 @@ exports.createCollectionOfficerCompany = (companyData, collectionOfficerId) => {
         const sql =
             "INSERT INTO collectionofficercompanydetails (collectionOfficerId, companyNameEnglish, companyNameSinhala, companyNameTamil, jobRole, companyEmail, assignedDistrict, employeeType, empId, collectionManagerId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-            if(companyData.collectionManagerId === ''){
-                companyData.collectionManagerId = null;
-            }
+        if (companyData.collectionManagerId === '') {
+            companyData.collectionManagerId = null;
+        }
 
         db.query(
             sql,
@@ -247,7 +247,7 @@ exports.getAllOfficersDAO = (page, limit, company, role, searchText) => {
             dataSql += searchCondition;
             const searchValue = `%${searchText}%`;
             countParams.push(searchValue, searchValue, searchValue, searchValue);
-            dataParams.push(searchValue, searchValue, searchValue, searchValue );
+            dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
         dataSql += " ORDER BY Coff.createdAt DESC ";
@@ -358,7 +358,7 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
 
 exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEnglish) => {
     try {
-        
+
         const doc = new PDFDocument();
 
         const pdfPath = `./uploads/register_details_${empId}.pdf`;
@@ -366,23 +366,23 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
         doc.pipe(fs.createWriteStream(pdfPath));
 
         const watermarkPath = './assets/bg.png';
-        doc.opacity(0.2) 
-           .image(watermarkPath, 100, 300, { width: 400 }) 
-           .opacity(1);
+        doc.opacity(0.2)
+            .image(watermarkPath, 100, 300, { width: 400 })
+            .opacity(1);
 
         doc.fontSize(20)
-           .fillColor('#071a51')
-           .text('Welcome to AgroWorld (Pvt) Ltd - Registration Confirmation', {
-               align: 'center',
-           });
-        
+            .fillColor('#071a51')
+            .text('Welcome to AgroWorld (Pvt) Ltd - Registration Confirmation', {
+                align: 'center',
+            });
+
         doc.moveDown();
 
-        const lineY = doc.y; 
+        const lineY = doc.y;
 
         doc.moveTo(50, lineY)
-        .lineTo(550, lineY)
-        .stroke();
+            .lineTo(550, lineY)
+            .stroke();
 
         doc.moveDown();
 
@@ -395,12 +395,12 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
         doc.moveDown();
 
         doc.fontSize(12)
-        .text(
-            'You have successfully created an account with AgroWorld (Pvt) Ltd. Our platform will help you with all your agricultural needs, providing guidance, weather reports, asset management tools, and much more. We are committed to helping farmers like you grow and succeed.',
-            {
-                align: 'justify',
-            }
-        );
+            .text(
+                'You have successfully created an account with AgroWorld (Pvt) Ltd. Our platform will help you with all your agricultural needs, providing guidance, weather reports, asset management tools, and much more. We are committed to helping farmers like you grow and succeed.',
+                {
+                    align: 'justify',
+                }
+            );
 
         doc.moveDown();
 
@@ -410,22 +410,22 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
         doc.moveDown();
 
         doc.fontSize(12)
-        .text(
-            'If you have any questions or need assistance, feel free to reach out to our support team at info@agroworld.lk',
-            {
-                align: 'justify',
-            }
-        );
+            .text(
+                'If you have any questions or need assistance, feel free to reach out to our support team at info@agroworld.lk',
+                {
+                    align: 'justify',
+                }
+            );
 
         doc.moveDown();
-        
+
         doc.fontSize(12)
-        .text(
-            'We are here to support you every step of the way!',
-            {
-                align: 'justify',
-            }
-        );
+            .text(
+                'We are here to support you every step of the way!',
+                {
+                    align: 'justify',
+                }
+            );
 
         doc.moveDown();
         doc.fontSize(12).text(`Best Regards,`);
@@ -473,7 +473,207 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
 
     } catch (error) {
         console.error('Error sending email:', error);
-        
+
         return { success: false, message: 'Failed to send email.', error };
     }
+};
+
+
+
+
+exports.getOfficerByIdDAO = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                co.*, 
+                cocd.companyNameEnglish, cocd.companyNameSinhala, cocd.companyNameTamil,
+                cocd.jobRole, cocd.collectionManagerId, cocd.companyEmail, cocd.assignedDistrict, cocd.employeeType, cocd.empId,
+                cobd.accHolderName, cobd.accNumber, cobd.bankName, cobd.branchName
+            FROM 
+                collectionofficer co
+            LEFT JOIN 
+                collectionofficercompanydetails cocd ON co.id = cocd.collectionOfficerId
+            LEFT JOIN 
+                collectionofficerbankdetails cobd ON co.id = cobd.collectionOfficerId
+            WHERE 
+                co.id = ?`;
+
+        db.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err); // Reject promise if an error occurs
+            }
+
+            if (results.length === 0) {
+                return resolve(null); // No officer found
+            }
+
+            const officer = results[0];
+
+            // Process image field if present
+            if (officer.image) {
+                const base64Image = Buffer.from(officer.image).toString("base64");
+                officer.image = `data:image/png;base64,${base64Image}`;
+            }
+
+            // Process QRcode field if present
+            if (officer.QRcode) {
+                const base64QRcode = Buffer.from(officer.QRcode).toString("base64");
+                officer.QRcode = `data:image/png;base64,${base64QRcode}`;
+            }
+
+            const empIdWithoutPrefix = officer.empId ? officer.empId.substring(3) : null;
+
+            resolve({
+                collectionOfficer: {
+                    id: officer.id,
+                    centerId: officer.centerId,
+                    firstNameEnglish: officer.firstNameEnglish,
+                    firstNameSinhala: officer.firstNameSinhala,
+                    firstNameTamil: officer.firstNameTamil,
+                    lastNameEnglish: officer.lastNameEnglish,
+                    lastNameSinhala: officer.lastNameSinhala,
+                    lastNameTamil: officer.lastNameTamil,
+                    phoneNumber01: officer.phoneNumber01,
+                    phoneNumber02: officer.phoneNumber02,
+                    image: officer.image,
+                    QRcode: officer.QRcode,
+                    nic: officer.nic,
+                    email: officer.email,
+                    passwordUpdated: officer.passwordUpdated,
+                    houseNumber: officer.houseNumber,
+                    streetName: officer.streetName,
+                    city: officer.city,
+                    district: officer.district,
+                    province: officer.province,
+                    country: officer.country,
+                    languages: officer.languages,
+                },
+                companyDetails: {
+                    companyNameEnglish: officer.companyNameEnglish,
+                    companyNameSinhala: officer.companyNameSinhala,
+                    companyNameTamil: officer.companyNameTamil,
+                    jobRole: officer.jobRole,
+                    collectionManagerId: officer.collectionManagerId,
+                    companyEmail: officer.companyEmail,
+                    assignedDistrict: officer.assignedDistrict,
+                    employeeType: officer.employeeType,
+                    empId: empIdWithoutPrefix,
+                },
+                bankDetails: {
+                    accHolderName: officer.accHolderName,
+                    accNumber: officer.accNumber,
+                    bankName: officer.bankName,
+                    branchName: officer.branchName,
+                },
+            });
+        });
+    });
+};
+
+
+exports.updateOfficerDetails = (id, officerData, companyData, bankData) => {
+    return new Promise((resolve, reject) => {
+
+
+        db.beginTransaction((err) => {
+            if (err) return reject(err);
+
+            const updateOfficerSQL = `
+                UPDATE collectionofficer
+                SET centerId = ?, firstNameEnglish = ?, lastNameEnglish = ?, firstNameSinhala = ?, lastNameSinhala = ?,
+                    firstNameTamil = ?, lastNameTamil = ?, nic = ?, email = ?, houseNumber = ?, streetName = ?, city = ?,
+                    district = ?, province = ?, country = ? , languages = ? , status = 'Not Approved'
+                WHERE id = ?
+            `;
+
+            const updateOfficerParams = [
+                officerData.centerId,
+                officerData.firstNameEnglish,
+                officerData.lastNameEnglish,
+                officerData.firstNameSinhala,
+                officerData.lastNameSinhala,
+                officerData.firstNameTamil,
+                officerData.lastNameTamil,
+                officerData.nic,
+                officerData.email,
+                officerData.houseNumber,
+                officerData.streetName,
+                officerData.city,
+                officerData.district,
+                officerData.province,
+                officerData.country,
+                officerData.languages,
+                parseInt(id),
+            ];
+
+            const updateBankDetailsSQL = `
+                UPDATE collectionofficerbankdetails
+                SET accHolderName = ?, accNumber = ?, bankName = ?, branchName = ?
+                WHERE collectionOfficerId = ?
+            `;
+
+            const updateBankDetailsParams = [
+                bankData.accHolderName,
+                bankData.accNumber,
+                bankData.bankName,
+                bankData.branchName,
+                parseInt(id),
+            ];
+
+            if (companyData.collectionManagerId === '') {
+                companyData.collectionManagerId = null;
+            }
+
+            let updateCompanyDetailsSQL = `
+    UPDATE collectionofficercompanydetails
+    SET companyNameEnglish = ?, companyNameSinhala = ?, companyNameTamil = ?, collectionManagerId = ?, 
+        companyEmail = ?, assignedDistrict = ?, employeeType = ?
+`;
+
+            const updateCompanyDetailsParams = [
+                companyData.companyNameEnglish,
+                companyData.companyNameSinhala,
+                companyData.companyNameTamil,
+                companyData.collectionManagerId,
+                companyData.companyEmail,
+                companyData.assignedDistrict,
+                companyData.employeeType,
+            ];
+
+            if (companyData.empId) {
+                updateCompanyDetailsSQL += `, jobRole = ?, empId = ?`; // Correctly added comma
+                updateCompanyDetailsParams.push(companyData.jobRole);
+                updateCompanyDetailsParams.push(companyData.empId);
+            }
+
+            updateCompanyDetailsSQL += ` WHERE collectionOfficerId = ?`;
+            updateCompanyDetailsParams.push(parseInt(id));
+
+
+
+
+            db.query(updateOfficerSQL, updateOfficerParams, (err, result) => {
+                if (err) {
+                    return db.rollback(() => reject(err));
+                }
+
+                db.query(updateBankDetailsSQL, updateBankDetailsParams, (err, result) => {
+                    if (err) {
+                        return db.rollback(() => reject(err));
+                    }
+
+                    db.query(updateCompanyDetailsSQL, updateCompanyDetailsParams, (err, result) => {
+                        if (err) {
+                            return db.rollback(() => reject(err));
+                        }
+
+                        db.commit((err) => {
+                            if (err) return db.rollback(() => reject(err));
+                            resolve(result);
+                        });
+                    });
+                });
+            });
+        });
+    });
 };
