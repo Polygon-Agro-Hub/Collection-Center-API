@@ -87,18 +87,19 @@ exports.loginUser = async (req, res) => {
         // Validate request body (ensure id and newPassword are provided)
         
 
-        const { id, newPassword } = await AuthValidate.logInUpdate.validateAsync(req.body);;
+        const {password } = await AuthValidate.logInUpdate.validateAsync(req.body);
+        const id = req.params.id;
 
         // Log the incoming values for debugging
         console.log('Received ID:', id);
-        console.log('Received newPassword:', newPassword);
+        console.log('Received newPassword:', password);
 
-        if (!newPassword) {
+        if (!password) {
             return res.status(400).json({ error: "newPassword is required." });
         }
 
         // Encrypt the new password using bcrypt
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
         console.log('Hashed Password:', hashedPassword);
 
         // Call the DAO function to update the password

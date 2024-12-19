@@ -14,6 +14,5 @@ exports.loginUserSchema = Joi.object({
 });
 
 exports.logInUpdate = Joi.object({
-  id: Joi.number().required(),
-  newPassword: Joi.string().required(),
+  password: Joi.string().required(),
 });
