@@ -122,6 +122,10 @@ exports.createCollectionOfficerCompany = (companyData, collectionOfficerId) => {
         const sql =
             "INSERT INTO collectionofficercompanydetails (collectionOfficerId, companyNameEnglish, companyNameSinhala, companyNameTamil, jobRole, companyEmail, assignedDistrict, employeeType, empId, collectionManagerId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+            if(companyData.collectionManagerId === ''){
+                companyData.collectionManagerId = null;
+            }
+
         db.query(
             sql,
             [
