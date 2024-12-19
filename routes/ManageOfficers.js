@@ -53,4 +53,16 @@ router.get(
     ManageOfficerEP.UpdateStatusAndSendPassword
 )
 
+router.get(
+    "/get-officer-by-id/:id",
+    // authMiddleware,
+    ManageOfficerEP.getOfficerById
+);
+
+router.put(
+    '/update-officer/:id', 
+    // authMiddleware, 
+    ManageOfficerEP.updateCollectionOfficer
+);
+
 module.exports = router;
