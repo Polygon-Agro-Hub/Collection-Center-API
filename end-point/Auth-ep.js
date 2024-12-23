@@ -55,7 +55,7 @@ exports.loginUser = async (req, res) => {
   
         if (verify_password) {
           const token = jwt.sign(
-            { userId: user.id, role: user.jobRole },
+            { userId: user.id, role: user.jobRole, centerId:user.centerId },
             process.env.JWT_SECRET,
             { expiresIn: "5h" }
           );

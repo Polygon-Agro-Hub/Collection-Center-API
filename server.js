@@ -4,8 +4,9 @@ const cors = require('cors');
 const db = require('./startup/database');
 
 //routers
-const AuthRoutes = require('./routes/Auth')
-const ManageOffcerRoutes  = require('./routes/ManageOfficers')
+const AuthRoutes = require('./routes/Auth');
+const ManageOffcerRoutes  = require('./routes/ManageOfficers');
+const PriceListRoutes = require('./routes/PriceList');
 
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/test', (req, res) => {
 })
 app.use('/api/auth', AuthRoutes);
 app.use('/api/manage-officers', ManageOffcerRoutes);
+app.use('/api/price-list', PriceListRoutes);
 
 
 app.listen(port, () => {

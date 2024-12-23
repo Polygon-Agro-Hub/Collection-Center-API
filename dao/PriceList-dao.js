@@ -1,0 +1,86 @@
+const db = require("../startup/database");
+
+exports.getAllPriceListDao = (centerId, page, limit, grade, searchText) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        let countSql = `
+            SELECT COUNT(*) AS total
+            FROM marketprice MP, marketpriceserve MPS, cropvariety CV, cropgroup CG
+            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.collectionCenterId = ? 
+        `;
+
+        let dataSql = `
+            SELECT MPS.id, CG.cropNameEnglish, CV.varietyNameEnglish,  MP.averagePrice, MP.grade, MPS.updatedPrice, MP.createdAt
+            FROM marketprice MP, marketpriceserve MPS, cropvariety CV, cropgroup CG
+            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.collectionCenterId = ?
+        `;
+
+        const countParams = [centerId];
+        const dataParams = [centerId];
+
+        if (grade) {
+            countSql += " AND MP.grade LIKE ?";
+            dataSql += " AND MP.grade LIKE ?";
+            countParams.push(grade);
+            dataParams.push(grade);
+        }
+
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    CG.cropNameEnglish LIKE ?
+                    OR CV.varietyNameEnglish LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue, searchValue);
+            dataParams.push(searchValue, searchValue);
+        }
+
+        dataSql += " ORDER BY CG.cropNameEnglish, MP.grade "
+
+        dataSql += " LIMIT ? OFFSET ?";
+        dataParams.push(limit, offset);
+
+
+        // Execute count query
+        db.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            db.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
+
+
+exports.updatePriceDao = (id, value) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE marketpriceserve 
+            SET updatedPrice = ?
+            WHERE id = ?
+        `
+        db.query(sql, [value, id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};

@@ -17,7 +17,8 @@ exports.loginUser = (userName) => {
             SELECT 
                 co.*, 
                 cocd.jobRole, 
-                cocd.empId 
+                cocd.empId,
+                co.centerId
             FROM 
                 collectionofficer AS co
             LEFT JOIN 
