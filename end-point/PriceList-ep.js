@@ -48,3 +48,50 @@ exports.updatePrice = async (req, res) => {
         res.status(500).json({ error: 'Failed to update collection officer details' });
     }
 };
+
+
+exports.getAllRequest = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+    try {
+        const centerId = req.user.centerId
+        console.log(req.query);
+        
+        const { page, limit, grade, status, searchText } = await PriceListValidate.getRequestPriceSchema.validateAsync(req.query);
+        const { items, total } = await PriceListDAO.getAllPriceRequestDao(centerId, page, limit, grade, status, searchText);
+        console.log(page, limit, grade, status);
+        
+
+        console.log("Successfully retrieved price list");
+        res.status(200).json({ items, total });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error retrieving price list:", error);
+        return res.status(500).json({ error: "An error occurred while fetching the price list" });
+    }
+};
+
+
+exports.changeRequestStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        const result = await PriceListDAO.ChangeRequestStatusDao(id, status);
+        console.log(result);
+        if (result.affectedRows === 0) {
+            console.log("faild to update request status");
+            return res.json({ status: false, message: "Faild to update request status" })
+
+        }
+        
+        res.json({ status: true, message: 'request status updated successfully' });
+
+    } catch (err) {
+        console.error('Error updating request status details:', err);
+        res.status(500).json({ error: 'Failed to update request status details' });
+    }
+};

@@ -16,5 +16,18 @@ router.patch(
     PriceListEP.updatePrice
 )
 
+router.get(
+    '/get-all-price-request',
+    authMiddleware,
+    PriceListEP.getAllRequest
+)
+
+
+router.patch(
+    '/change-request-status/:id',
+    authMiddleware,
+    PriceListEP.changeRequestStatus
+)
+
 
 module.exports = router;
