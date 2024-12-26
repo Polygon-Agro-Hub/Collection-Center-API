@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get(
     "/get-all-center",
-    authMiddleware,
+    // authMiddleware,
     ManageOfficerEP.getAllCollectionCenter
 )
 
@@ -31,7 +31,7 @@ router.get(
 
 router.get(
     "/get-all-officers",
-    authMiddleware,
+    // authMiddleware,
     ManageOfficerEP.getAllOfficers
 )
 

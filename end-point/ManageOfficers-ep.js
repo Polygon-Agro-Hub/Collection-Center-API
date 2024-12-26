@@ -252,8 +252,10 @@ exports.getOfficerById = async (req, res) => {
 exports.updateCollectionOfficer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { officerData, companyData, bankData } = req.body
-    await ManageOfficerDAO.updateOfficerDetails(id, officerData, companyData, bankData);
+    const officerData = req.body
+    console.log(officerData);
+    
+    const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData);
 
 
     res.json({ message: 'Collection officer details updated successfully' });

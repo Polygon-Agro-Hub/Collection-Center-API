@@ -180,7 +180,7 @@ exports.getAllOfficersDAO = (page, limit, company, role, searchText) => {
         let countSql = `
             SELECT COUNT(*) AS total
             FROM collectionofficer Coff, company Com 
-            WHERE Coff.companyId = Com.id 
+            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%'
         `;
 
         let dataSql = `
@@ -200,7 +200,7 @@ exports.getAllOfficersDAO = (page, limit, company, role, searchText) => {
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff, company Com 
-                     WHERE Coff.companyId = Com.id 
+                     WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%'
 
                  `;
 
@@ -474,18 +474,11 @@ exports.getOfficerByIdDAO = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
             SELECT 
-                co.*, 
-                cocd.companyNameEnglish, cocd.companyNameSinhala, cocd.companyNameTamil,
-                cocd.jobRole, cocd.collectionManagerId, cocd.companyEmail, cocd.assignedDistrict, cocd.employeeType, cocd.empId,
-                cobd.accHolderName, cobd.accNumber, cobd.bankName, cobd.branchName
+                *
             FROM 
-                collectionofficer co
-            LEFT JOIN 
-                collectionofficercompanydetails cocd ON co.id = cocd.collectionOfficerId
-            LEFT JOIN 
-                collectionofficerbankdetails cobd ON co.id = cobd.collectionOfficerId
+                collectionofficer
             WHERE 
-                co.id = ?`;
+                id = ?`;
 
         db.query(sql, [id], (err, results) => {
             if (err) {
@@ -515,7 +508,6 @@ exports.getOfficerByIdDAO = (id) => {
             resolve({
                 collectionOfficer: {
                     id: officer.id,
-                    centerId: officer.centerId,
                     firstNameEnglish: officer.firstNameEnglish,
                     firstNameSinhala: officer.firstNameSinhala,
                     firstNameTamil: officer.firstNameTamil,
@@ -524,6 +516,8 @@ exports.getOfficerByIdDAO = (id) => {
                     lastNameTamil: officer.lastNameTamil,
                     phoneNumber01: officer.phoneNumber01,
                     phoneNumber02: officer.phoneNumber02,
+                    phoneCode01:officer.phoneCode01,
+                    phoneCode02:officer.phoneCode02,
                     image: officer.image,
                     QRcode: officer.QRcode,
                     nic: officer.nic,
@@ -536,23 +530,16 @@ exports.getOfficerByIdDAO = (id) => {
                     province: officer.province,
                     country: officer.country,
                     languages: officer.languages,
-                },
-                companyDetails: {
-                    companyNameEnglish: officer.companyNameEnglish,
-                    companyNameSinhala: officer.companyNameSinhala,
-                    companyNameTamil: officer.companyNameTamil,
-                    jobRole: officer.jobRole,
-                    collectionManagerId: officer.collectionManagerId,
-                    companyEmail: officer.companyEmail,
-                    assignedDistrict: officer.assignedDistrict,
-                    employeeType: officer.employeeType,
                     empId: empIdWithoutPrefix,
-                },
-                bankDetails: {
+                    jobRole: officer.jobRole,
+                    employeeType: officer.empType,
                     accHolderName: officer.accHolderName,
                     accNumber: officer.accNumber,
                     bankName: officer.bankName,
-                    branchName: officer.branchName,
+                    branchName: officer.branchName
+
+
+
                 },
             });
         });
@@ -560,7 +547,7 @@ exports.getOfficerByIdDAO = (id) => {
 };
 
 
-exports.updateOfficerDetails = (id, officerData, companyData, bankData) => {
+exports.updateOfficerDetails = (id, officerData) => {
     return new Promise((resolve, reject) => {
 
 
@@ -569,22 +556,56 @@ exports.updateOfficerDetails = (id, officerData, companyData, bankData) => {
 
             const updateOfficerSQL = `
                 UPDATE collectionofficer
-                SET centerId = ?, firstNameEnglish = ?, lastNameEnglish = ?, firstNameSinhala = ?, lastNameSinhala = ?,
-                    firstNameTamil = ?, lastNameTamil = ?, nic = ?, email = ?, houseNumber = ?, streetName = ?, city = ?,
-                    district = ?, province = ?, country = ? , languages = ? , status = 'Not Approved'
+                SET firstNameEnglish = ?,
+                    firstNameSinhala = ?,
+                    firstNameTamil = ?,
+                    lastNameEnglish = ?,
+                    lastNameSinhala = ?,
+                    lastNameTamil = ?,
+                    jobRole = ?,
+                    empId = ?,
+                    empType = ?,
+                    phoneCode01 = ?,
+                    phoneNumber01 = ?,
+                    phoneCode02 = ?,
+                    phoneNumber02 = ?,
+                    nic = ?,
+                    email = ?,
+                    password = ?,
+                    passwordUpdated = ?,
+                    houseNumber = ?,
+                    streetName = ?,
+                    city = ?,
+                    district = ?,
+                    province = ?,
+                    country = ?,
+                    languages = ?,
+                    accHolderName = ?,
+                    accNumber = ?,
+                    bankName = ?,
+                    branchName = ?,
+                    status = ?
                 WHERE id = ?
             `;
 
             const updateOfficerParams = [
-                officerData.centerId,
                 officerData.firstNameEnglish,
-                officerData.lastNameEnglish,
                 officerData.firstNameSinhala,
-                officerData.lastNameSinhala,
                 officerData.firstNameTamil,
+                officerData.lastNameEnglish,
+                officerData.lastNameSinhala,
                 officerData.lastNameTamil,
+                officerData.jobRole,
+                officerData.empId,
+                officerData.employeeType,
+                officerData.phoneCode01,
+                officerData.phoneNumber01,
+                officerData.phoneCode02,
+                officerData.phoneNumber02,
                 officerData.nic,
                 officerData.email,
+                null,
+                0,
                 officerData.houseNumber,
                 officerData.streetName,
                 officerData.city,
@@ -592,76 +613,19 @@ exports.updateOfficerDetails = (id, officerData, companyData, bankData) => {
                 officerData.province,
                 officerData.country,
                 officerData.languages,
+                officerData.accHolderName,
+                officerData.accNumber,
+                officerData.bankName,
+                officerData.branchName,
+                "Not Approved",
                 parseInt(id),
             ];
-
-            const updateBankDetailsSQL = `
-                UPDATE collectionofficerbankdetails
-                SET accHolderName = ?, accNumber = ?, bankName = ?, branchName = ?
-                WHERE collectionOfficerId = ?
-            `;
-
-            const updateBankDetailsParams = [
-                bankData.accHolderName,
-                bankData.accNumber,
-                bankData.bankName,
-                bankData.branchName,
-                parseInt(id),
-            ];
-
-            if (companyData.collectionManagerId === '') {
-                companyData.collectionManagerId = null;
-            }
-
-            let updateCompanyDetailsSQL = `
-    UPDATE collectionofficercompanydetails
-    SET companyNameEnglish = ?, companyNameSinhala = ?, companyNameTamil = ?, collectionManagerId = ?, 
-        companyEmail = ?, assignedDistrict = ?, employeeType = ?
-`;
-
-            const updateCompanyDetailsParams = [
-                companyData.companyNameEnglish,
-                companyData.companyNameSinhala,
-                companyData.companyNameTamil,
-                companyData.collectionManagerId,
-                companyData.companyEmail,
-                companyData.assignedDistrict,
-                companyData.employeeType,
-            ];
-
-            if (companyData.empId) {
-                updateCompanyDetailsSQL += `, jobRole = ?, empId = ?`; // Correctly added comma
-                updateCompanyDetailsParams.push(companyData.jobRole);
-                updateCompanyDetailsParams.push(companyData.empId);
-            }
-
-            updateCompanyDetailsSQL += ` WHERE collectionOfficerId = ?`;
-            updateCompanyDetailsParams.push(parseInt(id));
-
-
-
 
             db.query(updateOfficerSQL, updateOfficerParams, (err, result) => {
                 if (err) {
                     return db.rollback(() => reject(err));
                 }
-
-                db.query(updateBankDetailsSQL, updateBankDetailsParams, (err, result) => {
-                    if (err) {
-                        return db.rollback(() => reject(err));
-                    }
-
-                    db.query(updateCompanyDetailsSQL, updateCompanyDetailsParams, (err, result) => {
-                        if (err) {
-                            return db.rollback(() => reject(err));
-                        }
-
-                        db.commit((err) => {
-                            if (err) return db.rollback(() => reject(err));
-                            resolve(result);
-                        });
-                    });
-                });
+                resolve(result);  
             });
         });
     });
