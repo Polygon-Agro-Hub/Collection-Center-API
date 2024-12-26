@@ -30,16 +30,15 @@ const { createCurrentAssetRecord } = require('./tables');
 
 const { createCurrentAssetTable } = require('./tables');
 const { createSlaveCropCalenderDaysTable } = require('./tables');
+const { createCropGeoTable } = require('./tables');
 const { createTaskImages } = require('./tables');
 
+const { createCompany } = require('./tables');
 const { createCollectionOfficer } = require('./tables');
-const { createCollectionOfficerCompanyDetails } = require('./tables');
-const { createCollectionOfficerBankDetails } = require('./tables');
 const { createRegisteredFarmerPayments } = require('./tables');
 const { createFarmerPaymensCrops } = require('./tables');
 const { createUserBankDetails } = require('./tables');
 const { createCollectionCenter } = require('./tables');
-const { createCollectionCenterOfficer } = require('./tables');
 const { createFarmerComplains } = require('./tables');
 
 //Seed for market Place Application
@@ -55,6 +54,7 @@ const {createMarketPriceRequestTable} = require('./tables')
 
 const {createSuperAdmin} = require('./admin')
 const {insertRoles} = require('./adminRoles')
+const {createAgroWorld} = require('./agroworldCompany')
 
 
 
@@ -130,6 +130,8 @@ const runSeeds = async () => {
 
     const messageSlaveCropCalenderDaysTable = await createSlaveCropCalenderDaysTable();
     console.log(messageSlaveCropCalenderDaysTable);
+    const messageCreateCropGeoTable = await createCropGeoTable();
+    console.log(messageCreateCropGeoTable);
     const messageCreateTaskImages= await createTaskImages();
     console.log(messageCreateTaskImages);
 
@@ -138,12 +140,15 @@ const runSeeds = async () => {
 
     const messagecreateCollectionCenter = await createCollectionCenter();
     console.log(messagecreateCollectionCenter);
+
+
+
+    const messageCreateCompany = await createCompany();
+    console.log(messageCreateCompany);
+
     const messageCreateCollectionOfficer = await createCollectionOfficer();
     console.log(messageCreateCollectionOfficer);
-    const messageCreateCollectionOfficerCompanyDetails = await createCollectionOfficerCompanyDetails();
-    console.log(messageCreateCollectionOfficerCompanyDetails);
-    const messagecreateCollectionOfficerBankDetails = await createCollectionOfficerBankDetails();
-    console.log(messagecreateCollectionOfficerBankDetails);
+
     const messageCreateRegisteredFarmerPayments = await createRegisteredFarmerPayments();
     console.log(messageCreateRegisteredFarmerPayments);
     const messageCreateFarmerPaymensCrops = await createFarmerPaymensCrops();
@@ -151,8 +156,7 @@ const runSeeds = async () => {
     const messageCreateUserBankDetails = await createUserBankDetails();
     console.log(messageCreateUserBankDetails);
     
-    const messagecreateCollectionCenterOfficer = await createCollectionCenterOfficer();
-    console.log(messagecreateCollectionCenterOfficer);
+  
 
     const messagecreateFarmerComplains = await createFarmerComplains();
     console.log(messagecreateFarmerComplains);
@@ -188,6 +192,9 @@ const runSeeds = async () => {
     console.log(messagecreateContentPublishingEvent);
     const messageCreateTaskStatusEvent = await createTaskStatusEvent();
     console.log(messageCreateTaskStatusEvent);
+
+    const messageCreateAgroWorld = await createAgroWorld();
+    console.log(messageCreateAgroWorld);
 
     
     
