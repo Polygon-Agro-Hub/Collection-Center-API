@@ -50,15 +50,24 @@ exports.createOfficer = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    const { officerData, companyData, bankData } = req.body
+    const officerData = req.body
     console.log(req.body);
+    // const centerId = req.user.centerId;
+    // const companyId:req.user.companyId;
+    // const managerID:req.user.userId;
 
-    const resultsPersonal = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, companyData, bankData);
-    const resultCompany = await ManageOfficerDAO.createCollectionOfficerCompany(companyData, resultsPersonal.insertId);
-    const resultBank = await ManageOfficerDAO.createCollectionOfficerBank(bankData, resultsPersonal.insertId);
+    const companyId = 1;
+    const centerId = 1;
+    const managerID = 11;
+
+
+    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID);
+    const cresteQR = await ManageOfficerDAO.CreateQRCodeForOfficerDao(result.insertId);
+    console.log(cresteQR);
+
 
     console.log("Collection Officer created successfully");
-    return res.status(201).json({ message: "Collection Officer created successfully", id: resultBank.insertId, status: true });
+    return res.status(201).json({ message: "Collection Officer created successfully", status: true });
   } catch (error) {
     if (error.isJoi) {
       // Handle validation error

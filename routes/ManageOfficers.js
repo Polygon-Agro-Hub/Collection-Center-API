@@ -13,13 +13,13 @@ router.get(
 
 router.get(
     "/get-last-emp-id/:role",
-    authMiddleware,
+    // authMiddleware,
     ManageOfficerEP.getForCreateId
 )
 
 router.post(
     "/create-officer",
-    authMiddleware,
+    // authMiddleware,
     ManageOfficerEP.createOfficer
 )
 

@@ -922,7 +922,7 @@ const createCollectionOfficer = () => {
       lastNameTamil VARCHAR(50) NOT NULL,
       jobRole VARCHAR(50) NOT NULL,
       empId VARCHAR(10) NOT NULL,
-      enpType VARCHAR(10) NOT NULL,
+      empType VARCHAR(10) NOT NULL,
       phoneCode01 VARCHAR(5) NOT NULL,
       phoneNumber01 VARCHAR(12) NOT NULL,
       phoneCode02 VARCHAR(5) NULL,
