@@ -173,7 +173,7 @@ exports.getManagerIdByCenterIdDAO = (centerID) => {
 };
 
 
-exports.getAllOfficersDAO = (page, limit, company, role, searchText) => {
+exports.getAllOfficersDAO = (page, limit, status, role, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -208,11 +208,11 @@ exports.getAllOfficersDAO = (page, limit, company, role, searchText) => {
         const dataParams = [];
 
         // Apply filters for company ID
-        if (company) {
-            countSql += " AND Com.companyNameEnglish LIKE ?";
-            dataSql += " AND Com.companyNameEnglish LIKE ?";
-            countParams.push(company);
-            dataParams.push(company);
+        if (status) {
+            countSql += " AND Coff.status LIKE ?";
+            dataSql += " AND Coff.status LIKE ?";
+            countParams.push(status);
+            dataParams.push(status);
         }
 
         if (role) {
@@ -306,10 +306,9 @@ exports.DeleteOfficerDao = (id) => {
 exports.getCollectionOfficerEmailDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            SELECT c.email, c.firstNameEnglish, ccd.empId AS empId
-            FROM collectionofficer c
-            LEFT JOIN collectionofficercompanydetails ccd ON c.id = ccd.collectionOfficerId
-            WHERE c.id = ?
+            SELECT email, firstNameEnglish, empId, status
+            FROM collectionofficer 
+            WHERE id = ?
         `;
         db.query(sql, [id], (err, results) => {
             if (err) {
@@ -317,9 +316,10 @@ exports.getCollectionOfficerEmailDao = (id) => {
             }
             if (results.length > 0) {
                 resolve({
-                    email: results[0].email, // Resolve with email
+                    email: results[0].email, 
                     firstNameEnglish: results[0].firstNameEnglish,
-                    empId: results[0].empId, // Resolve with employeeType (empId)
+                    empId: results[0].empId, 
+                    Existstatus: results[0].status
                 });
             } else {
                 resolve(null); // Resolve with null if no record is found

@@ -37,7 +37,7 @@ router.get(
 
 router.get(
     "/get-all-company-names",
-    authMiddleware,
+    // authMiddleware,
     ManageOfficerEP.getAllCompanyNames
 )
 
@@ -49,7 +49,7 @@ router.delete(
 
 router.get(
     "/update-status/:id/:status",
-    authMiddleware,
+    // authMiddleware,
     ManageOfficerEP.UpdateStatusAndSendPassword
 )
 

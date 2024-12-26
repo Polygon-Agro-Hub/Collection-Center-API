@@ -1,5 +1,7 @@
 const ManageOfficerValidate = require('../validations/ManageOfficer-validation')
 const ManageOfficerDAO = require('../dao/ManageOfficer-dao')
+const bcrypt = require("bcryptjs");
+
 
 exports.getAllCollectionCenter = async (req, res) => {
   try {
@@ -106,10 +108,10 @@ exports.getAllOfficers = async (req, res) => {
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
     console.log(validatedQuery);
 
-    const { page, limit, company, role, searchText } = validatedQuery;
+    const { page, limit, status, role, searchText } = validatedQuery;
 
     // Call the DAO to get all collection officers
-    const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(page, limit, company, role, searchText);
+    const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(page, limit, status, role, searchText);
 
 
     console.log("Successfully fetched collection officers");
@@ -184,31 +186,41 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
       return res.status(404).json({ message: 'Collection officer not found.', status: false });
     }
 
-    // Destructure email, firstNameEnglish, and empId from fetched data
-    const { email, firstNameEnglish, empId } = officerData;
-    console.log(`Email: ${email}, Name: ${firstNameEnglish}, Emp ID: ${empId}`);
+    const { email, firstNameEnglish, empId, Existstatus } = officerData;
+    console.log(`Email: ${email}, Name: ${firstNameEnglish}, Emp ID: ${empId}`,Existstatus);
 
-    // Generate a new random password
-    const generatedPassword = Math.random().toString(36).slice(-8); // Example: 8-character random password
-
-    // Update status and password in the database
-    const updateResult = await ManageOfficerDAO.UpdateCollectionOfficerStatusAndPasswordDao({
-      id,
-      status,
-      password: generatedPassword,
-    });
-
-    if (updateResult.affectedRows === 0) {
-      return res.status(400).json({ message: 'Failed to update status and password.', status: false });
+    if(Existstatus === status){
+      return res.json({ message: 'Status already updated.', status: false });
     }
 
-    // If status is 'Approved', send the password email
+
     if (status === 'Approved') {
+      const generatedPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(generatedPassword, parseInt(process.env.SALT_ROUNDS));
+
+
+      const updateResult = await ManageOfficerDAO.UpdateCollectionOfficerStatusAndPasswordDao({
+        id,
+        status,
+        password: hashedPassword,
+      });
+
+      if (updateResult.affectedRows === 0) {
+        return res.status(400).json({ message: 'Failed to update status and password.', status: false });
+      }
+
+
       const emailResult = await ManageOfficerDAO.SendGeneratedPasswordDao(email, generatedPassword, empId, firstNameEnglish);
 
       if (!emailResult.success) {
         return res.status(500).json({ message: 'Failed to send password email.', error: emailResult.error });
       }
+    }else{
+      const updateResult = await ManageOfficerDAO.UpdateCollectionOfficerStatusAndPasswordDao({
+        id,
+        status,
+        password: null,
+      });
     }
 
     // Return success response with empId and email
@@ -254,7 +266,7 @@ exports.updateCollectionOfficer = async (req, res) => {
     const { id } = req.params;
     const officerData = req.body
     console.log(officerData);
-    
+
     const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData);
 
 
