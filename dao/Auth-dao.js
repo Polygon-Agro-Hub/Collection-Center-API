@@ -15,18 +15,11 @@ exports.loginUser = (userName) => {
   return new Promise((resolve, reject) => {
     const sql = `
             SELECT 
-                co.*, 
-                cocd.jobRole, 
-                cocd.empId,
-                co.centerId
+                *
             FROM 
-                collectionofficer AS co
-            LEFT JOIN 
-                collectionofficercompanydetails AS cocd
-            ON 
-                co.id = cocd.collectionOfficerId
-            WHERE 
-                cocd.empId = ?`;
+                collectionofficer
+           WHERE
+                empId = ?`;
 
     db.query(sql, [userName], (err, results) => {
       if (err) {
