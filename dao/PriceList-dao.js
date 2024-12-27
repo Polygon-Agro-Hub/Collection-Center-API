@@ -96,17 +96,17 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             SELECT COUNT(*) AS total
             FROM marketpricerequest MPR
             JOIN marketprice MP ON MPR.marketPriceId = MP.id
-            JOIN collectionofficercompanydetails COD ON MPR.empId = COD.id
+            JOIN collectionofficer COF ON MPR.empId = COF.id
             JOIN cropvariety CV ON MP.varietyId = CV.id
             JOIN cropgroup CG ON CV.cropGroupId = CG.id
             WHERE MPR.centerId = ?        
             `;
 
         let dataSql = `
-            SELECT MPR.id, MPR.requestPrice, MPR.status, COD.empId, MP.grade, CV.varietyNameEnglish, CG.cropNameEnglish, MPR.createdAt
+            SELECT MPR.id, MPR.requestPrice, MPR.status, COF.empId, MP.grade, CV.varietyNameEnglish, CG.cropNameEnglish, MPR.createdAt
             FROM marketpricerequest MPR
             JOIN marketprice MP ON MPR.marketPriceId = MP.id
-            JOIN collectionofficercompanydetails COD ON MPR.empId = COD.id
+            JOIN collectionofficer COF ON MPR.empId = COF.id
             JOIN cropvariety CV ON MP.varietyId = CV.id
             JOIN cropgroup CG ON CV.cropGroupId = CG.id
             WHERE MPR.centerId = ?
@@ -143,8 +143,8 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             dataParams.push(searchValue, searchValue);
         }
 
-        dataSql += " GROUP BY MPR.id, MPR.requestPrice, MPR.status, COD.empId, MP.grade, CV.varietyNameEnglish, CG.cropNameEnglish, MPR.createdAt "
-        countSql += " GROUP BY MPR.id, MPR.requestPrice, MPR.status, COD.empId, MP.grade, CV.varietyNameEnglish, CG.cropNameEnglish, MPR.createdAt "
+        dataSql += " GROUP BY MPR.id, MPR.requestPrice, MPR.status, COF.empId, MP.grade, CV.varietyNameEnglish, CG.cropNameEnglish, MPR.createdAt "
+        countSql += " GROUP BY MPR.id, MPR.requestPrice, MPR.status, COF.empId, MP.grade, CV.varietyNameEnglish, CG.cropNameEnglish, MPR.createdAt "
 
         dataSql += " LIMIT ? OFFSET ? ";
         dataParams.push(limit, offset);
