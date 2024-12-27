@@ -7,19 +7,19 @@ const router = express.Router();
 
 router.get(
     "/get-all-center",
-    // authMiddleware,
+    authMiddleware,
     ManageOfficerEP.getAllCollectionCenter
 )
 
 router.get(
     "/get-last-emp-id/:role",
-    // authMiddleware,
+    authMiddleware,
     ManageOfficerEP.getForCreateId
 )
 
 router.post(
     "/create-officer",
-    // authMiddleware,
+    authMiddleware,
     ManageOfficerEP.createOfficer
 )
 
@@ -31,13 +31,13 @@ router.get(
 
 router.get(
     "/get-all-officers",
-    // authMiddleware,
+    authMiddleware,
     ManageOfficerEP.getAllOfficers
 )
 
 router.get(
     "/get-all-company-names",
-    // authMiddleware,
+    authMiddleware,
     ManageOfficerEP.getAllCompanyNames
 )
 

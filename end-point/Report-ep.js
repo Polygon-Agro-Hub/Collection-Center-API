@@ -1,0 +1,31 @@
+const ReportDAO = require('../dao/Report-dao')
+const ReportValidate = require('../validations/Report-validation')
+
+
+
+exports.getAllCollectionReportsDetails = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const validatedQuery = await ReportValidate.getAllOfficersSchema.validateAsync(req.query);
+    console.log(validatedQuery);
+
+    const { page, limit, searchText } = validatedQuery;
+    const centerId = req.user.centerId;
+
+    const { items, total } = await ReportDAO.getAllOfficersDAO(centerId, page, limit, searchText);
+
+
+    console.log("Successfully fetched collection officers");
+    return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};

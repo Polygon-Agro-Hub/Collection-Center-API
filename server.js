@@ -7,6 +7,7 @@ const db = require('./startup/database');
 const AuthRoutes = require('./routes/Auth');
 const ManageOffcerRoutes  = require('./routes/ManageOfficers');
 const PriceListRoutes = require('./routes/PriceList');
+const ReportRoutes = require('./routes/Report');
 
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api/test', (req, res) => {
 app.use('/api/auth', AuthRoutes);
 app.use('/api/manage-officers', ManageOffcerRoutes);
 app.use('/api/price-list', PriceListRoutes);
+app.use('/api/report', ReportRoutes);
 
 
 app.listen(port, () => {
