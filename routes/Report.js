@@ -10,5 +10,11 @@ router.get(
     ReporttEP.getAllCollectionReportsDetails
 )
 
+router.get(
+    "/get-sales-reports-details",
+    authMiddleware,
+    ReporttEP.getAllSalesReportsDetails
+)
+
 
 module.exports = router;
