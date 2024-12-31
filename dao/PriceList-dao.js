@@ -1,4 +1,4 @@
-const db = require("../startup/database");
+const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
 
 exports.getAllPriceListDao = (centerId, page, limit, grade, searchText) => {
     return new Promise((resolve, reject) => {
@@ -6,13 +6,13 @@ exports.getAllPriceListDao = (centerId, page, limit, grade, searchText) => {
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM marketprice MP, marketpriceserve MPS, cropvariety CV, cropgroup CG
+            FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
             WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.collectionCenterId = ? 
         `;
 
         let dataSql = `
             SELECT MPS.id, CG.cropNameEnglish, CV.varietyNameEnglish,  MP.averagePrice, MP.grade, MPS.updatedPrice, MP.createdAt
-            FROM marketprice MP, marketpriceserve MPS, cropvariety CV, cropgroup CG
+            FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
             WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.collectionCenterId = ?
         `;
 
@@ -47,7 +47,7 @@ exports.getAllPriceListDao = (centerId, page, limit, grade, searchText) => {
 
 
         // Execute count query
-        db.query(countSql, countParams, (countErr, countResults) => {
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
             if (countErr) {
                 console.error('Error in count query:', countErr);
                 return reject(countErr);
@@ -56,7 +56,7 @@ exports.getAllPriceListDao = (centerId, page, limit, grade, searchText) => {
             const total = countResults[0].total;
 
             // Execute data query
-            db.query(dataSql, dataParams, (dataErr, dataResults) => {
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
                 if (dataErr) {
                     console.error('Error in data query:', dataErr);
                     return reject(dataErr);
@@ -76,7 +76,7 @@ exports.updatePriceDao = (id, value) => {
             SET updatedPrice = ?
             WHERE id = ?
         `
-        db.query(sql, [value, id], (err, results) => {
+        collectionofficer.query(sql, [value, id], (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -97,8 +97,8 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             FROM marketpricerequest MPR
             JOIN marketprice MP ON MPR.marketPriceId = MP.id
             JOIN collectionofficer COF ON MPR.empId = COF.id
-            JOIN cropvariety CV ON MP.varietyId = CV.id
-            JOIN cropgroup CG ON CV.cropGroupId = CG.id
+            JOIN plant_care.cropvariety CV ON MP.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE MPR.centerId = ?        
             `;
 
@@ -107,8 +107,8 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             FROM marketpricerequest MPR
             JOIN marketprice MP ON MPR.marketPriceId = MP.id
             JOIN collectionofficer COF ON MPR.empId = COF.id
-            JOIN cropvariety CV ON MP.varietyId = CV.id
-            JOIN cropgroup CG ON CV.cropGroupId = CG.id
+            JOIN plant_care.cropvariety CV ON MP.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE MPR.centerId = ?
         `;
 
@@ -151,7 +151,7 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
 
 
         // Execute count query
-        db.query(countSql, countParams, (countErr, countResults) => {
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
             if (countErr) {
                 console.error('Error in count query:', countErr);
                 return reject(countErr);
@@ -160,7 +160,7 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             const total = countResults.length > 0 ? countResults[0].total : 0;
 
             // Execute data query
-            db.query(dataSql, dataParams, (dataErr, dataResults) => {
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
                 if (dataErr) {
                     console.error('Error in data query:', dataErr);
                     return reject(dataErr);
@@ -179,7 +179,7 @@ exports.ChangeRequestStatusDao = (id, status) => {
             SET status = ?
             WHERE id = ?
         `
-        db.query(sql, [status, id], (err, results) => {
+        collectionofficer.query(sql, [status, id], (err, results) => {
             if (err) {
                 return reject(err);
             }

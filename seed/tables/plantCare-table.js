@@ -1,6 +1,6 @@
 
 
-const { db, plantcare, collectionofficer } = require('../../startup/database');
+const { plantcare } = require('../../startup/database');
 
 const createUsersTable = () => {
     const sql = `
