@@ -7,9 +7,9 @@ const createUsersTable = () => {
     CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,
       firstName VARCHAR(50) NOT NULL,
-      lastName VARCHAR(50) NOT NULL,
+      firstName VARCHAR(50) NOT NULL,
       phoneNumber VARCHAR(12) NOT NULL,
-      NICnumber VARCHAR(12) NOT NULL,
+      firstName VARCHAR(12) NOT NULL,
       profileImage LONGBLOB NULL,
       farmerQr LONGBLOB,
       membership VARCHAR(25) NULL,

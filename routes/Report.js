@@ -16,5 +16,11 @@ router.get(
     ReporttEP.getAllSalesReportsDetails
 )
 
+router.get(
+    "/get-collection-farmer-list/:id",
+    // authMiddleware,
+    ReporttEP.getCollectionFarmersList
+)
+
 
 module.exports = router;
