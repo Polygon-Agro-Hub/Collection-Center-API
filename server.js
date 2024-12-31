@@ -1,7 +1,7 @@
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
-const db = require('./startup/database');
+const {  plantcare, collectionofficer, marketPlace, dash } = require('./startup/database');
 
 //routers
 const AuthRoutes = require('./routes/Auth');
@@ -18,13 +18,37 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-db.connect(err => {
+plantcare.connect(err => {
     if (err) {
-        console.error('Error connecting to the database in index.js:', err);
-        return;
+      console.error('Error connecting to the database in index.js (plantcare):', err);
+      return;
     }
-    console.log('Connected to the MySQL database in server.js.');
-});
+    console.log('Connected to the MySQL database in server.js.(plantcare)');
+  });
+  
+  collectionofficer.connect(err => {
+    if (err) {
+      console.error('Error connecting to the database in index.js (collectionofficer):', err);
+      return;
+    }
+    console.log('Connected to the MySQL database in server.js.(collectionofficer)');
+  });
+  
+  marketPlace.connect(err => {
+    if (err) {
+      console.error('Error connecting to the database in index.js (marketPlace):', err);
+      return;
+    }
+    console.log('Connected to the MySQL database in server.js.(marketPlace)');
+  });
+  
+  dash.connect(err => {
+    if (err) {
+      console.error('Error connecting to the database in index.js (dash):', err);
+      return;
+    }
+    console.log('Connected to the MySQL database in server.js.(dash)');
+  });
 
 
 
