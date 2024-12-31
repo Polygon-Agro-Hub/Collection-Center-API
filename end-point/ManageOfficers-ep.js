@@ -54,13 +54,13 @@ exports.createOfficer = async (req, res) => {
   try {
     const officerData = req.body
     console.log(req.body);
-    // const centerId = req.user.centerId;
-    // const companyId:req.user.companyId;
-    // const managerID:req.user.userId;
+    const centerId = req.user.centerId;
+    const companyId = req.user.companyId;
+    const managerID = req.user.userId;
 
-    const companyId = 1;
-    const centerId = 1;
-    const managerID = 11;
+    // const companyId = 1;
+    // const centerId = 1;
+    // const managerID = 11;
 
 
     const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID);
@@ -108,10 +108,12 @@ exports.getAllOfficers = async (req, res) => {
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
     console.log(validatedQuery);
 
+    const centerId = req.user.centerId;
+
     const { page, limit, status, role, searchText } = validatedQuery;
 
     // Call the DAO to get all collection officers
-    const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(page, limit, status, role, searchText);
+    const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(centerId, page, limit, status, role, searchText);
 
 
     console.log("Successfully fetched collection officers");
@@ -176,6 +178,8 @@ exports.deleteOfficer = async (req, res) => {
 exports.UpdateStatusAndSendPassword = async (req, res) => {
   try {
     const { id, status } = req.params;
+    console.log(id, status);
+    
 
     if (!id || !status) {
       return res.status(400).json({ message: 'ID and status are required.', status: false });
@@ -196,6 +200,8 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
 
     if (status === 'Approved') {
       const generatedPassword = Math.random().toString(36).slice(-8);
+      console.log(generatedPassword);
+      
       const hashedPassword = await bcrypt.hash(generatedPassword, parseInt(process.env.SALT_ROUNDS));
 
 

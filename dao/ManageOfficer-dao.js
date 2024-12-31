@@ -1,4 +1,4 @@
-const db = require("../startup/database");
+const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
 const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
@@ -7,7 +7,7 @@ const fs = require('fs');
 exports.GetAllCenterDAO = () => {
     return new Promise((resolve, reject) => {
         const sql = "SELECT * FROM collectioncenter";
-        db.query(sql, (err, results) => {
+        collectionofficer.query(sql, (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -19,7 +19,7 @@ exports.GetAllCenterDAO = () => {
 exports.getForCreateIdDao = (role) => {
     return new Promise((resolve, reject) => {
         const sql = "SELECT empId FROM collectionofficer WHERE empId LIKE ? ORDER BY empId DESC LIMIT 1";
-        db.query(sql, [`${role}%`], (err, results) => {
+        collectionofficer.query(sql, [`${role}%`], (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -53,7 +53,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
             `;
 
             // Database query with QR image data added
-            db.query(
+            collectionofficer.query(
                 sql,
                 [
                     centerId,
@@ -113,7 +113,7 @@ exports.createCollectionOfficerCompany = (companyData, collectionOfficerId) => {
             companyData.collectionManagerId = null;
         }
 
-        db.query(
+        collectionofficer.query(
             sql,
             [
                 collectionOfficerId,
@@ -142,7 +142,7 @@ exports.createCollectionOfficerBank = (bankData, collectionOfficerId) => {
         const sql =
             "INSERT INTO collectionofficerbankdetails (collectionOfficerId, accHolderName, accNumber, bankName, branchName) VALUES (?, ?, ?, ?, ?)";
 
-        db.query(
+        collectionofficer.query(
             sql,
             [
                 collectionOfficerId,
@@ -160,10 +160,10 @@ exports.createCollectionOfficerBank = (bankData, collectionOfficerId) => {
 };
 
 
-exports.getManagerIdByCenterIdDAO = (centerID) => {
+exports.getManagerIcollectionofficeryCenterIdDAO = (centerID) => {
     return new Promise((resolve, reject) => {
         const sql = "SELECT Coff.id, Coff.firstNameEnglish, Coff.lastNameEnglish FROM collectionofficer Coff, collectionofficercompanydetails Ccom WHERE Coff.id = Ccom.collectionOfficerId AND Ccom.empId LIKE 'CCM%' AND Coff.centerId = ?";
-        db.query(sql, [centerID], (err, results) => {
+        collectionofficer.query(sql, [centerID], (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -173,14 +173,14 @@ exports.getManagerIdByCenterIdDAO = (centerID) => {
 };
 
 
-exports.getAllOfficersDAO = (page, limit, status, role, searchText) => {
+exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
         let countSql = `
             SELECT COUNT(*) AS total
             FROM collectionofficer Coff, company Com 
-            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%'
+            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%' AND Coff.centerId = ?
         `;
 
         let dataSql = `
@@ -200,12 +200,12 @@ exports.getAllOfficersDAO = (page, limit, status, role, searchText) => {
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff, company Com 
-                     WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%'
+                     WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%' AND Coff.centerId = ?
 
                  `;
 
-        const countParams = [];
-        const dataParams = [];
+        const countParams = [centerId];
+        const dataParams = [centerId];
 
         // Apply filters for company ID
         if (status) {
@@ -246,7 +246,7 @@ exports.getAllOfficersDAO = (page, limit, status, role, searchText) => {
         dataParams.push(limit, offset);
 
         // Execute count query
-        db.query(countSql, countParams, (countErr, countResults) => {
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
             if (countErr) {
                 console.error('Error in count query:', countErr);
                 return reject(countErr);
@@ -255,7 +255,7 @@ exports.getAllOfficersDAO = (page, limit, status, role, searchText) => {
             const total = countResults[0].total;
 
             // Execute data query
-            db.query(dataSql, dataParams, (dataErr, dataResults) => {
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
                 if (dataErr) {
                     console.error('Error in data query:', dataErr);
                     return reject(dataErr);
@@ -276,7 +276,7 @@ exports.getAllCompanyNamesDao = () => {
             FROM company
             GROUP BY companyNameEnglish
         `;
-        db.query(sql, (err, results) => {
+        collectionofficer.query(sql, (err, results) => {
             if (err) {
                 return reject(err); // Reject promise if an error occurs
             }
@@ -293,7 +293,7 @@ exports.DeleteOfficerDao = (id) => {
             DELETE FROM collectionofficer
             WHERE id = ?
         `;
-        db.query(sql, [parseInt(id)], (err, results) => {
+        collectionofficer.query(sql, [parseInt(id)], (err, results) => {
             if (err) {
                 return reject(err); // Reject promise if an error occurs
             }
@@ -310,7 +310,7 @@ exports.getCollectionOfficerEmailDao = (id) => {
             FROM collectionofficer 
             WHERE id = ?
         `;
-        db.query(sql, [id], (err, results) => {
+        collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
                 return reject(err); // Reject promise if an error occurs
             }
@@ -335,7 +335,7 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
             SET status = ?, password = ?, passwordUpdated = 0
             WHERE id = ?
         `;
-        db.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
+        collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
             if (err) {
                 return reject(err); // Reject promise if an error occurs
             }
@@ -480,7 +480,7 @@ exports.getOfficerByIdDAO = (id) => {
             WHERE 
                 id = ?`;
 
-        db.query(sql, [id], (err, results) => {
+        collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
                 return reject(err); // Reject promise if an error occurs
             }
@@ -551,7 +551,7 @@ exports.updateOfficerDetails = (id, officerData) => {
     return new Promise((resolve, reject) => {
 
 
-        db.beginTransaction((err) => {
+        collectionofficer.beginTransaction((err) => {
             if (err) return reject(err);
 
             const updateOfficerSQL = `
@@ -621,9 +621,9 @@ exports.updateOfficerDetails = (id, officerData) => {
                 parseInt(id),
             ];
 
-            db.query(updateOfficerSQL, updateOfficerParams, (err, result) => {
+            collectionofficer.query(updateOfficerSQL, updateOfficerParams, (err, result) => {
                 if (err) {
-                    return db.rollback(() => reject(err));
+                    return collectionofficer.rollback(() => reject(err));
                 }
                 resolve(result);  
             });
@@ -652,7 +652,7 @@ exports.CreateQRCodeForOfficerDao = (id) => {
             SET QRcode = ?
             WHERE id = ?
         `
-        db.query(sql, [qrCodeBuffer, id], (err, results) => {
+        collectionofficer.query(sql, [qrCodeBuffer, id], (err, results) => {
             if (err) {
                 return reject(err);
             }

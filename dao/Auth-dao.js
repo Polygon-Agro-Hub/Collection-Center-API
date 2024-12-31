@@ -1,15 +1,4 @@
-// exports.GetAllCenterDAO = () => {
-//     return new Promise((resolve, reject) => {
-//       const sql = "SELECT * FROM collectioncenter";
-//       db.query(sql, (err, results) => {
-//         if (err) {
-//           return reject(err);
-//         }
-//         resolve(results);
-//       });
-//     });
-//   };
-const db = require("../startup/database");
+const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
 
 exports.loginUser = (userName) => {
   return new Promise((resolve, reject) => {
@@ -21,7 +10,7 @@ exports.loginUser = (userName) => {
            WHERE
                 empId = ?`;
 
-    db.query(sql, [userName], (err, results) => {
+    collectionofficer.query(sql, [userName], (err, results) => {
       if (err) {
         reject(err);
       } else {
@@ -43,7 +32,7 @@ exports.updatePasswordDAO = (id, hashedPassword) => {
                 WHERE 
                     id = ?`;
 
-      db.query(sql, [hashedPassword, id], (err, results) => {
+      collectionofficer.query(sql, [hashedPassword, id], (err, results) => {
         if (err) {
           reject(err);
         } else {

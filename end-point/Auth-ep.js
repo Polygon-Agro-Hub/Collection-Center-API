@@ -43,6 +43,8 @@ exports.loginUser = async (req, res) => {
     }
 
     if (user) {
+      console.log(user.password,password);
+      
 
       verify_password = bcrypt.compareSync(password, user.password);
 

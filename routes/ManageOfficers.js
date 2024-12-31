@@ -49,19 +49,19 @@ router.delete(
 
 router.get(
     "/update-status/:id/:status",
-    // authMiddleware,
+    authMiddleware,
     ManageOfficerEP.UpdateStatusAndSendPassword
 )
 
 router.get(
     "/get-officer-by-id/:id",
-    // authMiddleware,
+    authMiddleware,
     ManageOfficerEP.getOfficerById
 );
 
 router.put(
     '/update-officer/:id', 
-    // authMiddleware, 
+    authMiddleware, 
     ManageOfficerEP.updateCollectionOfficer
 );
 
