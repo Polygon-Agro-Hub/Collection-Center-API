@@ -61,7 +61,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, searchText) => {
                 if (dataErr) {
                     console.error('Error in data query:', dataErr);
                     return reject(dataErr);
-                }                
+                }
                 resolve({ items: dataResults, total });
             });
         });
@@ -86,7 +86,7 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
             
         `;
         console.log(officerId);
-        
+
         const countParams = [officerId];
         const dataParams = [officerId];
 
@@ -211,3 +211,27 @@ exports.getAllSalesOfficerDAO = (centerId, page, limit, searchText) => {
     });
 };
 
+
+
+exports.dailyReportDao = (id, date) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        SELECT CV.id, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS gradeA, SUM(FPC.gradeBquan) AS gradeB, SUM(FPC.gradeCquan) AS gradeC, SUM(FPC.gradeAquan)+SUM(FPC.gradeBquan)+SUM(FPC.gradeCquan) AS total
+        FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, plant_care.cropvariety CV
+        WHERE FPC.registerFarmerId = RFP.id AND FPC.cropId = CV.id AND RFP.collectionOfficerId = ? AND DATE(FPC.createdAt) = ?
+        GROUP BY CV.varietyNameEnglish
+        `;
+
+        console.log(date.toISOString().slice(0, 10));
+        
+        collectionofficer.query(sql,[id, date.toISOString().slice(0, 10)], (err, results) => {
+            if (err) {
+                console.log(err);
+                
+                return reject(err);
+            }
+            console.log(results);
+            resolve(results);
+        });
+    });
+};

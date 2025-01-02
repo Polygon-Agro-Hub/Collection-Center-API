@@ -65,7 +65,7 @@ exports.getCollectionFarmersList = async (req, res) => {
 
   try {
     const validatedQuery = await ReportValidate.getCollectionFarmerListQuaryParmsSchema.validateAsync(req.query);
-    const { id } = await ReportValidate.getCollectionFarmerListParmsSchema.validateAsync(req.params);
+    const { id } = await ReportValidate.IdParmsSchema.validateAsync(req.params);
 
     console.log(validatedQuery);
 
@@ -85,5 +85,31 @@ exports.getCollectionFarmersList = async (req, res) => {
 
     console.error("Error fetching collection farmer list :", error);
     return res.status(500).json({ error: "An error occurred while fetching collection farmer list " });
+  }
+};
+
+
+exports.getDailyReport = async (req, res) => {
+  try {
+    const { id, date } = await ReportValidate.dailyReportSchema.validateAsync(req.params);
+    console.log(id, date);
+    
+    const result = await ReportDAO.dailyReportDao(id, date);
+
+    if (result.length === 0) {
+      return res.json({ message: "No news items found", data: result });
+    }
+
+    console.log("Successfully retrieved all collection center");
+    res.json(result);
+  } catch (err) {
+    if (err.isJoi) {
+      // Validation error
+      console.error("Validation error:", err.details[0].message);
+      return res.status(400).json({ error: err.details[0].message });
+    }
+
+    console.error("Error fetching news:", err);
+    res.status(500).json({ error: "An error occurred while fetching news" });
   }
 };

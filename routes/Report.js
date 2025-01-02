@@ -18,8 +18,14 @@ router.get(
 
 router.get(
     "/get-collection-farmer-list/:id",
-    // authMiddleware,
+    authMiddleware,
     ReporttEP.getCollectionFarmersList
+)
+
+router.get(
+    "/get-daily-report/:id/:date",
+    // authMiddleware,
+    ReporttEP.getDailyReport
 )
 
 

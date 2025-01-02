@@ -13,6 +13,11 @@ exports.getCollectionFarmerListQuaryParmsSchema = Joi.object({
     date: Joi.date().optional(),
 });
 
-exports.getCollectionFarmerListParmsSchema = Joi.object({
+exports.IdParmsSchema = Joi.object({
     id: Joi.number().integer().required()
+});
+
+exports.dailyReportSchema = Joi.object({
+    id: Joi.number().integer().required(),
+    date: Joi.date().required()
 });
