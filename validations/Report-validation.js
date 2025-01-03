@@ -21,3 +21,9 @@ exports.dailyReportSchema = Joi.object({
     id: Joi.number().integer().required(),
     date: Joi.date().required()
 });
+
+exports.monthlyReportSchema = Joi.object({
+    id: Joi.number().integer().required(),
+    startDate: Joi.date().required(),
+    endDate: Joi.date().required()
+});

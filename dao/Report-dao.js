@@ -223,11 +223,11 @@ exports.dailyReportDao = (id, date) => {
         `;
 
         console.log(date.toISOString().slice(0, 10));
-        
-        collectionofficer.query(sql,[id, date.toISOString().slice(0, 10)], (err, results) => {
+
+        collectionofficer.query(sql, [id, date.toISOString().slice(0, 10)], (err, results) => {
             if (err) {
                 console.log(err);
-                
+
                 return reject(err);
             }
             console.log(results);
@@ -235,3 +235,62 @@ exports.dailyReportDao = (id, date) => {
         });
     });
 };
+
+
+exports.getMonthlyReportOfficerDao = (id, startDate, endDate) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT CO.id, CO.firstNameEnglish, CO.lastNameEnglish, CO.jobRole, CO.empId, SUM(FPC.gradeAquan)+SUM(FPC.gradeBquan)+SUM(FPC.gradeCquan) AS TotalQty, COUNT(RFP.userId) AS TotalFarmers
+            FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, collectionofficer CO
+            WHERE RFP.collectionOfficerId = CO.id AND RFP.id = FPC.registerFarmerId AND RFP.collectionOfficerId = ? AND DATE(RFP.createdAt) BETWEEN DATE(?) AND DATE(?)
+            GROUP BY CO.id, CO.firstNameEnglish, CO.lastNameEnglish, CO.jobRole, CO.empId
+        `;
+
+
+        collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
+            if (err) {
+                console.log(err);
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.getMonthlyReportDao = (id, startDate, endDate) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                DATE(RFP.createdAt) AS ReportDate, 
+                SUM(FPC.gradeAquan) + SUM(FPC.gradeBquan) + SUM(FPC.gradeCquan) AS TotalQty, 
+                COUNT(DISTINCT RFP.userId) AS TotalFarmers
+            FROM 
+                registeredfarmerpayments RFP
+            JOIN 
+                farmerpaymentscrops FPC 
+            ON 
+                RFP.id = FPC.registerFarmerId
+            WHERE 
+                RFP.collectionOfficerId = ? AND
+                DATE(RFP.createdAt) BETWEEN DATE(?) AND DATE(?)
+            GROUP BY 
+                ReportDate
+            ORDER BY 
+                ReportDate
+        `;
+
+        collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
+            if (err) {
+                console.log(err);
+                return reject(err);
+            }
+            console.log(results);
+            resolve(results);
+        });
+    });
+};
+
+
+
+

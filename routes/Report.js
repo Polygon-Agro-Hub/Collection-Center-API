@@ -24,9 +24,16 @@ router.get(
 
 router.get(
     "/get-daily-report/:id/:date",
-    // authMiddleware,
+    authMiddleware,
     ReporttEP.getDailyReport
 )
+
+router.get(
+    "/get-monthly-officer-details/:id/:startDate/:endDate",
+    authMiddleware,
+    ReporttEP.getMonthlyReportOfficer
+)
+
 
 
 module.exports = router;

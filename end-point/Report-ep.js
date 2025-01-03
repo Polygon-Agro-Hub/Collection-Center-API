@@ -113,3 +113,31 @@ exports.getDailyReport = async (req, res) => {
     res.status(500).json({ error: "An error occurred while fetching news" });
   }
 };
+
+
+exports.getMonthlyReportOfficer = async (req, res) => {
+  try {
+    const { id, startDate, endDate } = await ReportValidate.monthlyReportSchema.validateAsync(req.params);
+    console.log(id,startDate, endDate);
+    
+    const resultOfficer = await ReportDAO.getMonthlyReportOfficerDao(id, startDate, endDate);
+    const resultDates = await ReportDAO.getMonthlyReportDao(id, startDate, endDate);
+
+
+    if (resultOfficer.length === 0) {
+      return res.json({ message: "No report items found", officer: resultOfficer[0], dates: resultDates});
+    }
+
+    console.log("Successfully retrieved all collection center");
+    res.json({officer: resultOfficer[0], dates: resultDates});
+  } catch (err) {
+    if (err.isJoi) {
+      // Validation error
+      console.error("Validation error:", err.details[0].message);
+      return res.status(400).json({ error: err.details[0].message });
+    }
+
+    console.error("Error fetching report:", err);
+    res.status(500).json({ error: "An error occurred while fetching news" });
+  }
+};
