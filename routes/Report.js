@@ -34,6 +34,12 @@ router.get(
     ReporttEP.getMonthlyReportOfficer
 )
 
+router.get(
+    "/get-farmer-report-details/:id",
+    // authMiddleware,
+    ReporttEP.getFarmerReport
+)
+
 
 
 module.exports = router;

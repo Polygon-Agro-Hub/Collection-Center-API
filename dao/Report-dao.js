@@ -292,5 +292,41 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
 };
 
 
+exports.getFarmerDetailsDao = (id) => {
+    return new Promise((resolve, reject) => {
+        let sql = `
+        SELECT RFP.id, U.firstName, U.lastName, U.phoneNumber, U.NICnumber, U.houseNo, U.streetName, U.city, U.district, UB.accNumber, UB.accHolderName, UB.bankName, UB.branchName, RFP.createdAt
+        FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U, plant_care.userbankdetails UB
+        WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND U.id = UB.userId AND RFP.id = ?
+        `;
 
 
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                console.log(err);
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.getFarmerCropsDetailsDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        SELECT RFP.id, CG.cropNameEnglish, CV.varietyNameEnglish, FPC.gradeAprice, FPC.gradeBprice, FPC.gradeCprice, FPC.gradeAquan, FPC.gradeBquan, FPC.gradeCquan
+        FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, plant_care.cropvariety CV, plant_care.cropgroup CG
+        WHERE FPC.registerFarmerId = RFP.id AND FPC.cropId = CV.id AND CV.cropGroupId = CG.id AND RFP.id = ?
+        `;
+
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                console.log(err);
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
