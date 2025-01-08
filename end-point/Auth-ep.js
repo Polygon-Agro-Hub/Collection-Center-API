@@ -43,8 +43,8 @@ exports.loginUser = async (req, res) => {
     }
 
     if (user) {
-      console.log(user.password,password);
-      
+      console.log(user.password, password);
+
 
       verify_password = bcrypt.compareSync(password, user.password);
 
@@ -54,7 +54,7 @@ exports.loginUser = async (req, res) => {
 
       if (verify_password) {
         const token = jwt.sign(
-          { userId: user.id, role: user.jobRole, centerId: user.centerId, companyId:user.companyId },
+          { userId: user.id, role: user.jobRole, centerId: user.centerId, companyId: user.companyId },
           process.env.JWT_SECRET,
           { expiresIn: "5h" }
         );
@@ -83,11 +83,8 @@ exports.updatePassword = async (req, res) => {
   console.log('Request URL:', fullUrl);
 
   try {
-    // Validate request body (ensure id and newPassword are provided)
-
-
     const { password } = await AuthValidate.logInUpdate.validateAsync(req.body);
-    const id = req.params.id;
+    const id = req.user.userId;
 
     // Log the incoming values for debugging
     console.log('Received ID:', id);
@@ -98,17 +95,16 @@ exports.updatePassword = async (req, res) => {
     }
 
     // Encrypt the new password using bcrypt
-    const hashedPassword = bcrypt.hash(password, process.env.SALT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS));
     console.log('Hashed Password:', hashedPassword);
 
     // Call the DAO function to update the password
     const result = await AuthDAO.updatePasswordDAO(id, hashedPassword);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "User not found or no changes were made." });
+      return res.json({ message: "User not found or no changes were made.", status: false });
     }
-
-    res.status(200).json({ message: "Password updated successfully." });
+    res.status(200).json({ message: "Password updated successfully.", status: true });
   } catch (err) {
     console.error("Error during password update:", err);
     res.status(500).json({ error: "An error occurred during password update." });

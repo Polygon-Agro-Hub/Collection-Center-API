@@ -15,7 +15,8 @@ router.post(
 );
 
 router.post(
-    "/change-passwords/:id",
+    "/change-passwords",
+    authMiddleware,
     AuthEP.updatePassword
 )
 
