@@ -50,7 +50,7 @@ const seedCollection = async () => {
     const messageCreateDailyTartget = await createDailyTargetTable();
     console.log(messageCreateDailyTartget);
 
-    const messageCreateDailyTartgetItems = await createDailyTargetItemsTablen();
+    const messageCreateDailyTartgetItems = await createDailyTargetItemsTable();
     console.log(messageCreateDailyTartgetItems);
 
 
