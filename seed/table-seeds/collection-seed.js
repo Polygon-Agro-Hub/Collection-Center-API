@@ -1,4 +1,4 @@
-const { createXlsxHistoryTable, createDailyTargetTable, createDailyTargetItemsTable } = require('../tables/collection-table');
+const { createXlsxHistoryTable } = require('../tables/collection-table');
 const { createMarketPriceTable } = require('../tables/collection-table');
 const { createMarketPriceServeTable } = require('../tables/collection-table');
 const { createCompany } = require('../tables/collection-table');
@@ -47,11 +47,6 @@ const seedCollection = async () => {
     const messageCreateMarketPriceRequestTable = await createMarketPriceRequestTable();
     console.log(messageCreateMarketPriceRequestTable);
 
-    const messageCreateDailyTartget = await createDailyTargetTable();
-    console.log(messageCreateDailyTartget);
-
-    const messageCreateDailyTartgetItems = await createDailyTargetItemsTable();
-    console.log(messageCreateDailyTartgetItems);
 
 
 
