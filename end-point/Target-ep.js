@@ -61,9 +61,10 @@ exports.getAllDailyTarget = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    const searchText = req.query.searchText
-    const page = parseInt(req.query.page)
-    const limit = parseInt(req.query.limit)
+    const searchText = req.query.searchText;
+    const page = parseInt(req.query.page) || 1; // Default page is 1 if not provided
+    const limit = parseInt(req.query.limit) || 10; // Default limit is 10 if not provided
+
     console.log(searchText, page, limit);
 
     const resultTarget = await TargetDAO.getAllDailyTargetDAO(searchText);
@@ -71,21 +72,16 @@ exports.getAllDailyTarget = async (req, res) => {
 
     const combinedData = [];
 
+    // Loop through targets and combine with complete data
     for (const target of resultTarget) {
       const completeMatch = resultComplete.find(
-        complete =>
+        (complete) =>
           complete.cropNameEnglish === target.cropNameEnglish &&
           complete.varietyNameEnglish === target.varietyNameEnglish &&
           complete.grade === target.grade
-
       );
 
-      
-      if (target.varietyNameEnglish==='Kekulu') {
-        console.log(completeMatch);
-      }
-
-
+      // Logic for adding combined data
       if (target.qtyA !== undefined) {
         combinedData.push({
           cropNameEnglish: target.cropNameEnglish,
@@ -126,10 +122,19 @@ exports.getAllDailyTarget = async (req, res) => {
       }
     }
 
-    console.log("Successfully transformed data");
-    return res.status(200).json(combinedData);
-    // return res.status(200).json({resultTarget,resultComplete});
+    const totalCount = combinedData.length;
 
+    const totalPages = Math.ceil(totalCount / limit);
+    
+
+    const startIndex = (page - 1) * limit;
+    const paginatedData = combinedData.slice(startIndex, startIndex + limit);
+
+    console.log("Successfully transformed data");
+    return res.status(200).json({
+      items: paginatedData,
+      totalPages: totalCount
+    });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -139,4 +144,5 @@ exports.getAllDailyTarget = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
   }
 };
+
 
