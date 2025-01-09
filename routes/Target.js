@@ -16,6 +16,12 @@ router.post(
     TargetEP.addDailyTarget
 )
 
+router.get(
+    "/get-daily-target",
+    // authMiddleware,
+    TargetEP.getAllDailyTarget
+)
+
 
 
 module.exports = router;

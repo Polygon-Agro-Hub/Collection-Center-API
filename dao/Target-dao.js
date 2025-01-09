@@ -70,7 +70,7 @@ exports.createDailyTargetDao = (target, companyId, userId) => {
 exports.createDailyTargetItemsDao = (data, targetId) => {
     return new Promise((resolve, reject) => {
         const sql = `
-           INSERT INTO dailytargetitems (targetId, varietyId, qtyA, qtyB, qtC)
+           INSERT INTO dailytargetitems (targetId, varietyId, qtyA, qtyB, qtyC)
            VALUES (?, ?, ?, ?, ?)
         `
         collectionofficer.query(sql, [
@@ -84,6 +84,53 @@ exports.createDailyTargetItemsDao = (data, targetId) => {
                 return reject(err);
             }
             resolve(results.insertId);
+        });
+    });
+};
+
+
+exports.getAllDailyTargetDAO = () => {
+    return new Promise((resolve, reject) => {
+        const targetSql = `
+           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC
+           FROM dailytargetitems DTI, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+           WHERE DTI.varietyId = CV.id AND CV.cropGroupId = CG.id
+        `
+
+        collectionofficer.query(targetSql, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            const transformedTargetData = results.flatMap(item => [
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, qtyA: item.qtyA },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, qtyB: item.qtyB },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, qtyC: item.qtyC }
+            ]);
+            resolve(transformedTargetData);
+        });
+    });
+};
+
+
+exports.getAllDailyTargetCompleteDAO = () => {
+    return new Promise((resolve, reject) => {
+        const completeSql = `
+            SELECT CG.cropNameEnglish, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS totA, SUM(FPC.gradeBquan) AS totB, SUM(FPC.gradeCquan) AS totC
+            FROM farmerpaymentscrops FPC, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+            WHERE FPC.cropId = CV.id AND CV.cropGroupId = CG.id
+            GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish
+
+        `
+        collectionofficer.query(completeSql, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            const transformedCompleteData = results.flatMap(item => [
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totA: item.totA },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totB: item.totB },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totC: item.totC }
+            ]);
+            resolve(transformedCompleteData);
         });
     });
 };

@@ -111,3 +111,16 @@ exports.updatePassword = async (req, res) => {
   }
 };
 
+
+exports.test = async (req, res) => {
+  try {
+    
+  } catch (err) {
+    if (err.isJoi) {
+      return res.status(400).json({ error: err.details[0].message });
+    }
+    console.error("Error executing query:", err);
+    res.status(500).send("An error occurred while fetching data.");
+  }
+};
+

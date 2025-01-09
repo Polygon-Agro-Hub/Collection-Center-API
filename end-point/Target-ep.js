@@ -54,3 +54,62 @@ exports.addDailyTarget = async (req, res) => {
     res.status(500).json({ error: "An error occurred while fetching news" });
   }
 };
+
+
+exports.getAllDailyTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const resultTarget = await TargetDAO.getAllDailyTargetDAO();
+    const resultComplete = await TargetDAO.getAllDailyTargetCompleteDAO();
+
+    const combinedData = [];
+
+    for (const target of resultTarget) {
+      const completeMatch = resultComplete.find(
+        complete =>
+          complete.cropNameEnglish === target.cropNameEnglish &&
+          complete.varietyNameEnglish === target.varietyNameEnglish
+      );
+
+      if (target.qtyA !== undefined) {
+        combinedData.push({
+          cropNameEnglish: target.cropNameEnglish,
+          varietyNameEnglish: target.varietyNameEnglish,
+          qtyA: target.qtyA,
+          totA: completeMatch?.totA || "0.00",
+        });
+      }
+
+      if (target.qtyB !== undefined) {
+        combinedData.push({
+          cropNameEnglish: target.cropNameEnglish,
+          varietyNameEnglish: target.varietyNameEnglish,
+          qtyB: target.qtyB,
+          totB: completeMatch?.totB || "0.00",
+        });
+      }
+
+      if (target.qtyC !== undefined) {
+        combinedData.push({
+          cropNameEnglish: target.cropNameEnglish,
+          varietyNameEnglish: target.varietyNameEnglish,
+          qtyC: target.qtyC,
+          totC: completeMatch?.totC || "0.00",
+        });
+      }
+    }
+
+    console.log("Successfully transformed data");
+    return res.status(200).json(combinedData);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching crop names and verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
+  }
+};
+
