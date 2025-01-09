@@ -32,8 +32,8 @@ exports.addDailyTarget = async (req, res) => {
 
     const targetId = await TargetDAO.createDailyTargetDao(target, companyId, userId);
 
-    if(!targetId){
-      return res.json({message:"Faild create target try again!", status:false})
+    if (!targetId) {
+      return res.json({ message: "Faild create target try again!", status: false })
     }
 
     for (let i = 0; i < target.TargetItems.length; i++) {
@@ -42,7 +42,7 @@ exports.addDailyTarget = async (req, res) => {
     }
 
     console.log("Daily Target Created Successfully");
-    res.json({message:"Daily Target Created Successfully!", status:true})
+    res.json({ message: "Daily Target Created Successfully!", status: true })
   } catch (err) {
     if (err.isJoi) {
       // Validation error
@@ -61,8 +61,13 @@ exports.getAllDailyTarget = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    const resultTarget = await TargetDAO.getAllDailyTargetDAO();
-    const resultComplete = await TargetDAO.getAllDailyTargetCompleteDAO();
+    const searchText = req.query.searchText
+    const page = parseInt(req.query.page)
+    const limit = parseInt(req.query.limit)
+    console.log(searchText, page, limit);
+
+    const resultTarget = await TargetDAO.getAllDailyTargetDAO(searchText);
+    const resultComplete = await TargetDAO.getAllDailyTargetCompleteDAO(searchText);
 
     const combinedData = [];
 
@@ -70,15 +75,27 @@ exports.getAllDailyTarget = async (req, res) => {
       const completeMatch = resultComplete.find(
         complete =>
           complete.cropNameEnglish === target.cropNameEnglish &&
-          complete.varietyNameEnglish === target.varietyNameEnglish
+          complete.varietyNameEnglish === target.varietyNameEnglish &&
+          complete.grade === target.grade
+
       );
+
+      
+      if (target.varietyNameEnglish==='Kekulu') {
+        console.log(completeMatch);
+      }
+
 
       if (target.qtyA !== undefined) {
         combinedData.push({
           cropNameEnglish: target.cropNameEnglish,
           varietyNameEnglish: target.varietyNameEnglish,
-          qtyA: target.qtyA,
-          totA: completeMatch?.totA || "0.00",
+          toDate: target.toDate,
+          toTime: target.toTime,
+          grade: "A",
+          status: parseFloat(completeMatch?.totA) >= parseFloat(target.qtyA) ? 'Completed' : 'Pending',
+          TargetQty: target.qtyA,
+          CompleteQty: completeMatch?.totA || "0.00",
         });
       }
 
@@ -86,8 +103,12 @@ exports.getAllDailyTarget = async (req, res) => {
         combinedData.push({
           cropNameEnglish: target.cropNameEnglish,
           varietyNameEnglish: target.varietyNameEnglish,
-          qtyB: target.qtyB,
-          totB: completeMatch?.totB || "0.00",
+          toDate: target.toDate,
+          toTime: target.toTime,
+          grade: "B",
+          status: parseFloat(completeMatch?.totB) >= parseFloat(target.qtyB) ? 'Completed' : 'Pending',
+          TargetQty: target.qtyB,
+          CompleteQty: completeMatch?.totB || "0.00",
         });
       }
 
@@ -95,14 +116,20 @@ exports.getAllDailyTarget = async (req, res) => {
         combinedData.push({
           cropNameEnglish: target.cropNameEnglish,
           varietyNameEnglish: target.varietyNameEnglish,
-          qtyC: target.qtyC,
-          totC: completeMatch?.totC || "0.00",
+          toDate: target.toDate,
+          toTime: target.toTime,
+          grade: "C",
+          status: parseFloat(completeMatch?.totC) >= parseFloat(target.qtyC) ? 'Completed' : 'Pending',
+          TargetQty: target.qtyC,
+          CompleteQty: completeMatch?.totC || "0.00",
         });
       }
     }
 
     console.log("Successfully transformed data");
     return res.status(200).json(combinedData);
+    // return res.status(200).json({resultTarget,resultComplete});
+
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });

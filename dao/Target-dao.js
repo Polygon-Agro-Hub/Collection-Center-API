@@ -89,22 +89,32 @@ exports.createDailyTargetItemsDao = (data, targetId) => {
 };
 
 
-exports.getAllDailyTargetDAO = () => {
+exports.getAllDailyTargetDAO = (searchText) => {
     return new Promise((resolve, reject) => {
-        const targetSql = `
-           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC
-           FROM dailytargetitems DTI, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
-           WHERE DTI.varietyId = CV.id AND CV.cropGroupId = CG.id
+        let targetSql = `
+           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime
+           FROM dailytarget DT, dailytargetitems DTI, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id
         `
+        const sqlParams = []
 
-        collectionofficer.query(targetSql, (err, results) => {
+        if (searchText) {
+            const searchCondition =
+                ` AND  CV.varietyNameEnglish LIKE ? `;
+            targetSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            sqlParams.push(searchValue);
+        }
+
+
+        collectionofficer.query(targetSql, sqlParams, (err, results) => {
             if (err) {
                 return reject(err);
             }
             const transformedTargetData = results.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, qtyA: item.qtyA },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, qtyB: item.qtyB },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, qtyC: item.qtyC }
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyA: item.qtyA, grade:"A" },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyB: item.qtyB, grade:"B" },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyC: item.qtyC, grade:"C" }
             ]);
             resolve(transformedTargetData);
         });
@@ -112,24 +122,40 @@ exports.getAllDailyTargetDAO = () => {
 };
 
 
-exports.getAllDailyTargetCompleteDAO = () => {
+exports.getAllDailyTargetCompleteDAO = (searchText) => {
     return new Promise((resolve, reject) => {
-        const completeSql = `
+        let completeSql = `
             SELECT CG.cropNameEnglish, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS totA, SUM(FPC.gradeBquan) AS totB, SUM(FPC.gradeCquan) AS totC
             FROM farmerpaymentscrops FPC, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
             WHERE FPC.cropId = CV.id AND CV.cropGroupId = CG.id
             GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish
 
         `
-        collectionofficer.query(completeSql, (err, results) => {
+
+        const sqlParams = []
+
+        if (searchText) {
+            const searchCondition =
+                ` AND  CV.varietyNameEnglish LIKE ? `;
+            completeSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            sqlParams.push(searchValue);
+        }
+
+
+        collectionofficer.query(completeSql, sqlParams, (err, results) => {
             if (err) {
                 return reject(err);
             }
+            // console.log(results);
+            
             const transformedCompleteData = results.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totA: item.totA },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totB: item.totB },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totC: item.totC }
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totA: item.totA, grade:"A" },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totB: item.totB, grade:"B" },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totC: item.totC, grade:"C" }
             ]);
+            // console.log(transformedCompleteData);
+            
             resolve(transformedCompleteData);
         });
     });
