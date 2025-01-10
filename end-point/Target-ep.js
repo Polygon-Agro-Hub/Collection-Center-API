@@ -69,16 +69,20 @@ exports.getAllDailyTarget = async (req, res) => {
 
     const resultTarget = await TargetDAO.getAllDailyTargetDAO(companyId,searchText);
     const resultComplete = await TargetDAO.getAllDailyTargetCompleteDAO(companyId, searchText);
-
     const combinedData = [];
+    
 
     for (const target of resultTarget) {
       const completeMatch = resultComplete.find(
-        (complete) =>
+        (complete) => 
           complete.cropNameEnglish === target.cropNameEnglish &&
           complete.varietyNameEnglish === target.varietyNameEnglish &&
-          complete.grade === target.grade
+          complete.grade === target.grade 
+          // &&
+          // new Date(complete.buyDate) >= new Date(target.fromDate) &&
+          // new Date(complete.buyDate) <= new Date(target.toDate)
       );
+      
 
       // Logic for adding combined data
       if (target.qtyA !== undefined) {
