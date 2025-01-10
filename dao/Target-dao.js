@@ -89,14 +89,14 @@ exports.createDailyTargetItemsDao = (data, targetId) => {
 };
 
 
-exports.getAllDailyTargetDAO = (searchText) => {
+exports.getAllDailyTargetDAO = (companyId, searchText) => {
     return new Promise((resolve, reject) => {
         let targetSql = `
            SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime
            FROM dailytarget DT, dailytargetitems DTI, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
-           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id
+           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ?
         `
-        const sqlParams = []
+        const sqlParams = [companyId]
 
         if (searchText) {
             const searchCondition =
@@ -122,17 +122,17 @@ exports.getAllDailyTargetDAO = (searchText) => {
 };
 
 
-exports.getAllDailyTargetCompleteDAO = (searchText) => {
+exports.getAllDailyTargetCompleteDAO = (companyId, searchText) => {
     return new Promise((resolve, reject) => {
         let completeSql = `
             SELECT CG.cropNameEnglish, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS totA, SUM(FPC.gradeBquan) AS totB, SUM(FPC.gradeCquan) AS totC
-            FROM farmerpaymentscrops FPC, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
-            WHERE FPC.cropId = CV.id AND CV.cropGroupId = CG.id
+            FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, collectionofficer CO, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+            WHERE RFP.id = FPC.registerFarmerId AND RFP.collectionOfficerId = CO.id AND FPC.cropId = CV.id AND CV.cropGroupId = CG.id AND CO.companyId = ?
             GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish
 
         `
 
-        const sqlParams = []
+        const sqlParams = [companyId]
 
         if (searchText) {
             const searchCondition =

@@ -29,6 +29,7 @@ exports.addDailyTarget = async (req, res) => {
     console.log(target.TargetItems.length, req.user);
     const companyId = req.user.companyId;
     const userId = req.user.userId;
+    
 
     const targetId = await TargetDAO.createDailyTargetDao(target, companyId, userId);
 
@@ -61,14 +62,16 @@ exports.getAllDailyTarget = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    const searchText = req.query.searchText;
-    const page = parseInt(req.query.page) || 1; // Default page is 1 if not provided
-    const limit = parseInt(req.query.limit) || 10; // Default limit is 10 if not provided
+    const {searchText,page, limit} = await TargetValidate.getAllDailyTargetSchema.validateAsync(req.query);
+    const companyId = req.user.companyId
+    // const searchText = req.query.searchText;
+    // const page = parseInt(req.query.page) || 1; // Default page is 1 if not provided
+    // const limit = parseInt(req.query.limit) || 10; // Default limit is 10 if not provided
 
-    console.log(searchText, page, limit);
+    console.log(searchText, page, limit,companyId);
 
-    const resultTarget = await TargetDAO.getAllDailyTargetDAO(searchText);
-    const resultComplete = await TargetDAO.getAllDailyTargetCompleteDAO(searchText);
+    const resultTarget = await TargetDAO.getAllDailyTargetDAO(companyId,searchText);
+    const resultComplete = await TargetDAO.getAllDailyTargetCompleteDAO(companyId, searchText);
 
     const combinedData = [];
 
