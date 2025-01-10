@@ -64,9 +64,6 @@ exports.getAllDailyTarget = async (req, res) => {
   try {
     const {searchText,page, limit} = await TargetValidate.getAllDailyTargetSchema.validateAsync(req.query);
     const companyId = req.user.companyId
-    // const searchText = req.query.searchText;
-    // const page = parseInt(req.query.page) || 1; // Default page is 1 if not provided
-    // const limit = parseInt(req.query.limit) || 10; // Default limit is 10 if not provided
 
     console.log(searchText, page, limit,companyId);
 
@@ -75,7 +72,6 @@ exports.getAllDailyTarget = async (req, res) => {
 
     const combinedData = [];
 
-    // Loop through targets and combine with complete data
     for (const target of resultTarget) {
       const completeMatch = resultComplete.find(
         (complete) =>
