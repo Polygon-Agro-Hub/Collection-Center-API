@@ -474,11 +474,13 @@ exports.getOfficerByIdDAO = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
             SELECT 
-                *
+                COF.*,
+                COM.companyNameEnglish,
+                CEN.centerName
             FROM 
-                collectionofficer
+                collectionofficer COF, company COM, collectioncenter CEN
             WHERE 
-                id = ?`;
+             COF.centerId = CEN.id AND COF.companyId = COM.id AND COF.id = ?`;
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
@@ -536,7 +538,9 @@ exports.getOfficerByIdDAO = (id) => {
                     accHolderName: officer.accHolderName,
                     accNumber: officer.accNumber,
                     bankName: officer.bankName,
-                    branchName: officer.branchName
+                    branchName: officer.branchName,
+                    companyNameEnglish:officer.companyNameEnglish,
+                    centerName:officer.centerName
 
 
 

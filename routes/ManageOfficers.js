@@ -55,7 +55,7 @@ router.get(
 
 router.get(
     "/get-officer-by-id/:id",
-    authMiddleware,
+    // authMiddleware,
     ManageOfficerEP.getOfficerById
 );
 
