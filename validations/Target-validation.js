@@ -6,3 +6,9 @@ exports.getAllDailyTargetSchema = Joi.object({
     limit: Joi.number().integer().min(1).max(100).default(10).optional(),
     searchText: Joi.string().allow('').optional(),
 });
+
+
+exports.downloadDailyTargetSchema = Joi.object({
+    fromDate: Joi.date().required(),
+    toDate: Joi.date().required()
+});

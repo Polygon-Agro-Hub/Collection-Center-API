@@ -160,3 +160,63 @@ exports.getAllDailyTargetCompleteDAO = (companyId, searchText) => {
         });
     });
 };
+
+
+
+exports.downloadAllDailyTargetDao = (companyId, fromDate, toDate) => {
+    return new Promise((resolve, reject) => {
+        let targetSql = `
+           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime, DT.fromTime
+           FROM dailytarget DT, dailytargetitems DTI, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ? AND DATE(DT.fromDate) >= ? AND DATE(DT.toDate) <= ?
+        `
+        const sqlParams = [companyId, fromDate, toDate]
+
+
+        collectionofficer.query(targetSql, sqlParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            const transformedTargetData = results.flatMap(item => [
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade:"A" },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade:"B" },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade:"C" }
+            ]);
+
+            console.log(transformedTargetData);
+            
+            resolve(transformedTargetData);
+        });
+    });
+};
+
+
+exports.downloadAllDailyTargetCompleteDAO = (companyId, fromDate, toDate) => {
+    return new Promise((resolve, reject) => {
+        let completeSql = `
+            SELECT CG.cropNameEnglish, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS totA, SUM(FPC.gradeBquan) AS totB, SUM(FPC.gradeCquan) AS totC, FPC.createdAt
+            FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, collectionofficer CO, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+            WHERE RFP.id = FPC.registerFarmerId AND RFP.collectionOfficerId = CO.id AND FPC.cropId = CV.id AND CV.cropGroupId = CG.id AND CO.companyId = ? AND DATE(RFP.createdAt) BETWEEN DATE(?) AND DATE(?)
+            GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish
+
+        `
+
+        const sqlParams = [companyId, fromDate, toDate]
+
+        collectionofficer.query(completeSql, sqlParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            // console.log(results);
+            
+            const transformedCompleteData = results.flatMap(item => [
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totA: item.totA, grade:"A", buyDate:item.createdAt },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totB: item.totB, grade:"B", buyDate:item.createdAt },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totC: item.totC, grade:"C", buyDate:item.createdAt }
+            ]);
+            // console.log(transformedCompleteData);
+            
+            resolve(transformedCompleteData);
+        });
+    });
+};

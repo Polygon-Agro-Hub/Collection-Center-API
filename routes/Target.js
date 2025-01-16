@@ -22,6 +22,12 @@ router.get(
     TargetEP.getAllDailyTarget
 )
 
+router.get(
+    "/download-daily-target",
+    authMiddleware,
+    TargetEP.downloadDailyTarget
+)
+
 
 
 module.exports = router;
