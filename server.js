@@ -8,7 +8,8 @@ const AuthRoutes = require('./routes/Auth');
 const ManageOffcerRoutes  = require('./routes/ManageOfficers');
 const PriceListRoutes = require('./routes/PriceList');
 const ReportRoutes = require('./routes/Report');
-const TargetRoutes  =require('./routes/Target')
+const TargetRoutes  =require('./routes/Target');
+const ComplaintRoutes = require('./routes/Complaints')
 
 
 const app = express();
@@ -61,6 +62,7 @@ app.use('/api/manage-officers', ManageOffcerRoutes);
 app.use('/api/price-list', PriceListRoutes);
 app.use('/api/report', ReportRoutes);
 app.use('/api/target', TargetRoutes);
+app.use('/api/complaint', ComplaintRoutes);
 
 
 app.listen(port, () => {
