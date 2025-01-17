@@ -75,13 +75,13 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
 
         let countSql = `
             SELECT RFP.id, U.firstName, U.lastName, U.NICnumber, SUM(FPC.gradeAprice)+SUM(FPC.gradeBprice)+SUM(FPC.gradeCprice) AS totalAmount
-            FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, \`plant-care\`.users U
+            FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U
             WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND RFP.collectionOfficerId = ?
         `;
 
         let dataSql = `
             SELECT RFP.id, U.firstName, U.lastName, U.NICnumber, SUM(FPC.gradeAprice)+SUM(FPC.gradeBprice)+SUM(FPC.gradeCprice) AS totalAmount
-            FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, \`plant-care\`.users U
+            FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U
             WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND RFP.collectionOfficerId = ?
             
         `;
@@ -217,7 +217,7 @@ exports.dailyReportDao = (id, date) => {
     return new Promise((resolve, reject) => {
         const sql = `
         SELECT CV.id, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS gradeA, SUM(FPC.gradeBquan) AS gradeB, SUM(FPC.gradeCquan) AS gradeC, SUM(FPC.gradeAquan)+SUM(FPC.gradeBquan)+SUM(FPC.gradeCquan) AS total
-        FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, \`plant-care\`.cropvariety CV
+        FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, plant_care.cropvariety CV
         WHERE FPC.registerFarmerId = RFP.id AND FPC.cropId = CV.id AND RFP.collectionOfficerId = ? AND DATE(FPC.createdAt) = ?
         GROUP BY CV.varietyNameEnglish
         `;
@@ -296,7 +296,7 @@ exports.getFarmerDetailsDao = (id) => {
     return new Promise((resolve, reject) => {
         let sql = `
         SELECT RFP.id, U.firstName, U.lastName, U.phoneNumber, U.NICnumber, U.houseNo, U.streetName, U.city, U.district, UB.accNumber, UB.accHolderName, UB.bankName, UB.branchName, RFP.createdAt
-        FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, \`plant-care\`.users U, \`plant-care\`.userbankdetails UB
+        FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U, plant_care.userbankdetails UB
         WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND U.id = UB.userId AND RFP.id = ?
         `;
 
@@ -316,7 +316,7 @@ exports.getFarmerCropsDetailsDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
         SELECT RFP.id, CG.cropNameEnglish, CV.varietyNameEnglish, FPC.gradeAprice, FPC.gradeBprice, FPC.gradeCprice, FPC.gradeAquan, FPC.gradeBquan, FPC.gradeCquan
-        FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+        FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, plant_care.cropvariety CV, plant_care.cropgroup CG
         WHERE FPC.registerFarmerId = RFP.id AND FPC.cropId = CV.id AND CV.cropGroupId = CG.id AND RFP.id = ?
         `;
 

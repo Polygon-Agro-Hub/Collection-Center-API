@@ -6,13 +6,13 @@ exports.getAllPriceListDao = (centerId, page, limit, grade, searchText) => {
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM marketprice MP, marketpriceserve MPS, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+            FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
             WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.collectionCenterId = ? 
         `;
 
         let dataSql = `
             SELECT MPS.id, CG.cropNameEnglish, CV.varietyNameEnglish,  MP.averagePrice, MP.grade, MPS.updatedPrice, MP.createdAt
-            FROM marketprice MP, marketpriceserve MPS, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+            FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
             WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.collectionCenterId = ?
         `;
 
@@ -97,8 +97,8 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             FROM marketpricerequest MPR
             JOIN marketprice MP ON MPR.marketPriceId = MP.id
             JOIN collectionofficer COF ON MPR.empId = COF.id
-            JOIN \`plant-care\`.cropvariety CV ON MP.varietyId = CV.id
-            JOIN \`plant-care\`.cropgroup CG ON CV.cropGroupId = CG.id
+            JOIN plant_care.cropvariety CV ON MP.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE MPR.centerId = ?        
             `;
 
@@ -107,8 +107,8 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             FROM marketpricerequest MPR
             JOIN marketprice MP ON MPR.marketPriceId = MP.id
             JOIN collectionofficer COF ON MPR.empId = COF.id
-            JOIN \`plant-care\`.cropvariety CV ON MP.varietyId = CV.id
-            JOIN \`plant-care\`.cropgroup CG ON CV.cropGroupId = CG.id
+            JOIN plant_care.cropvariety CV ON MP.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE MPR.centerId = ?
         `;
 

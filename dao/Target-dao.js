@@ -93,7 +93,7 @@ exports.getAllDailyTargetDAO = (companyId, searchText) => {
     return new Promise((resolve, reject) => {
         let targetSql = `
            SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime, DT.fromTime
-           FROM dailytarget DT, dailytargetitems DTI, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ?
         `
         const sqlParams = [companyId]
@@ -126,7 +126,7 @@ exports.getAllDailyTargetCompleteDAO = (companyId, searchText) => {
     return new Promise((resolve, reject) => {
         let completeSql = `
             SELECT CG.cropNameEnglish, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS totA, SUM(FPC.gradeBquan) AS totB, SUM(FPC.gradeCquan) AS totC, FPC.createdAt
-            FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, collectionofficer CO, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+            FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, collectionofficer CO, plant_care.cropvariety CV, plant_care.cropgroup CG
             WHERE RFP.id = FPC.registerFarmerId AND RFP.collectionOfficerId = CO.id AND FPC.cropId = CV.id AND CV.cropGroupId = CG.id AND CO.companyId = ?
             GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish
 
@@ -167,7 +167,7 @@ exports.downloadAllDailyTargetDao = (companyId, fromDate, toDate) => {
     return new Promise((resolve, reject) => {
         let targetSql = `
            SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime, DT.fromTime
-           FROM dailytarget DT, dailytargetitems DTI, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ? AND DATE(DT.fromDate) >= ? AND DATE(DT.toDate) <= ?
         `
         const sqlParams = [companyId, fromDate, toDate]
@@ -195,7 +195,7 @@ exports.downloadAllDailyTargetCompleteDAO = (companyId, fromDate, toDate) => {
     return new Promise((resolve, reject) => {
         let completeSql = `
             SELECT CG.cropNameEnglish, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS totA, SUM(FPC.gradeBquan) AS totB, SUM(FPC.gradeCquan) AS totC, FPC.createdAt
-            FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, collectionofficer CO, \`plant-care\`.cropvariety CV, \`plant-care\`.cropgroup CG
+            FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, collectionofficer CO, plant_care.cropvariety CV, plant_care.cropgroup CG
             WHERE RFP.id = FPC.registerFarmerId AND RFP.collectionOfficerId = CO.id AND FPC.cropId = CV.id AND CV.cropGroupId = CG.id AND CO.companyId = ? AND DATE(RFP.createdAt) BETWEEN DATE(?) AND DATE(?)
             GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish
 
