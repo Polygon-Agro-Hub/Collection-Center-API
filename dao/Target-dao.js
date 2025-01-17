@@ -183,7 +183,7 @@ exports.downloadAllDailyTargetDao = (companyId, fromDate, toDate) => {
                 { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade:"C" }
             ]);
 
-            console.log(transformedTargetData);
+            // console.log(transformedTargetData);
             
             resolve(transformedTargetData);
         });
