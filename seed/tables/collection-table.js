@@ -426,6 +426,35 @@ const createDailyTargetItemsTable = () => {
     });
 };
 
+const createOfficerComplainsTable  = () => {
+    const sql = `
+   CREATE TABLE IF NOT EXISTS officercomplains (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    officerId INT,
+    refNo VARCHAR(20) NOT NULL,
+    language VARCHAR(50) NOT NULL,
+    complainCategory VARCHAR(50) NOT NULL,
+    complain TEXT NOT NULL,
+    reply TEXT NULL,
+    status VARCHAR(20) NOT NULL,
+    complainAssign VARCHAR(20) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (officerId) REFERENCES collectionofficer(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+)
+  `;
+    return new Promise((resolve, reject) => {
+        collectionofficer.query(sql, (err, result) => {
+            if (err) {
+                reject('Error creating market place users table: ' + err);
+            } else {
+                resolve('market place users table created successfully.');
+            }
+        });
+    });
+};
+
 
 
 module.exports = {
@@ -440,5 +469,6 @@ module.exports = {
     createFarmerComplains,
     createMarketPriceRequestTable,
     createDailyTargetTable,
-    createDailyTargetItemsTable
+    createDailyTargetItemsTable,
+    createOfficerComplainsTable
 };

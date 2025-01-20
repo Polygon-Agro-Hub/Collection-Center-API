@@ -5,8 +5,9 @@ const ComplaintEP = require('../end-point/Complaints-ep')
 const router = express.Router();
 
 
-// router.get('/test', 
-//     AuthEP.test
+// router.get('/get-recived-complaints', 
+//     // authMiddleware,
+//     ComplaintEP.getAllRecivedComplain
 // );
 
 
