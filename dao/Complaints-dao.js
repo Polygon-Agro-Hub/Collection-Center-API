@@ -32,9 +32,9 @@ exports.getAllRecivedComplainDao = (page, limit, status, searchText) => {
             dataParams.push(searchValue, searchValue);
         }
 
-        if(status){
-            countSql+=` AND OC.status = ? `;
-            dataSql+=` AND OC.status = ? `;
+        if (status) {
+            countSql += ` AND OC.status = ? `;
+            dataSql += ` AND OC.status = ? `;
             countParams.push(status);
             dataParams.push(status);
 
