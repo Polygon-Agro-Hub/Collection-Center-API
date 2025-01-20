@@ -1,23 +1,23 @@
 const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
 
-exports.getAllRecivedComplainDao = (page, limit, status, searchText) => {
+exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
-        const countParams = [];
-        const dataParams = [];
+        const countParams = [userId];
+        const dataParams = [userId];
 
 
         let countSql = `
             SELECT COUNT(*) AS total
             FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCM"
+            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCM" AND COF.irmId = ?
         `;
 
         let dataSql = `
             SELECT OC.id, OC.refNo, OC.complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
             FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCM"
+            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCM" AND COF.irmId = ?
         `;
 
         if (searchText) {

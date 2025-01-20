@@ -6,7 +6,7 @@ const router = express.Router();
 
 
 router.get('/get-recived-complaints', 
-    // authMiddleware,
+    authMiddleware,
     ComplaintEP.getAllRecivedComplain
 );
 

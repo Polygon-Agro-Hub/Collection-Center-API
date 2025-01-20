@@ -7,13 +7,13 @@ exports.getAllRecivedComplain = async (req, res) => {
     console.log(fullUrl);
 
     try {
-        // const companyId = req.user.companyId
-        // console.log(companyId);
+        const userId = req.user.userId
+        console.log(userId);
         const { page, limit, searchText, status } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
         console.log(page, limit, searchText, status);
 
 
-        const { items, total } = await ComplaintDAO.getAllRecivedComplainDao(page, limit, status, searchText)
+        const { items, total } = await ComplaintDAO.getAllRecivedComplainDao(userId, page, limit, status, searchText)
 
         console.log("Successfully fetched recived complaind");
         return res.status(200).json({ items, total });
