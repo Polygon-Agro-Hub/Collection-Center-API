@@ -64,3 +64,20 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
         });
     });
 };
+
+
+exports.GetReciveReplyByIdDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT reply
+            FROM officercomplains 
+            WHERE id = ?
+        `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};

@@ -6,3 +6,8 @@ exports.getAllDailyTargetSchema = Joi.object({
     searchText: Joi.string().allow('').optional(),
     status: Joi.string().allow('').optional(),
 });
+
+
+exports.getparmasIdSchema = Joi.object({
+    id: Joi.number().integer().required()
+});

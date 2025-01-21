@@ -10,5 +10,10 @@ router.get('/get-recived-complaints',
     ComplaintEP.getAllRecivedComplain
 );
 
+router.get('/get-recived-complaints-by-id/:id', 
+    authMiddleware,
+    ComplaintEP.getRecivedComplainById
+);
+
 
 module.exports = router;

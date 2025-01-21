@@ -27,3 +27,30 @@ exports.getAllRecivedComplain = async (req, res) => {
         return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
     }
 }
+
+
+exports.getRecivedComplainById = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
+
+
+        const result = await ComplaintDAO.GetReciveReplyByIdDao(id)
+        if (result.length === 0) {
+            return res.json({ message: "no data found!", status: false, data: result[0] })
+        }
+
+        console.log("Successfully fetched recived complaind");
+        res.status(200).json({ message: "Data found!", status: true, data: result[0] });
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error fetching recived complaind:", error);
+        return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+    }
+}
