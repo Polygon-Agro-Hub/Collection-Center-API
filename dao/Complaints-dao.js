@@ -69,9 +69,43 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
 exports.GetReciveReplyByIdDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            SELECT reply
-            FROM officercomplains 
-            WHERE id = ?
+            SELECT OC.id, OC.refNo, OC.complainCategory, OC.complain, OC.createdAt, OC.reply, OC.language, COF.empId, COF.firstNameEnglish, COF.lastNameEnglish, COF.phoneCode01, COF.phoneNumber01, COF.phoneCode02, COF.phoneNumber02
+            FROM officercomplains OC, collectionofficer COF
+            WHERE OC.officerId = COF.id AND OC.id = ?
+        `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.forwordComplaintDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+           UPDATE officercomplains
+           SET complainAssign = 'CCH'
+           WHERE id = ?
+        `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.replyComplainDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+           UPDATE officercomplains
+           SET complainAssign = 'CCH'
+           WHERE id = ?
         `;
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {

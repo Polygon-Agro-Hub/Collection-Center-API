@@ -54,3 +54,56 @@ exports.getRecivedComplainById = async (req, res) => {
         return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
     }
 }
+
+exports.forwordComplaint = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
+
+
+        const result = await ComplaintDAO.forwordComplaintDao(id)
+        if (result.affectedRows === 0) {
+            return res.json({ message: "Forword faild try again!", status: false })
+        }
+
+        console.log("Successfully forword complaint");
+        res.status(200).json({ message: "Complaint was forward to Center Head!", status: true});
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error forword complaint:", error);
+        return res.status(500).json({ error: "An error occurred while forword complaint" });
+    }
+}
+
+
+exports.replyComplain = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
+
+
+        const result = await ComplaintDAO.forwordComplaintDao(id)
+        if (result.affectedRows === 0) {
+            return res.json({ message: "Forword faild try again!", status: false })
+        }
+
+        console.log("Successfully forword complaint");
+        res.status(200).json({ message: "Complaint was forward to Center Head!", status: true});
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error forword complaint:", error);
+        return res.status(500).json({ error: "An error occurred while forword complaint" });
+    }
+}

@@ -15,5 +15,15 @@ router.get('/get-recived-complaints-by-id/:id',
     ComplaintEP.getRecivedComplainById
 );
 
+router.patch('/forword-to-complain/:id',
+    authMiddleware,
+    ComplaintEP.forwordComplaint
+);
+
+
+router.post('/reply-complain',
+    authMiddleware,
+    ComplaintEP.replyComplain
+);
 
 module.exports = router;
