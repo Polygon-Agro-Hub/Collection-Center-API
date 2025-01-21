@@ -11,3 +11,8 @@ exports.getAllDailyTargetSchema = Joi.object({
 exports.getparmasIdSchema = Joi.object({
     id: Joi.number().integer().required()
 });
+
+exports.replyComplainSchema = Joi.object({
+    id: Joi.number().integer().required(),
+    reply: Joi.string().required()
+});

@@ -100,14 +100,14 @@ exports.forwordComplaintDao = (id) => {
 };
 
 
-exports.replyComplainDao = (id) => {
+exports.replyComplainDao = (data) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET complainAssign = 'CCH'
+           SET reply = ?, status = 'Closed'
            WHERE id = ?
         `;
-        collectionofficer.query(sql, [id], (err, results) => {
+        collectionofficer.query(sql, [data.reply, data.id], (err, results) => {
             if (err) {
                 return reject(err);
             }

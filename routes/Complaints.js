@@ -21,7 +21,7 @@ router.patch('/forword-to-complain/:id',
 );
 
 
-router.post('/reply-complain',
+router.patch('/reply-complain',
     authMiddleware,
     ComplaintEP.replyComplain
 );

@@ -87,15 +87,17 @@ exports.replyComplain = async (req, res) => {
     console.log(fullUrl);
 
     try {
-        const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
+        // const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
+        const complain = await ComplaintValidate.replyComplainSchema.validateAsync(req.body)
 
-
-        const result = await ComplaintDAO.forwordComplaintDao(id)
+        const result = await ComplaintDAO.replyComplainDao(complain)
+        console.log(result);
+        
         if (result.affectedRows === 0) {
-            return res.json({ message: "Forword faild try again!", status: false })
+            return res.json({ message: "Reply Does not send!", status: false })
         }
 
-        console.log("Successfully forword complaint");
+        console.log("Reply Send Successfull!");
         res.status(200).json({ message: "Complaint was forward to Center Head!", status: true});
     } catch (error) {
         if (error.isJoi) {
