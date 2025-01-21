@@ -26,4 +26,9 @@ router.patch('/reply-complain',
     ComplaintEP.replyComplain
 );
 
+router.get('/get-all-sent-complaint',
+    authMiddleware,
+    ComplaintEP.getAllSentComplaint
+);
+
 module.exports = router;

@@ -109,3 +109,35 @@ exports.replyComplain = async (req, res) => {
         return res.status(500).json({ error: "An error occurred while forword complaint" });
     }
 }
+
+
+exports.getAllSentComplaint = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const userId = req.user.userId
+        console.log(req.user);
+        
+        const companyId = req.user.companyId
+
+        console.log(userId, companyId);
+        const { page, limit, searchText, status, emptype } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
+        console.log(page, limit, searchText, status, emptype);
+        // console.log(req.query);
+        
+
+        const { items, total } = await ComplaintDAO.getAllSendComplainDao(userId,companyId, page, limit, status, emptype, searchText)
+
+        console.log("Successfully fetched recived complaind");
+        return res.status(200).json({ items, total, userId});
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error fetching recived complaind:", error);
+        return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+    }
+}
