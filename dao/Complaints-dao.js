@@ -99,7 +99,6 @@ exports.forwordComplaintDao = (id) => {
     });
 };
 
-
 exports.replyComplainDao = (data) => {
     return new Promise((resolve, reject) => {
         const sql = `
@@ -196,3 +195,57 @@ exports.getAllSendComplainDao = (userId,companyId, page, limit, status, emptype,
         });
     });
 };
+
+exports.addComplaintDao = (officerId, category, complaint) => {
+    return new Promise((resolve, reject) => {
+        // Generate the refNo with the format CC+YYMMDD+000N
+        const currentDate = new Date();
+        const year = currentDate.getFullYear().toString().slice(-2); // Last two digits of the year
+        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); // Month as two digits
+        const day = currentDate.getDate().toString().padStart(2, '0'); // Day as two digits
+        const datePart = `${year}${month}${day}`; // Format: YYMMDD
+        const sqlGetMaxRefNo = `
+            SELECT MAX(refNo) as maxRefNo FROM officercomplains 
+            WHERE refNo LIKE ?;
+        `;
+        const refNoPrefix = `CC${datePart}`;
+
+        collectionofficer.query(sqlGetMaxRefNo, [`${refNoPrefix}%`], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            let nextSequence = 1; // Default sequence number
+            if (results && results[0] && results[0].maxRefNo) {
+                const lastRefNo = results[0].maxRefNo;
+                const lastSequence = parseInt(lastRefNo.slice(-4)); // Extract the last 4 digits
+                nextSequence = lastSequence + 1; // Increment the sequence number
+            }
+
+            const refNo = `${refNoPrefix}${nextSequence.toString().padStart(4, '0')}`; // Generate refNo
+            const language = "English";
+            const status = "Pending";
+            const complainAssign = "Assign";
+
+            const sqlInsert = `
+                INSERT INTO officercomplains (officerId, refNo, language, complainCategory, complain, reply, status, complainAssign)
+                VALUES (?, ?, ?, ?, ?, NULL, ?, ?);
+            `;
+
+            collectionofficer.query(sqlInsert, [officerId, refNo, language, category, complaint, status, complainAssign], (err, results) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(results);
+            });
+        });
+    });
+};
+
+
+
+
+
+
+
+

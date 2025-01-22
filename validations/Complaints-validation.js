@@ -25,3 +25,9 @@ exports.getAllDailySentSchema = Joi.object({
     emptype: Joi.string().allow('').optional(),
     status: Joi.string().allow('').optional()
 });
+
+exports.addComplaintSchema = Joi.object({
+    category: Joi.string().required(),
+    complaint: Joi.string().required(),
+});
+

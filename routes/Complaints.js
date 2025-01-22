@@ -31,4 +31,9 @@ router.get('/get-all-sent-complaint',
     ComplaintEP.getAllSentComplaint
 );
 
+router.post('/add-complain',
+    authMiddleware,
+    ComplaintEP.addComplaint
+);
+
 module.exports = router;
