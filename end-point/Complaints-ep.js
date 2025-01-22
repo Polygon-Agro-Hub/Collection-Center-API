@@ -107,3 +107,36 @@ exports.replyComplain = async (req, res) => {
         return res.status(500).json({ error: "An error occurred while forword complaint" });
     }
 }
+
+exports.addComplaint = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        // Validate request body for complaint details
+        const { category, complaint } = await ComplaintValidate.addComplaintSchema.validateAsync(req.body);
+        // const { category, complaint } = req.body;
+        const officerId = req.user.userId
+        // console.log(req.user);
+        console.log(category,complaint);
+
+        
+        const result = await ComplaintDAO.addComplaintDao(officerId, category, complaint);
+
+        if (result.affectedRows === 0) {
+            return res.json({ message: "Complaint could not be added. Please try again!", status: false });
+        }
+
+        console.log("Successfully added complaint");
+        res.status(201).json({ message: "Complaint added successfully!", status: true });
+
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error adding complaint:", error);
+        return res.status(500).json({ error: "An error occurred while adding the complaint" });
+    }
+};

@@ -26,4 +26,9 @@ router.post('/reply-complain',
     ComplaintEP.replyComplain
 );
 
+router.post('/add-complain',
+    authMiddleware,
+    ComplaintEP.addComplaint
+);
+
 module.exports = router;
