@@ -224,8 +224,8 @@ exports.addComplaintDao = (officerId, category, complaint) => {
 
             const refNo = `${refNoPrefix}${nextSequence.toString().padStart(4, '0')}`; // Generate refNo
             const language = "English";
-            const status = "Pending";
-            const complainAssign = "Assign";
+            const status = "Assigned";
+            const complainAssign = "CCH";
 
             const sqlInsert = `
                 INSERT INTO officercomplains (officerId, refNo, language, complainCategory, complain, reply, status, complainAssign)
