@@ -179,7 +179,7 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
   try {
     const { id, status } = req.params;
     console.log(id, status);
-    
+
 
     if (!id || !status) {
       return res.status(400).json({ message: 'ID and status are required.', status: false });
@@ -191,9 +191,9 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
     }
 
     const { email, firstNameEnglish, empId, Existstatus } = officerData;
-    console.log(`Email: ${email}, Name: ${firstNameEnglish}, Emp ID: ${empId}`,Existstatus);
+    console.log(`Email: ${email}, Name: ${firstNameEnglish}, Emp ID: ${empId}`, Existstatus);
 
-    if(Existstatus === status){
+    if (Existstatus === status) {
       return res.json({ message: 'Status already updated.', status: false });
     }
 
@@ -201,7 +201,7 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
     if (status === 'Approved') {
       const generatedPassword = Math.random().toString(36).slice(-8);
       console.log(generatedPassword);
-      
+
       const hashedPassword = await bcrypt.hash(generatedPassword, parseInt(process.env.SALT_ROUNDS));
 
 
@@ -221,7 +221,7 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
       if (!emailResult.success) {
         return res.status(500).json({ message: 'Failed to send password email.', error: emailResult.error });
       }
-    }else{
+    } else {
       const updateResult = await ManageOfficerDAO.UpdateCollectionOfficerStatusAndPasswordDao({
         id,
         status,
@@ -298,3 +298,66 @@ exports.disclaimOfficer = async (req, res) => {
     res.status(500).json({ error: 'Failed to update collection officer details' });
   }
 };
+
+
+exports.getOfficerByEmpId = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const { id } = await ManageOfficerValidate.getparmasEmpIdSchema.validateAsync(req.params);
+    console.log(id);
+
+
+    const result = await ManageOfficerDAO.getOfficerByEmpIdDao(id)
+
+    if (result.length === 0) {
+      return res.json({ message: "no data found!", status: false })
+    }
+
+    if (result[0].claimStatus === 1) {
+      return res.json({ message: "Officer have center", status: true, data: result[0] })
+    }
+
+    console.log("Successfully fetched officer");
+    res.status(200).json({ message: "Data found!", status: true, data: result[0] });
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching officer:", error);
+    return res.status(500).json({ error: "An error occurred while fetching officer" });
+  }
+}
+
+
+exports.claimOfficer = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.body);
+    const userId = req.user.userId;
+    const centerId = req.user.centerId;
+    console.log(id, userId, centerId);
+
+    const results = await ManageOfficerDAO.claimOfficerDao(id, userId, centerId)
+
+    if (results.affectedRows > 0) {
+      res.status(200).json({ results: results, status: true });
+    } else {
+      res.json({ results: results, status: false });
+
+    };
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching officer:", error);
+    return res.status(500).json({ error: "An error occurred while fetching officer" });
+  }
+}

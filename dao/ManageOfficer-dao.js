@@ -316,9 +316,9 @@ exports.getCollectionOfficerEmailDao = (id) => {
             }
             if (results.length > 0) {
                 resolve({
-                    email: results[0].email, 
+                    email: results[0].email,
                     firstNameEnglish: results[0].firstNameEnglish,
-                    empId: results[0].empId, 
+                    empId: results[0].empId,
                     Existstatus: results[0].status
                 });
             } else {
@@ -518,8 +518,8 @@ exports.getOfficerByIdDAO = (id) => {
                     lastNameTamil: officer.lastNameTamil,
                     phoneNumber01: officer.phoneNumber01,
                     phoneNumber02: officer.phoneNumber02,
-                    phoneCode01:officer.phoneCode01,
-                    phoneCode02:officer.phoneCode02,
+                    phoneCode01: officer.phoneCode01,
+                    phoneCode02: officer.phoneCode02,
                     image: officer.image,
                     QRcode: officer.QRcode,
                     nic: officer.nic,
@@ -539,8 +539,8 @@ exports.getOfficerByIdDAO = (id) => {
                     accNumber: officer.accNumber,
                     bankName: officer.bankName,
                     branchName: officer.branchName,
-                    companyNameEnglish:officer.companyNameEnglish,
-                    centerName:officer.centerName
+                    companyNameEnglish: officer.companyNameEnglish,
+                    centerName: officer.centerName
 
 
 
@@ -629,7 +629,7 @@ exports.updateOfficerDetails = (id, officerData) => {
                 if (err) {
                     return collectionofficer.rollback(() => reject(err));
                 }
-                resolve(result);  
+                resolve(result);
             });
         });
     });
@@ -683,3 +683,52 @@ exports.disclaimOfficerDetailsDao = (id) => {
     });
 };
 
+
+
+
+exports.getOfficerByEmpIdDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                COF.id,
+                COF.firstNameEnglish, 
+                COF.lastNameEnglish, 
+                COF.jobRole, 
+                COF.empId, 
+                COM.companyNameEnglish, 
+                COF.claimStatus, 
+                COF.image,
+                CEN.centerName
+            FROM 
+                collectionofficer COF
+            LEFT JOIN 
+                company COM ON COF.companyId = COM.id
+            LEFT JOIN 
+                collectioncenter CEN ON COF.centerId = CEN.id
+            WHERE 
+                COF.empId = ?;        `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.claimOfficerDao = (id, userid, centerid) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE collectionofficer
+            SET centerId = ?, irmId = ?, claimStatus = ?
+            WHERE id = ?
+        `;
+        collectionofficer.query(sql, [centerid, userid, 1, id], (err, results) => {
+            if (err) {
+                return reject(err); // Reject promise if an error occurs
+            }
+            resolve(results); // Resolve with the query results
+        });
+    });
+};
