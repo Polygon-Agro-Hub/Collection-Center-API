@@ -65,4 +65,10 @@ router.put(
     ManageOfficerEP.updateCollectionOfficer
 );
 
+router.put(
+    '/disclaim-officer/:id',
+    authMiddleware,
+    ManageOfficerEP.disclaimOfficer
+)
+
 module.exports = router;

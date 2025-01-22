@@ -282,3 +282,19 @@ exports.updateCollectionOfficer = async (req, res) => {
     res.status(500).json({ error: 'Failed to update collection officer details' });
   }
 };
+
+exports.disclaimOfficer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log(id);
+
+    const result = await ManageOfficerDAO.disclaimOfficerDetailsDao(id);
+
+
+    res.json({ message: 'Collection officer details updated successfully' });
+  } catch (err) {
+    console.error('Error updating collection officer details:', err);
+    res.status(500).json({ error: 'Failed to update collection officer details' });
+  }
+};

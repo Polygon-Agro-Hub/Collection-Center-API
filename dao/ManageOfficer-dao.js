@@ -664,3 +664,22 @@ exports.CreateQRCodeForOfficerDao = (id) => {
         });
     });
 };
+
+exports.disclaimOfficerDetailsDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE collectionofficer
+            SET centerId = NULL, irmId = NULL, claimStatus = 0
+            WHERE id = ?
+        `;
+
+        // Pass the `id` as the parameter to the query
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err); // Reject the promise if an error occurs
+            }
+            resolve(results); // Resolve with the query results
+        });
+    });
+};
+
