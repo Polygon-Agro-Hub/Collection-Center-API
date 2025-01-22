@@ -172,7 +172,7 @@ const createCollectionOfficer = () => {
     const sql = `
     CREATE TABLE IF NOT EXISTS collectionofficer (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      centerId INT NOT NULL,
+      centerId INT NULL,
       companyId INT NOT NULL,
       irmId INT NULL,
       firstNameEnglish VARCHAR(50) NOT NULL,
@@ -406,6 +406,9 @@ const createDailyTargetItemsTable = () => {
       qtyA DECIMAL(8,2) DEFAULT 0,
       qtyB DECIMAL(8,2) DEFAULT 0,
       qtyC DECIMAL(8,2) DEFAULT 0,
+      complteQtyA DECIMAL(8,2) DEFAULT 0,
+      complteQtyB DECIMAL(8,2) DEFAULT 0,
+      complteQtyC DECIMAL(8,2) DEFAULT 0,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (targetId) REFERENCES dailytarget(id)
         ON DELETE CASCADE

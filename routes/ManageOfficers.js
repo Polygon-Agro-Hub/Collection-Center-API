@@ -65,4 +65,14 @@ router.put(
     ManageOfficerEP.updateCollectionOfficer
 );
 
+router.get('/get-officer-by-empId/:id',
+    authMiddleware,
+    ManageOfficerEP.getOfficerByEmpId
+);
+
+router.patch('/claim-officer',
+    authMiddleware,
+    ManageOfficerEP.claimOfficer
+);
+
 module.exports = router;
