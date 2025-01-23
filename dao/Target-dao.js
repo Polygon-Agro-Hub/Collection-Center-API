@@ -70,15 +70,12 @@ exports.createDailyTargetDao = (target, companyId, userId) => {
 exports.createDailyTargetItemsDao = (data, targetId) => {
     return new Promise((resolve, reject) => {
         const sql = `
-           INSERT INTO dailytargetitems (targetId, varietyId, qtyA, qtyB, qtyC, complteQtyA, complteQtyB, complteQtyC)
+           INSERT INTO dailytargetitems (targetId, varietyId, qtyA, qtyB, qtyC)
            VALUES (?, ?, ?, ?, ?)
         `
         collectionofficer.query(sql, [
             targetId,
             data.varietyId,
-            data.qtyA,
-            data.qtyB,
-            data.qtyC,
             data.qtyA,
             data.qtyB,
             data.qtyC
@@ -92,14 +89,26 @@ exports.createDailyTargetItemsDao = (data, targetId) => {
 };
 
 
-exports.getAllDailyTargetDAO = (companyId, searchText) => {
+exports.getAllDailyTargetDAO = (companyId, page, limit, searchText) => {
     return new Promise((resolve, reject) => {
-        let targetSql = `
-           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime, DT.fromTime
-           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ?
+        const offset = (page - 1) * limit;
+
+
+        let countSql = `
+            SELECT COUNT(*) AS total
+            FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
+            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ?
         `
-        const sqlParams = [companyId]
+
+
+        let targetSql = `
+           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, DT.toDate, DT.toTime, DT.fromTime
+           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
+           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ? 
+        `
+        const sqlParams = [companyId];
+        const countParams = [companyId]
+
 
         if (searchText) {
             const searchCondition =
@@ -109,67 +118,44 @@ exports.getAllDailyTargetDAO = (companyId, searchText) => {
             sqlParams.push(searchValue);
         }
 
+        targetSql += " LIMIT ? OFFSET ? ";
+        sqlParams.push(limit, offset);
 
-        collectionofficer.query(targetSql, sqlParams, (err, results) => {
-            if (err) {
-                return reject(err);
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
             }
-            const transformedTargetData = results.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A" },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B" },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C" }
-            ]);
-            resolve(transformedTargetData);
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                const transformedTargetData = dataResults.flatMap(item => [
+                    { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
+                    { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
+                    { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
+                ]);
+
+                resolve({ resultTarget: transformedTargetData, total });
+            });
         });
     });
 };
 
-
-exports.getAllDailyTargetCompleteDAO = (companyId, searchText) => {
-    return new Promise((resolve, reject) => {
-        let completeSql = `
-            SELECT CG.cropNameEnglish, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS totA, SUM(FPC.gradeBquan) AS totB, SUM(FPC.gradeCquan) AS totC, FPC.createdAt
-            FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, collectionofficer CO, plant_care.cropvariety CV, plant_care.cropgroup CG
-            WHERE RFP.id = FPC.registerFarmerId AND RFP.collectionOfficerId = CO.id AND FPC.cropId = CV.id AND CV.cropGroupId = CG.id AND CO.companyId = ?
-            GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish
-
-        `
-
-        const sqlParams = [companyId]
-
-        if (searchText) {
-            const searchCondition =
-                ` AND  CV.varietyNameEnglish LIKE ? `;
-            completeSql += searchCondition;
-            const searchValue = `%${searchText}%`;
-            sqlParams.push(searchValue);
-        }
-
-
-        collectionofficer.query(completeSql, sqlParams, (err, results) => {
-            if (err) {
-                return reject(err);
-            }
-            // console.log(results);
-
-            const transformedCompleteData = results.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totA: item.totA, grade: "A", buyDate: item.createdAt },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totB: item.totB, grade: "B", buyDate: item.createdAt },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totC: item.totC, grade: "C", buyDate: item.createdAt }
-            ]);
-            // console.log(transformedCompleteData);
-
-            resolve(transformedCompleteData);
-        });
-    });
-};
 
 
 
 exports.downloadAllDailyTargetDao = (companyId, fromDate, toDate) => {
     return new Promise((resolve, reject) => {
         let targetSql = `
-           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime, DT.fromTime
+           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, DT.toDate, DT.toTime, DT.fromTime
            FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ? AND DATE(DT.fromDate) >= ? AND DATE(DT.toDate) <= ?
         `
@@ -181,9 +167,9 @@ exports.downloadAllDailyTargetDao = (companyId, fromDate, toDate) => {
                 return reject(err);
             }
             const transformedTargetData = results.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A" },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B" },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C" }
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
             ]);
 
             // console.log(transformedTargetData);
