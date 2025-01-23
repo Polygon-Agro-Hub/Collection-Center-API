@@ -10,7 +10,7 @@ const PriceListRoutes = require('./routes/PriceList');
 const ReportRoutes = require('./routes/Report');
 const TargetRoutes  =require('./routes/Target');
 const ComplaintRoutes = require('./routes/Complaints')
-
+const DashbordRoutes = require('./routes/Dashboards')
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -63,6 +63,7 @@ app.use('/api/price-list', PriceListRoutes);
 app.use('/api/report', ReportRoutes);
 app.use('/api/target', TargetRoutes);
 app.use('/api/complaint', ComplaintRoutes);
+app.use('/api/dashboard', DashbordRoutes);
 
 
 app.listen(port, () => {

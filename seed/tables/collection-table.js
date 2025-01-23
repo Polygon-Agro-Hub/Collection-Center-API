@@ -103,6 +103,7 @@ const createMarketPriceServeTable = () => {
       price DECIMAL(15,2) DEFAULT NULL,
       updatedPrice DECIMAL(15,2) DEFAULT NULL,
       collectionCenterId INT(11) DEFAULT NULL,
+      updateAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (marketPriceId) REFERENCES marketprice(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
