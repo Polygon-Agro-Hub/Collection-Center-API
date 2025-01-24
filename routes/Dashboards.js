@@ -9,9 +9,9 @@ router.get('/get-officer-counts',
     DashboardEP.getOfficerCount
 );
 
-router.get('/get-activity', 
+router.get('/get-chart', 
     authMiddleware,
-    DashboardEP.getActivity
+    DashboardEP.getChart
 );
 
 module.exports = router;
