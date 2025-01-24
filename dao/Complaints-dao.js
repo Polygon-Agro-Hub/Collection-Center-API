@@ -198,7 +198,6 @@ exports.getAllSendComplainDao = (userId,companyId, page, limit, status, emptype,
 
 exports.addComplaintDao = (officerId, category, complaint) => {
     return new Promise((resolve, reject) => {
-        // Generate the refNo with the format CC+YYMMDD+000N
         const currentDate = new Date();
         const year = currentDate.getFullYear().toString().slice(-2); // Last two digits of the year
         const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); // Month as two digits
