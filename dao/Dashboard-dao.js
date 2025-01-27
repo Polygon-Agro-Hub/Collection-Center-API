@@ -65,54 +65,44 @@ exports.getActivityDetails = () => {
     });
 };
 
-exports.getChartDetails = (centerId,filter) => {
+exports.getChartDetails = (centerId, filter) => {
     return new Promise((resolve, reject) => {
-        // const sql = `
-        // SELECT 
-        //     FPC.gradeAquan,
-        //     FPC.gradeBquan,
-        //     FPC.gradeCquan
-        //     FROM collectionofficer CO, registeredfarmerpayments RFP, farmerpaymentscrop FPC
-        //     WHERE FPC.registerFarmerId = RFP.id AND RFP.collectionOfficerId = CO.id AND createdAt LIKE '2024-12-31%' AND CO.id IN (
-        //         SELECT 
-        //             id
-        //         FROM 
-        //             collectionofficer
-        //         WHERE 
-        //             centerId = ?
-        //     )
-
-        // `;
-
-        let sql = `
-            SELECT RFP.createdAt AS date, SUM(FPC.gradeAquan) + SUM(FPC.gradeBquan) + SUM(FPC.gradeCquan) AS totCount
-            FROM registeredfarmerpayments RFP
-            JOIN farmerpaymentscrops FPC ON FPC.registerFarmerId = RFP.id
-            JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
-            WHERE COF.centerId = ?  
-        `;
-
-        if (filter === '7Days') {
-            sql += `
+        let sql;
+        if (filter === 'week') {
+            sql = `
+                SELECT DAYNAME(RFP.createdAt) AS date,  -- Day name (e.g., Monday)
+                SUM(FPC.gradeAquan) + SUM(FPC.gradeBquan) + SUM(FPC.gradeCquan) AS totCount
+                FROM registeredfarmerpayments RFP
+                JOIN farmerpaymentscrops FPC ON FPC.registerFarmerId = RFP.id
+                JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
+                WHERE COF.centerId = ?
                 AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)  -- Last 7 days
-                GROUP BY DATE(RFP.createdAt)
-                ORDER BY DATE(RFP.createdAt)
+                GROUP BY DAYNAME(RFP.createdAt)
+                ORDER BY RFP.createdAt
             `;
-        }
-
-        if (filter === '30Days') {
-            sql += `
+        } else if (filter === 'month') {
+            sql = `
+                SELECT DAY(RFP.createdAt) AS date,  -- Day number (e.g., 1, 2, 3, ...)
+                SUM(FPC.gradeAquan) + SUM(FPC.gradeBquan) + SUM(FPC.gradeCquan) AS totCount
+                FROM registeredfarmerpayments RFP
+                JOIN farmerpaymentscrops FPC ON FPC.registerFarmerId = RFP.id
+                JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
+                WHERE COF.centerId = ?
                 AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)  -- Last 30 days
-                GROUP BY DATE(RFP.createdAt)
-                ORDER BY DATE(RFP.createdAt)
+                GROUP BY DAY(RFP.createdAt)
+                ORDER BY RFP.createdAt
             `;
-        }
-
-        if (filter === '12Months') {
-            sql += `
-                AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)  -- Last 12 months
-                GROUP BY YEAR(RFP.createdAt), MONTH(RFP.createdAt)
-                ORDER BY YEAR(RFP.createdAt) DESC, MONTH(RFP.createdAt)
+        } else if (filter === 'year') {
+            sql = `
+                SELECT MONTHNAME(RFP.createdAt) AS date, 
+                SUM(FPC.gradeAquan) + SUM(FPC.gradeBquan) + SUM(FPC.gradeCquan) AS totCount
+                FROM registeredfarmerpayments RFP
+                JOIN farmerpaymentscrops FPC ON FPC.registerFarmerId = RFP.id
+                JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
+                WHERE COF.centerId = ?
+                AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                GROUP BY MONTHNAME(RFP.createdAt)
+                ORDER BY YEAR(RFP.createdAt), MONTH(RFP.createdAt)
             `;
         }
 
