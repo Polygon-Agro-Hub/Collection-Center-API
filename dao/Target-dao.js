@@ -48,10 +48,11 @@ exports.getAllCropNameDAO = () => {
 exports.createDailyTargetDao = (target, companyId, userId) => {
     return new Promise((resolve, reject) => {
         const sql = `
-           INSERT INTO dailytarget (companyId, fromDate, toDate, fromTime, toTime, createdBy)
-           VALUES (?, ?, ?, ?, ?, ?)
+           INSERT INTO dailytarget (centerId, companyId, fromDate, toDate, fromTime, toTime, createdBy)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
         `
         collectionofficer.query(sql, [
+            target.centerId,
             companyId,
             target.fromDate,
             target.toDate,
