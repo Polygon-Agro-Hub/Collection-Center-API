@@ -29,12 +29,14 @@ exports.loginUser = async (req, res) => {
     const { userName, password } = req.body;
     const [user] = await AuthDAO.loginUser(userName);
     let verify_password;
+    console.log(user);
+    
 
     if (!user) {
       return res.status(401).json({ error: "User not found." });
     }
 
-    if (user.jobRole != 'Collection Center Manager') {
+    if (user.jobRole !== 'Collection Center Manager' && user.jobRole !== 'Collection Center Head') {
       return res.status(401).json({ error: "User have not access for this web" });
     }
 
