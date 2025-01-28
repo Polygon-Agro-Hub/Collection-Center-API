@@ -297,7 +297,7 @@ const createFarmerPaymensCrops = () => {
 
 
 
-const createFarmerComplains  = () => {
+const createFarmerComplains = () => {
     const sql = `
    CREATE TABLE IF NOT EXISTS farmercomplains (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -371,6 +371,7 @@ const createDailyTargetTable = () => {
     CREATE TABLE IF NOT EXISTS dailytarget (
       id INT AUTO_INCREMENT PRIMARY KEY,
       centerId INT(11) DEFAULT NULL,
+      companyId INT(11) DEFAULT NULL,
       fromDate DATE  NOT NULL,
       toDate DATE  NOT NULL,
       fromTime TIME NOT NULL,
@@ -378,6 +379,9 @@ const createDailyTargetTable = () => {
       createdBy INT(11) DEFAULT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (centerId) REFERENCES collectioncenter(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+      FOREIGN KEY (companyId) REFERENCES company(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
       FOREIGN KEY (createdBy) REFERENCES collectionofficer(id)
@@ -429,7 +433,7 @@ const createDailyTargetItemsTable = () => {
     });
 };
 
-const createOfficerComplainsTable  = () => {
+const createOfficerComplainsTable = () => {
     const sql = `
    CREATE TABLE IF NOT EXISTS officercomplains (
     id INT AUTO_INCREMENT PRIMARY KEY,
