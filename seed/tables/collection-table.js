@@ -377,7 +377,7 @@ const createDailyTargetTable = () => {
       toTime TIME NOT NULL,
       createdBy INT(11) DEFAULT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (companyId) REFERENCES center(id)
+      FOREIGN KEY (centerId) REFERENCES collectioncenter(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
       FOREIGN KEY (createdBy) REFERENCES collectionofficer(id)
@@ -459,6 +459,33 @@ const createOfficerComplainsTable  = () => {
 };
 
 
+const createCompanyCenterTable = () => {
+    const sql = `
+    CREATE TABLE IF NOT EXISTS companycenter (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      centerId INT(11) NULL,
+      companyId INT(11) NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (centerId) REFERENCES collectioncenter(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+      FOREIGN KEY (companyId) REFERENCES company(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+    )
+  `;
+    return new Promise((resolve, reject) => {
+        collectionofficer.query(sql, (err, result) => {
+            if (err) {
+                reject('Error creating Daily Target request table: ' + err);
+            } else {
+                resolve('Daily Target table created request successfully.');
+            }
+        });
+    });
+};
+
+
 
 module.exports = {
     createXlsxHistoryTable,
@@ -473,5 +500,6 @@ module.exports = {
     createMarketPriceRequestTable,
     createDailyTargetTable,
     createDailyTargetItemsTable,
-    createOfficerComplainsTable
+    createOfficerComplainsTable,
+    createCompanyCenterTable
 };
