@@ -230,57 +230,32 @@ exports.downloadDailyTarget = async (req, res) => {
   }
 };
 
-// exports.getCenterDetails = async (req, res) => {
-//   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-//   console.log(fullUrl);
-//   try {
-//       const centerId = req.user.companyId
-//       console.log(req.query);
-
-//       const { page, limit, province, district, search } = await TargetValidate.getCentersSchema.validateAsync(req.query);
-//       const { items, total } = await TargetDAO.getCenterDetailsDao(companyId, page, limit, province, district, search);
-//       console.log(page, limit, province, district, search);
-
-
-//       console.log("Successfully retrieved center data");
-//       res.status(200).json({ items, total });
-//   } catch (error) {
-//       if (error.isJoi) {
-//           return res.status(400).json({ error: error.details[0].message });
-//       }
-
-//       console.error("Error retrieving center data:", error);
-//       return res.status(500).json({ error: "An error occurred while fetching the center data" });
-//   }
-// };
-
 exports.getCenterDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
-    const companyId = req.user.companyId
-    //const { province, district, search} = req.query;
-    const { province, district, searchText } = req.query;
-    // console.log(req.query);
-    console.log(companyId, province, district, searchText);
+      const companyId = req.user.companyId;
+      const { province, district, searchText, page = 1, limit = 10 } = req.query;
 
+      console.log(companyId, province, district, searchText, page, limit);
 
-    // const { items } = await TargetDAO.getCenterDetailsDao(companyId, province, district, search);
-    const { totalItems, items } = await TargetDAO.getCenterDetailsDao(companyId, province, district, searchText);
+      const { totalItems, items } = await TargetDAO.getCenterDetailsDao(
+          companyId,
+          province,
+          district,
+          searchText,
+          parseInt(page),
+          parseInt(limit)
+      );
 
+      console.log("Successfully retrieved company data");
+      console.log(items);
+      console.log(totalItems);
 
-    console.log("Successfully retrieved company data");
-    console.log(items);
-    console.log(totalItems)
-    res.status(200).json({items, totalItems});
-    
+      res.status(200).json({ items, totalItems });
   } catch (error) {
-    // if (error.isJoi) {
-    //     return res.status(400).json({ error: error.details[0].message });
-    // }
-
-    console.error("Error retrieving center data:", error);
-    return res.status(500).json({ error: "An error occurred while fetching the company data" });
+      console.error("Error retrieving center data:", error);
+      return res.status(500).json({ error: "An error occurred while fetching the company data" });
   }
 };
 

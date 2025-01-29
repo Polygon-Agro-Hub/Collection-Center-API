@@ -28,13 +28,6 @@ router.get(
     TargetEP.downloadDailyTarget
 )
 
-// router.get(
-//     "/get-all-centers",
-//     authMiddleware,
-//     TargetEP.getCenterDetails
-// )
-
-
 router.get(
     "/get-all-centers",
     authMiddleware,

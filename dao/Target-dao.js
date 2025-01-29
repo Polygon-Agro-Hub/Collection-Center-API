@@ -221,86 +221,17 @@ exports.downloadAllDailyTargetCompleteDAO = (companyId, fromDate, toDate) => {
     });
 };
 
-// exports.getAllPriceRequestDao = (companyId, page, limit, province, district, search) => {
-//     return new Promise((resolve, reject) => {
-//         const offset = (page - 1) * limit;
-//         console.log(province);
-
-
-//         let countSql = `
-//             SELECT COUNT(*) AS total
-//             FROM collectionofficer CO, company C, companycenter CC, collectioncenter CLC
-//             WHERE CO.companyId = C.id AND CC.companyId  = C.id AND CLC.id = CC.centerId CO.companyId = ?
-//             GROUP by CO.jobRole
-//             `;
-
-//         let dataSql = `
-//             SELECT CC.centerName, CC.regCode, CC.province, CC.district, CC.city CC.contact01 CO.COUNT(*) AS COcount
-//             FROM collectionofficer CO, company C, companycenter CC, collectioncenter CLC
-//             WHERE CO.companyId = C.id AND CC.companyId  = C.id AND CLC.id = CC.centerId CO.companyId = ?
-//             GROUP by CO.jobRole
-//             `;
-
-
-//         const countParams = [companyId];
-//         const dataParams = [companyId];
-
-//         if (province) {
-//             countSql += " AND CC.province LIKE ? ";
-//             dataSql += " AND CC.province LIKE ? ";
-//             countParams.push(province);
-//             dataParams.push(province);
-//         }
-
-//         if (district) {
-//             countSql += " AND CC.district LIKE ? ";
-//             dataSql += " AND CC.district LIKE ? ";
-//             countParams.push(district);
-//             dataParams.push(district);
-//         }
-
-//         if (search) {
-//             const searchCondition = `
-//                 AND (
-//                     CC.centerName LIKE ?
-//                 )
-//             `;
-//             countSql += searchCondition;
-//             dataSql += searchCondition;
-//             const searchValue = `%${search}%`;
-//             countParams.push(searchValue, searchValue);
-//             dataParams.push(searchValue, searchValue);
-//         }
-
-//         dataSql += " LIMIT ? OFFSET ? ";
-//         dataParams.push(limit, offset);
-
-
-//         // Execute count query
-//         collectionofficer.query(countSql, countParams, (countErr, countResults) => {
-//             if (countErr) {
-//                 console.error('Error in count query:', countErr);
-//                 return reject(countErr);
-//             }
-
-//             const total = countResults.length > 0 ? countResults[0].total : 0;
-
-//             // Execute data query
-//             collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
-//                 if (dataErr) {
-//                     console.error('Error in data query:', dataErr);
-//                     return reject(dataErr);
-//                 }
-//                 resolve({ items: dataResults, total });
-//             });
-//         });
-//     });
-// };
-
-
-exports.getCenterDetailsDao = (companyId, province, district, searchText) => {
+exports.getCenterDetailsDao = (companyId, province, district, searchText, page, limit) => {
     return new Promise((resolve, reject) => {
         console.log(province, "--params--");
+
+        let countSql = `
+        SELECT COUNT(DISTINCT CC.id) AS totalCount
+        FROM companycenter COMC
+        JOIN collectioncenter CC ON COMC.centerId = CC.id
+        JOIN collectionofficer COF ON COF.centerId = CC.id
+        WHERE COMC.companyId = ?
+    `;
 
         // Base SQL query
         let dataSql = `
@@ -325,19 +256,27 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText) => {
 
         // Add conditions for province if provided
         const queryParams = [companyId];
+        const countParams = [companyId];
+
         if (province) {
             dataSql += ` AND CC.province = ? `;
+            countSql += ` AND CC.province = ? `;
             queryParams.push(province);
+            countParams.push(province);
         }
 
         if (district) {
             dataSql += ` AND CC.district = ? `;
+            countSql += ` AND CC.district = ? `;
             queryParams.push(district);
+            countParams.push(district);
         }
 
         if (searchText) {
-            dataSql += ` AND CC.centerName LIKE ? `;
-            queryParams.push(`%${searchText}%`);
+            dataSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?) `;
+            countSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?) `;
+            queryParams.push(`%${searchText}%`, `%${searchText}%`);
+            countParams.push(`%${searchText}%`, `%${searchText}%`);
         }
 
         // Group and order the results
@@ -345,6 +284,11 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText) => {
             GROUP BY 
                 CC.id, CC.centerName, CC.province, CC.district, CC.city, CC.contact01, CC.regCode, COF.jobRole
         `;
+
+        // Add pagination
+        const offset = (page - 1) * limit;
+        dataSql += ` LIMIT ? OFFSET ? `;
+        queryParams.push(limit, offset);
 
         console.log("Final SQL Query:", dataSql, "Query Params:", queryParams);
 
@@ -360,8 +304,8 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText) => {
 
             dataResults.forEach(({ centerId, centerName, province, district, city, contact01, regCode, jobRole, totCount }) => {
                 if (!centerMap.has(centerId)) {
-                    const centerData = { 
-                        id: centerId, 
+                    const centerData = {
+                        id: centerId,
                         centerName,
                         province,
                         district,
@@ -381,8 +325,15 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText) => {
             });
 
             const transformedResults = Array.from(centerMap.values());
-            const totalItems = transformedResults.length;
-            resolve({ totalItems, items: transformedResults });
+            collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+                if (countErr) {
+                    console.error('Error in count query:', countErr);
+                    return reject(countErr);
+                }
+
+                const totalItems = countResults[0].totalCount;
+                resolve({ totalItems, items: transformedResults });
+            });
         });
     });
 };
