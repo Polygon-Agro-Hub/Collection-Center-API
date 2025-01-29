@@ -292,4 +292,32 @@ exports.downloadDailyTarget = async (req, res) => {
   }
 };
 
+exports.getCenterDetails = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+      const companyId = req.user.companyId;
+      const { province, district, searchText, page = 1, limit = 10 } = req.query;
+
+      console.log(companyId, province, district, searchText, page, limit);
+
+      const { totalItems, items } = await TargetDAO.getCenterDetailsDao(
+          companyId,
+          province,
+          district,
+          searchText,
+          parseInt(page),
+          parseInt(limit)
+      );
+
+      console.log("Successfully retrieved company data");
+      console.log(items);
+      console.log(totalItems);
+
+      res.status(200).json({ items, totalItems });
+  } catch (error) {
+      console.error("Error retrieving center data:", error);
+      return res.status(500).json({ error: "An error occurred while fetching the company data" });
+  }
+};
 
