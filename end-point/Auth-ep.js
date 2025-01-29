@@ -59,6 +59,8 @@ exports.loginUser = async (req, res) => {
           { expiresIn: "5h" }
         );
 
+        console.log("Token--- ",token);
+
         const data = {
           token,
           userId: user.id,
