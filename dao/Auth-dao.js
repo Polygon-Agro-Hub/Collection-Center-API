@@ -44,3 +44,112 @@ exports.updatePasswordDAO = (id, hashedPassword) => {
     }
   });
 };
+
+// exports.getUserDAO = (userId) => {
+//   return new Promise(async (resolve, reject) => {
+//     try {
+//       const sql = `
+//         SELECT firstNameEnglish, firstNameSinhala, jobRole, empId, companyNameEnglish, 
+//         FROM collectionofficer 
+//         WHERE id = ? `;
+
+//       collectionofficer.query(sql, [userId], (err, results) => {
+//         if (err) {
+//           reject(err);
+//         } else {
+//           resolve(results);
+//         }
+//       });
+//     } catch (error) {
+//       reject(error);
+//     }
+//   });
+// };
+
+
+exports.getUserDAO = (userId) => {
+  return new Promise((resolve, reject) => {
+      const sql = `
+          SELECT 
+              COF.firstNameEnglish,
+              COF.lastNameEnglish,
+              COF.email,
+              COF.nic,
+              COF.phoneNumber01,
+              COF.phoneNumber02,
+              COF.houseNumber,
+              COF.city,
+              COF.province,
+              COF.streetName,
+              COF.country,
+              COF.district,
+              COF.bankName,
+              COF.accNumber,
+              COF.branchName,
+              COF.accHolderName,
+              COF.jobRole,
+              COF.empId,
+              COM.companyNameEnglish,
+              CEN.centerName
+          FROM 
+              collectionofficer COF, company COM, collectioncenter CEN
+          WHERE 
+           COF.centerId = CEN.id AND COF.companyId = COM.id AND COF.id = ?`;
+
+      collectionofficer.query(sql, [userId], (err, results) => {
+          if (err) {
+              return reject(err); // Reject promise if an error occurs
+          }
+
+          if (results.length === 0) {
+              return resolve(null); // No officer found
+          }
+
+          const officer = results[0];
+
+          // Process image field if present
+          if (officer.image) {
+              const base64Image = Buffer.from(officer.image).toString("base64");
+              officer.image = `data:image/png;base64,${base64Image}`;
+          }
+
+          // Process QRcode field if present
+          if (officer.QRcode) {
+              const base64QRcode = Buffer.from(officer.QRcode).toString("base64");
+              officer.QRcode = `data:image/png;base64,${base64QRcode}`;
+          }
+
+          resolve({
+              collectionOfficer: {
+                  id: officer.id,
+                  firstNameEnglish: officer.firstNameEnglish,
+                  lastNameEnglish: officer.lastNameEnglish,
+                  phoneNumber01: officer.phoneNumber01,
+                  phoneNumber02: officer.phoneNumber02,
+                  nic: officer.nic,
+                  email: officer.email,
+                  passwordUpdated: officer.passwordUpdated,
+                  houseNumber: officer.houseNumber,
+                  streetName: officer.streetName,
+                  city: officer.city,
+                  district: officer.district,
+                  province: officer.province,
+                  country: officer.country,
+                  languages: officer.languages,
+                  empId: officer.empId,
+                  jobRole: officer.jobRole,
+                  employeeType: officer.empType,
+                  accHolderName: officer.accHolderName,
+                  accNumber: officer.accNumber,
+                  bankName: officer.bankName,
+                  branchName: officer.branchName,
+                  companyNameEnglish: officer.companyNameEnglish,
+                  centerName: officer.centerName
+
+
+
+              },
+          });
+      });
+  });
+};
