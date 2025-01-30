@@ -45,27 +45,6 @@ exports.updatePasswordDAO = (id, hashedPassword) => {
   });
 };
 
-// exports.getUserDAO = (userId) => {
-//   return new Promise(async (resolve, reject) => {
-//     try {
-//       const sql = `
-//         SELECT firstNameEnglish, firstNameSinhala, jobRole, empId, companyNameEnglish, 
-//         FROM collectionofficer 
-//         WHERE id = ? `;
-
-//       collectionofficer.query(sql, [userId], (err, results) => {
-//         if (err) {
-//           reject(err);
-//         } else {
-//           resolve(results);
-//         }
-//       });
-//     } catch (error) {
-//       reject(error);
-//     }
-//   });
-// };
-
 
 exports.getUserDAO = (userId) => {
   return new Promise((resolve, reject) => {
