@@ -213,8 +213,6 @@ exports.downloadAllDailyTargetCompleteDAO = (companyId, fromDate, toDate) => {
 
 exports.getCenterDetailsDao = (companyId, province, district, searchText, page, limit) => {
     return new Promise((resolve, reject) => {
-        console.log(province, "--params--");
-
         let countSql = `
         SELECT COUNT(DISTINCT CC.id) AS totalCount
         FROM companycenter COMC

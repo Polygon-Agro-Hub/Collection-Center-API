@@ -297,7 +297,7 @@ exports.getCenterDetails = async (req, res) => {
   console.log(fullUrl);
   try {
       const companyId = req.user.companyId;
-      const { province, district, searchText, page = 1, limit = 10 } = req.query;
+      const { province, district, searchText, page, limit } = req.query;
 
       console.log(companyId, province, district, searchText, page, limit);
 
