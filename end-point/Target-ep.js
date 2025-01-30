@@ -321,3 +321,32 @@ exports.getCenterDetails = async (req, res) => {
   }
 };
 
+
+exports.getCenterDashbord = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const { id } = req.params;
+    const officerCount = await TargetDAO.getCenterNameAndOficerCountDao(id);
+    const transCount = await TargetDAO.getTransactionCountDao(id);
+    const transAmountCount = await TargetDAO.getTransactionAmountCountDao(id);
+    const resentCollection = await TargetDAO.getReseantCollectionDao(id);
+    const totExpences = await TargetDAO.getTotExpencesDao(id);
+    console.log(totExpences);
+    const limitedResentCollection = resentCollection.slice(0, 5);
+    
+    
+
+    console.log("Successfully fetched gatogory");
+    return res.status(200).json({ officerCount, transCount, transAmountCount, limitedResentCollection, totExpences });
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching crop names and verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
+  }
+}

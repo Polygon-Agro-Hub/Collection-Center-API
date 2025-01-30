@@ -34,5 +34,11 @@ router.get(
     TargetEP.getCenterDetails
 )
 
+router.get(
+    "/get-center-dashboard/:id",
+    authMiddleware,
+    TargetEP.getCenterDashbord
+)
+
 
 module.exports = router;
