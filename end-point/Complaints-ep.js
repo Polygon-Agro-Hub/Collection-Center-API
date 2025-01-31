@@ -87,7 +87,6 @@ exports.replyComplain = async (req, res) => {
     console.log(fullUrl);
 
     try {
-        // const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
         const complain = await ComplaintValidate.replyComplainSchema.validateAsync(req.body)
 
         const result = await ComplaintDAO.replyComplainDao(complain)
@@ -147,11 +146,8 @@ exports.addComplaint = async (req, res) => {
     console.log(fullUrl);
 
     try {
-        // Validate request body for complaint details
         const { category, complaint } = await ComplaintValidate.addComplaintSchema.validateAsync(req.body);
-        // const { category, complaint } = req.body;
         const officerId = req.user.userId
-        // console.log(req.user);
         console.log(category, complaint);
 
 
@@ -181,6 +177,8 @@ exports.getAllRecivedCCHComplain = async (req, res) => {
     console.log(fullUrl);
 
     try {
+        console.log("ffffffffffffffffffffffffffffffffffffffffffff");
+        
         const companyId = req.user.companyId
         console.log(companyId);
         const { page, limit, searchText, status } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
@@ -233,3 +231,61 @@ exports.getAllSentCCHComplaint = async (req, res) => {
         return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
     }
 }
+
+
+exports.forwordComplaintToAdmin = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
+
+
+        const result = await ComplaintDAO.forwordComplaintToAdminDao(id)
+        if (result.affectedRows === 0) {
+            return res.json({ message: "Forword faild try again!", status: false })
+        }
+
+        console.log("Successfully forword complaint");
+        res.status(200).json({ message: "Complaint was forward to Agro World Admin!", status: true });
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error forword complaint:", error);
+        return res.status(500).json({ error: "An error occurred while forword complaint" });
+    }
+}
+
+
+exports.addComplaintCCH = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const { category, complaint } = await ComplaintValidate.addComplaintSchema.validateAsync(req.body);
+        const officerId = req.user.userId
+        console.log(category, complaint);
+
+
+        const result = await ComplaintDAO.addComplaintCCHDao(officerId, category, complaint);
+
+        if (result.affectedRows === 0) {
+            return res.json({ message: "Complaint could not be added. Please try again!", status: false });
+        }
+
+        console.log("Successfully added complaint");
+        res.status(201).json({ message: "Complaint added successfully!", status: true });
+
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error adding complaint:", error);
+        return res.status(500).json({ error: "An error occurred while adding the complaint" });
+    }
+};
