@@ -34,5 +34,11 @@ router.get(
     TargetEP.getCenterDetails
 )
 
+router.get(
+    "/get-all-officers",
+    authMiddleware,
+    TargetEP.getOfficerDetails
+)
+
 
 module.exports = router;

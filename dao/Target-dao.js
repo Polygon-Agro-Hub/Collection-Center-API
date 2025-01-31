@@ -328,5 +328,97 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
     });
 };
 
+exports.getOfficerDetailsDAO = (centerId, page, limit, role, status, searchText) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        let countSql = `
+            SELECT COUNT(*) AS total 
+            FROM collectionofficer Coff  
+            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ? 
+        `;
+
+        let dataSql = `
+                     SELECT
+                        Coff.id,
+                        Coff.image,
+                        Coff.firstNameEnglish,
+                        Coff.lastNameEnglish,
+                        Coff.phoneCode01,
+                        Coff.phoneCode02,
+                        Coff.empId,
+                        Coff.jobRole,
+                        Coff.phoneNumber01,
+                        Coff.phoneNumber02,
+                        Coff.nic,
+                        Coff.district,
+                        Coff.status
+                     FROM collectionofficer Coff
+                     WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ? 
+
+                 `;
+        
+        const countParams = [centerId];
+        const dataParams = [centerId];
+
+        if (role) {
+            countSql += " AND Coff.jobRole LIKE ?";
+            dataSql += " AND Coff.jobRole LIKE ?";
+            countParams.push(role);
+            dataParams.push(role);
+        }
+
+        if (status) {
+            countSql += " AND Coff.status LIKE ?";
+            dataSql += " AND Coff.status LIKE ?";
+            countParams.push(status);
+            dataParams.push(status);
+        }
+
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    Coff.nic LIKE ?
+                    OR Coff.firstNameEnglish LIKE ?
+                    OR Coff.lastNameEnglish LIKE ?
+                    OR Coff.empId LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue, searchValue, searchValue, searchValue);
+            dataParams.push(searchValue, searchValue, searchValue, searchValue);
+        }
+
+        dataSql += " ORDER BY Coff.createdAt DESC ";
+
+        // Add pagination to the data query
+        dataSql += " LIMIT ? OFFSET ? ";
+        dataParams.push(Number(limit), Number(offset));
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+
+        
+    });
+};
+
 
 

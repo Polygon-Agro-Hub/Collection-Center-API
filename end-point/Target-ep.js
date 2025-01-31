@@ -278,7 +278,7 @@ exports.downloadDailyTarget = async (req, res) => {
     }
 
     console.log(combinedData);
-    
+
 
     console.log("Successfully transformed data");
     return res.status(200).json({ message: 'Daily tartget find', status: true, data: combinedData });
@@ -296,28 +296,64 @@ exports.getCenterDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
-      const companyId = req.user.companyId;
-      const { province, district, searchText, page = 1, limit = 10 } = req.query;
+    const companyId = req.user.companyId;
+    const { province, district, searchText, page = 1, limit = 10 } = req.query;
 
-      console.log(companyId, province, district, searchText, page, limit);
+    console.log(companyId, province, district, searchText, page, limit);
 
-      const { totalItems, items } = await TargetDAO.getCenterDetailsDao(
-          companyId,
-          province,
-          district,
-          searchText,
-          parseInt(page),
-          parseInt(limit)
-      );
+    const { totalItems, items } = await TargetDAO.getCenterDetailsDao(
+      companyId,
+      province,
+      district,
+      searchText,
+      parseInt(page),
+      parseInt(limit)
+    );
 
-      console.log("Successfully retrieved company data");
-      console.log(items);
-      console.log(totalItems);
+    console.log("Successfully retrieved company data");
+    console.log(items);
+    console.log(totalItems);
 
-      res.status(200).json({ items, totalItems });
+    res.status(200).json({ items, totalItems });
   } catch (error) {
-      console.error("Error retrieving center data:", error);
-      return res.status(500).json({ error: "An error occurred while fetching the company data" });
+    console.error("Error retrieving center data:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the company data" });
+  }
+};
+
+exports.getOfficerDetails = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    // Validate query parameters      
+    const validatedQuery = await TargetValidate.getOfficerDetailsSchema.validateAsync(req.query);
+    // console.log(validatedQuery);
+
+    // const { centerId, page, limit, role, status, searchText } = req.query;
+    const { centerId, page, limit, role, status, searchText } = validatedQuery;
+    console.log(centerId);
+    console.log(centerId, page, limit, role, status, searchText);
+    // const { page, limit, status, role, searchText } = validatedQuery;
+
+    // Call the DAO to get all collection officers
+    // const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(centerId, page, limit, status, role, searchText);
+    const { items, total } = await TargetDAO.getOfficerDetailsDAO(centerId, page, limit, role, status, searchText);
+
+    // console.log(items, total);
+
+
+    console.log("Successfully fetched collection officers");
+    // return res.status(200).json({ items, total });
+    return res.status(200).json({ items, total });
+  } catch (error) {
+    console.error("Error fetching collection officers:", error);
+
+    if (error.isJoi && error.details) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
   }
 };
 
