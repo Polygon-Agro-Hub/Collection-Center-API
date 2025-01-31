@@ -412,40 +412,40 @@ exports.getReseantCollectionDao = (centerId) => {
                 const entries = [];
 
                 if (item.totAqty !== undefined) {
-                    entries.push({ 
-                        cropNameEnglish: item.cropNameEnglish, 
-                        varietyNameEnglish: item.varietyNameEnglish, 
-                        totPrice: item.totAprice, 
-                        totQty: item.totAqty, 
-                        grade: "A", 
-                        date: item.date 
+                    entries.push({
+                        cropNameEnglish: item.cropNameEnglish,
+                        varietyNameEnglish: item.varietyNameEnglish,
+                        totPrice: item.totAprice,
+                        totQty: item.totAqty,
+                        grade: "A",
+                        date: item.date
                     });
                 }
-                
+
                 if (item.totBqty !== undefined) {
-                    entries.push({ 
-                        cropNameEnglish: item.cropNameEnglish, 
-                        varietyNameEnglish: item.varietyNameEnglish, 
-                        totPrice: item.totBprice, 
-                        totQty: item.totBqty, 
-                        grade: "B", 
-                        date: item.date 
+                    entries.push({
+                        cropNameEnglish: item.cropNameEnglish,
+                        varietyNameEnglish: item.varietyNameEnglish,
+                        totPrice: item.totBprice,
+                        totQty: item.totBqty,
+                        grade: "B",
+                        date: item.date
                     });
                 }
-                
+
                 if (item.totCqty !== undefined) {
-                    entries.push({ 
-                        cropNameEnglish: item.cropNameEnglish, 
-                        varietyNameEnglish: item.varietyNameEnglish, 
-                        totPrice: item.totCprice, 
-                        totQty: item.totCqty, 
-                        grade: "C", 
-                        date: item.date 
+                    entries.push({
+                        cropNameEnglish: item.cropNameEnglish,
+                        varietyNameEnglish: item.varietyNameEnglish,
+                        totPrice: item.totCprice,
+                        totQty: item.totCqty,
+                        grade: "C",
+                        date: item.date
                     });
                 }
 
                 return entries;
-            });            
+            });
 
             resolve(transformData);
         });
@@ -470,5 +470,38 @@ exports.getTotExpencesDao = (centerId) => {
             }
             resolve(results[0]);
         });
+    });
+};
+
+exports.differenceBetweenExpences = (centerId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        SELECT 
+            YEAR(RFP.createdAt) AS year,
+            MONTH(RFP.createdAt) AS month,
+            SUM(FPC.gradeAprice) + SUM(FPC.gradeBprice) + SUM(FPC.gradeCprice) AS monthexpences
+        FROM registeredfarmerpayments RFP
+        JOIN farmerpaymentscrops FPC ON RFP.id = FPC.registerFarmerId
+        JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
+        WHERE COF.centerId = ?
+        GROUP BY YEAR(RFP.createdAt), MONTH(RFP.createdAt)
+        ORDER BY YEAR(RFP.createdAt) DESC, MONTH(RFP.createdAt) DESC
+        LIMIT 2;
+        `
+        collectionofficer.query(sql, [centerId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length < 2) {
+                return reject(new Error("Not enough data to compare two months."));
+            }
+
+            const difExpences = ((results[0].monthexpences - results[1].monthexpences) / results[0].monthexpences) * 100;
+            const roundedDifExpences = parseFloat(difExpences.toFixed(2));
+
+            resolve(roundedDifExpences);
+        });
+
     });
 };

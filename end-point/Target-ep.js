@@ -333,13 +333,15 @@ exports.getCenterDashbord = async (req, res) => {
     const transAmountCount = await TargetDAO.getTransactionAmountCountDao(id);
     const resentCollection = await TargetDAO.getReseantCollectionDao(id);
     const totExpences = await TargetDAO.getTotExpencesDao(id);
-    console.log(totExpences);
+    const difExpences = await TargetDAO.differenceBetweenExpences(id);
+    
+    console.log(difExpences);
     const limitedResentCollection = resentCollection.slice(0, 5);
     
     
 
     console.log("Successfully fetched gatogory");
-    return res.status(200).json({ officerCount, transCount, transAmountCount, limitedResentCollection, totExpences });
+    return res.status(200).json({ officerCount, transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
   } catch (error) {
     if (error.isJoi) {
       // Handle validation error
