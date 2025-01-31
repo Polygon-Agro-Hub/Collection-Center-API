@@ -337,6 +337,7 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
         `;
         collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
             if (err) {
+                console.log(err);
                 return reject(err); // Reject promise if an error occurs
             }
             resolve(results); // Resolve with the query results

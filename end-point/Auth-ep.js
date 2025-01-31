@@ -139,16 +139,8 @@ exports.getProfile = async (req, res) => {
       return res.status(404).json({ error: "officer not found" });
     }
 
-    // // Extracting first name and last name
-    // const firstName = user[0].firstNameEnglish;
-    // const lastName = user[0].firstNameSinhala;
-
-    // // Logging the fetched data
-    // console.log("First Name:", firstName);
-    // console.log("Last Name:", lastName);
-
     res.status(200).json({ officerData });
-    console.log(officerData);
+    
   } catch (error) {
     console.error("Error fetching officer profile:", error);
     res.status(500).json({ error: "An error occurred while fetching the usofficer profile" });

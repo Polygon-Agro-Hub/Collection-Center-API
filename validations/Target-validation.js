@@ -21,3 +21,13 @@ exports.getCentersSchema = Joi.object({
     status: Joi.string().optional()
     
 });
+
+exports.getOfficerDetailsSchema = Joi.object({
+    centerId: Joi.number().integer().optional(),
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    role: Joi.string().allow('').optional(),
+    status: Joi.string().optional(),
+    searchText: Joi.string().optional()
+    
+});
