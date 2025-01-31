@@ -36,4 +36,14 @@ router.post('/add-complain',
     ComplaintEP.addComplaint
 );
 
+router.get('/get-recived-cch-complaints', 
+    authMiddleware,
+    ComplaintEP.getAllRecivedCCHComplain
+);
+
+router.get('/get-all-sent-cch-complaint',
+    authMiddleware,
+    ComplaintEP.getAllSentCCHComplaint
+)
+
 module.exports = router;

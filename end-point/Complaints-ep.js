@@ -69,7 +69,7 @@ exports.forwordComplaint = async (req, res) => {
         }
 
         console.log("Successfully forword complaint");
-        res.status(200).json({ message: "Complaint was forward to Center Head!", status: true});
+        res.status(200).json({ message: "Complaint was forward to Center Head!", status: true });
     } catch (error) {
         if (error.isJoi) {
             // Handle validation error
@@ -92,13 +92,13 @@ exports.replyComplain = async (req, res) => {
 
         const result = await ComplaintDAO.replyComplainDao(complain)
         console.log(result);
-        
+
         if (result.affectedRows === 0) {
             return res.json({ message: "Reply Does not send!", status: false })
         }
 
         console.log("Reply Send Successfull!");
-        res.status(200).json({ message: "Complaint was forward to Center Head!", status: true});
+        res.status(200).json({ message: "Complaint was forward to Center Head!", status: true });
     } catch (error) {
         if (error.isJoi) {
             // Handle validation error
@@ -118,19 +118,19 @@ exports.getAllSentComplaint = async (req, res) => {
     try {
         const userId = req.user.userId
         console.log(req.user);
-        
+
         const companyId = req.user.companyId
 
         console.log(userId, companyId);
         const { page, limit, searchText, status, emptype } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
         console.log(page, limit, searchText, status, emptype);
         // console.log(req.query);
-        
 
-        const { items, total } = await ComplaintDAO.getAllSendComplainDao(userId,companyId, page, limit, status, emptype, searchText)
+
+        const { items, total } = await ComplaintDAO.getAllSendComplainDao(userId, companyId, page, limit, status, emptype, searchText)
 
         console.log("Successfully fetched recived complaind");
-        return res.status(200).json({ items, total, userId});
+        return res.status(200).json({ items, total, userId });
     } catch (error) {
         if (error.isJoi) {
             // Handle validation error
@@ -152,9 +152,9 @@ exports.addComplaint = async (req, res) => {
         // const { category, complaint } = req.body;
         const officerId = req.user.userId
         // console.log(req.user);
-        console.log(category,complaint);
+        console.log(category, complaint);
 
-        
+
         const result = await ComplaintDAO.addComplaintDao(officerId, category, complaint);
 
         if (result.affectedRows === 0) {
@@ -174,3 +174,62 @@ exports.addComplaint = async (req, res) => {
         return res.status(500).json({ error: "An error occurred while adding the complaint" });
     }
 };
+
+
+exports.getAllRecivedCCHComplain = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const companyId = req.user.companyId
+        console.log(companyId);
+        const { page, limit, searchText, status } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
+        console.log(page, limit, searchText, status);
+
+
+        const { items, total } = await ComplaintDAO.getAllRecivedCCHComplainDao(companyId, page, limit, status, searchText)
+
+        console.log("Successfully fetched recived complaind");
+        return res.status(200).json({ items, total });
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error fetching recived complaind:", error);
+        return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+    }
+}
+
+
+exports.getAllSentCCHComplaint = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const userId = req.user.userId
+        console.log(req.user);
+
+        const companyId = req.user.companyId
+
+        console.log(userId, companyId);
+        const { page, limit, searchText, status, emptype } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
+        console.log(page, limit, searchText, status, emptype);
+        // console.log(req.query);
+
+
+        const { items, total } = await ComplaintDAO.getAllSendCCHComplainDao(userId, companyId, page, limit, status, emptype, searchText)
+
+        console.log("Successfully fetched recived complaind");
+        return res.status(200).json({ items, total, userId });
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error fetching recived complaind:", error);
+        return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+    }
+}
