@@ -52,5 +52,11 @@ router.get(
     TargetEP.getAllPriceDetails
 )
 
+router.get(
+    "/assign-all-daily-target",
+    authMiddleware,
+    TargetEP.getAssignCenterTarget
+)
+
 
 module.exports = router;

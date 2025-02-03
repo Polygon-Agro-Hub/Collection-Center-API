@@ -90,7 +90,7 @@ exports.createDailyTargetItemsDao = (data, targetId) => {
 };
 
 
-exports.getAllDailyTargetDAO = (companyId, page, limit, searchText) => {
+exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -98,17 +98,17 @@ exports.getAllDailyTargetDAO = (companyId, page, limit, searchText) => {
         let countSql = `
             SELECT COUNT(*) AS total
             FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ?
+            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ?
         `
 
 
         let targetSql = `
            SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, DT.toDate, DT.toTime, DT.fromTime
            FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ? 
+           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ? 
         `
-        const sqlParams = [companyId];
-        const countParams = [companyId]
+        const sqlParams = [centerId];
+        const countParams = [centerId]
 
 
         if (searchText) {
@@ -661,6 +661,50 @@ exports.getAllPriceDetailsDao = (centerId, page, limit, grade, searchText) => {
                 }
 
                 resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
+
+exports.getAssignCenterTargetDAO = (centerId, page, limit) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+
+        let countSql = `
+            SELECT COUNT(*) AS total
+            FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
+            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ?
+        `
+
+
+        let targetSql = `
+           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime, DT.fromTime
+           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
+           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ? 
+        `
+        const sqlParams = [centerId];
+        const countParams = [centerId]
+
+        targetSql += " LIMIT ? OFFSET ? ";
+        sqlParams.push(limit, offset);
+
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ resultTarget: dataResults, total });
             });
         });
     });

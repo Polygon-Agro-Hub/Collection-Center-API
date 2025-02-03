@@ -63,11 +63,11 @@ exports.getAllDailyTarget = async (req, res) => {
 
   try {
     const { searchText, page, limit } = await TargetValidate.getAllDailyTargetSchema.validateAsync(req.query);
-    const companyId = req.user.companyId
+    const centerId = req.user.centerId
 
-    console.log(searchText, page, limit, companyId);
+    console.log(searchText, page, limit, centerId);
 
-    const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(companyId, page, limit, searchText);
+    const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(centerId, page, limit, searchText);
     const combinedData = [];
 
 
@@ -313,6 +313,32 @@ exports.getAllPriceDetails = async (req, res) => {
 
       console.error("Error retrieving price list:", error);
       return res.status(500).json({ error: "An error occurred while fetching the price list" });
+  }
+};
+
+exports.getAssignCenterTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const { page, limit } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
+    const centerId = req.user.centerId
+
+    console.log(centerId);
+
+    const {resultTarget, total } = await TargetDAO.getAssignCenterTargetDAO(centerId, page, limit);
+
+    console.log({resultTarget, total});
+
+    console.log("Successfully transformed data");
+    return res.status(200).json({ items: resultTarget, total: total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching crop names and verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
   }
 };
 
