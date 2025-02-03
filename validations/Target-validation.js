@@ -40,3 +40,7 @@ exports.getAllPriceDetailSchema = Joi.object({
     searchText: Joi.string().optional()
     
 });
+
+exports.IdValidationSchema = Joi.object({
+    id: Joi.number().integer().required()
+});

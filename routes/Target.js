@@ -52,5 +52,17 @@ router.get(
     TargetEP.getAllPriceDetails
 )
 
+router.get(
+    '/get-target-verity/:id',
+    authMiddleware,
+    TargetEP.getTargetVerity
+)
+
+router.post(
+    '/assing-officer-target',
+    authMiddleware,
+    TargetEP.AssignOfficerTarget
+)
+
 
 module.exports = router;
