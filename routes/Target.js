@@ -46,5 +46,11 @@ router.get(
     TargetEP.getOfficerDetails
 )
 
+router.get(
+    '/get-all-price',
+    authMiddleware,
+    TargetEP.getAllPriceDetails
+)
+
 
 module.exports = router;
