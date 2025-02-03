@@ -203,12 +203,12 @@ exports.downloadDailyTarget = async (req, res) => {
 
 exports.getCenterDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
+  // console.log(fullUrl);
   try {
       const companyId = req.user.companyId;
       const { province, district, searchText, page, limit } = req.query;
 
-    console.log(companyId, province, district, searchText, page, limit);
+    // console.log(companyId, province, district, searchText, page, limit);
 
     const { totalItems, items } = await TargetDAO.getCenterDetailsDao(
       companyId,
@@ -220,8 +220,8 @@ exports.getCenterDetails = async (req, res) => {
     );
 
     console.log("Successfully retrieved company data");
-    console.log(items);
-    console.log(totalItems);
+    // console.log(items);
+    // console.log(totalItems);
 
     res.status(200).json({ items, totalItems });
   } catch (error) {
@@ -240,8 +240,8 @@ exports.getOfficerDetails = async (req, res) => {
 
 
     const { centerId, page, limit, role, status, searchText } = validatedQuery;
-    console.log(centerId);
-    console.log(centerId, page, limit, role, status, searchText);
+    // console.log(centerId);
+    // console.log(centerId, page, limit, role, status, searchText);
 
     const { items, total } = await TargetDAO.getOfficerDetailsDAO(centerId, page, limit, role, status, searchText);
 
@@ -291,3 +291,28 @@ exports.getCenterDashbord = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
   }
 }
+
+exports.getAllPriceDetails = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+ 
+      const { centerId, page, limit, grade, searchText } = await TargetValidate.getAllPriceDetailSchema.validateAsync(req.query);
+      // const { items, total } = await PriceListDAO.getAllPriceListDao(centerId, page, limit, grade, searchText);
+
+      const { items, total } = await TargetDAO.getAllPriceDetailsDao(centerId, page, limit, grade, searchText);
+
+      console.log({items, total});
+
+      console.log("Successfully retrieved price list");
+      res.status(200).json({ items, total });
+  } catch (error) {
+      if (error.isJoi) {
+          return res.status(400).json({ error: error.details[0].message });
+      }
+
+      console.error("Error retrieving price list:", error);
+      return res.status(500).json({ error: "An error occurred while fetching the price list" });
+  }
+};
+
