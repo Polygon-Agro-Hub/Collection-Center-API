@@ -490,6 +490,38 @@ const createCompanyCenterTable = () => {
     });
 };
 
+const createOficerDailyTargetTable = () => {
+    const sql = `
+    CREATE TABLE officerdailytarget (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dailyTargetId INT NOT NULL,
+    varietyId INT NOT NULL,
+    officerId INT NOT NULL,
+    grade VARCHAR(10) NOT NULL,
+    target DECIMAL(10,2) NOT NULL,
+    complete DECIMAL(10,2) DEFAULT 0,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (dailyTargetId) REFERENCES dailytarget(id) 
+      ON DELETE CASCADE 
+      ON UPDATE CASCADE,
+    FOREIGN KEY (varietyId) REFERENCES plant_care.cropvariety(id) 
+      ON DELETE CASCADE 
+      ON UPDATE CASCADE,
+    FOREIGN KEY (officerId) REFERENCES collectionofficer(id) 
+      ON DELETE CASCADE 
+      ON UPDATE CASCADE
+  )
+  `;
+    return new Promise((resolve, reject) => {
+        collectionofficer.query(sql, (err, result) => {
+            if (err) {
+                reject('Error creating Officer Daily Target request table: ' + err);
+            } else {
+                resolve('Officer Daily Target table created request successfully.');
+            }
+        });
+    });
+};
 
 
 module.exports = {
@@ -506,5 +538,6 @@ module.exports = {
     createDailyTargetTable,
     createDailyTargetItemsTable,
     createOfficerComplainsTable,
-    createCompanyCenterTable
+    createCompanyCenterTable,
+    createOficerDailyTargetTable
 };

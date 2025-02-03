@@ -355,7 +355,7 @@ exports.getOfficerDetailsDAO = (centerId, page, limit, role, status, searchText)
                      WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ? 
 
                  `;
-        
+
         const countParams = [centerId];
         const dataParams = [centerId];
 
@@ -414,7 +414,7 @@ exports.getOfficerDetailsDAO = (centerId, page, limit, role, status, searchText)
             });
         });
 
-        
+
     });
 };
 
@@ -706,6 +706,63 @@ exports.getAssignCenterTargetDAO = (centerId, page, limit) => {
 
                 resolve({ resultTarget: dataResults, total });
             });
+        });
+    });
+};
+
+
+
+exports.getTargetVerityDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        SELECT DT.id, CV.id AS varietyId, CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime
+        FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
+        WHERE DTI.id = ? AND DTI.targetId = DT.id AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id
+        `
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results[0]);
+        });
+    });
+};
+
+
+exports.getAssingTargetForOfficersDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        SELECT id, empId, jobRole, firstNameEnglish, lastNameEnglish
+        FROM collectionofficer 
+        WHERE irmId = ? OR id = ?
+        `
+        collectionofficer.query(sql, [id, id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.AssignOfficerTargetDao = (targetId, verityId, offficerId, grade, target) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        INSERT INTO officerdailytarget (dailyTargetId, varietyId, officerId, grade, target) VALUES (?, ?, ?, ?, ?)
+        `
+
+        collectionofficer.query(sql, [
+            targetId,
+            verityId,
+            offficerId,
+            grade,
+            target
+        ], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
         });
     });
 };

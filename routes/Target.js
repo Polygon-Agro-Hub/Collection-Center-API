@@ -58,5 +58,17 @@ router.get(
     TargetEP.getAssignCenterTarget
 )
 
+router.get(
+    '/get-target-verity/:id',
+    authMiddleware,
+    TargetEP.getTargetVerity
+)
+
+router.post(
+    '/assing-officer-target',
+    authMiddleware,
+    TargetEP.AssignOfficerTarget
+)
+
 
 module.exports = router;
