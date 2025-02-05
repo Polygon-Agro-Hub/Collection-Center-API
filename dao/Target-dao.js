@@ -767,3 +767,46 @@ exports.AssignOfficerTargetDao = (targetId, verityId, offficerId, grade, target)
     });
 };
 
+
+exports.getTargetDetailsToPassDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+                    SELECT 
+                        ODT.id, 
+                        CV.varietyNameEnglish, 
+                        ODT.target, 
+                        ODT.complete,
+                        DT.toDate,
+                        DT.toTime,
+                        COF.empId,
+                        (ODT.target - ODT.complete) AS todo
+                    FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
+                    WHERE ODT.id = ? AND ODT.dailyTargetId = DT.id AND ODT.officerId = COF.id AND ODT.varietyId = CV.id
+                `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results[0]);
+        });
+    });
+};
+
+
+
+exports.getOfficersToPassTargetDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT id, firstNameEnglish, lastNameEnglish
+            FROM collectionofficer
+            WHERE irmId = ? AND empId NOT LIKE 'CUO%' AND empId NOT LIKE 'CCM%' AND empId NOT LIKE 'CCH%'
+        `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+

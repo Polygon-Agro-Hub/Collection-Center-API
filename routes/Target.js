@@ -70,5 +70,17 @@ router.post(
     TargetEP.AssignOfficerTarget
 )
 
+router.get(
+    '/get-officer-target-by-id/:id',
+    authMiddleware,
+    TargetEP.getTargetDetailsToPass
+)
+
+router.get(
+    '/get-officers-to-pass-target/:id',
+    authMiddleware,
+    TargetEP.getOfficersToPassTarget
+)
+
 
 module.exports = router;

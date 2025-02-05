@@ -326,9 +326,9 @@ exports.getAssignCenterTarget = async (req, res) => {
 
     console.log(centerId);
 
-    const {resultTarget, total } = await TargetDAO.getAssignCenterTargetDAO(centerId, page, limit);
+    const { resultTarget, total } = await TargetDAO.getAssignCenterTargetDAO(centerId, page, limit);
 
-    console.log({resultTarget, total});
+    console.log({ resultTarget, total });
 
     console.log("Successfully transformed data");
     return res.status(200).json({ items: resultTarget, total: total });
@@ -381,23 +381,69 @@ exports.AssignOfficerTarget = async (req, res) => {
     const id = parseInt(req.body.id);
     const verityId = parseInt(req.body.varietyId);
     const targetData = req.body.OfficerData;
-    
 
-    for(let i=0; i<targetData.length; i++){
-      if(targetData[i].targetA !== 0){
-        let result = await TargetDAO.AssignOfficerTargetDao(id,verityId,targetData[i].id, 'A', targetData[i].targetA);
-      }else if(targetData[i].targetB !== 0){
-        let result = await TargetDAO.AssignOfficerTargetDao(id,verityId,targetData[i].id, 'B', targetData[i].targetB);
-      }else if(targetData[i].targetC !== 0){
-        let result = await TargetDAO.AssignOfficerTargetDao(id,verityId,targetData[i].id, 'C', targetData[i].targetC);
-      }else{
+
+    for (let i = 0; i < targetData.length; i++) {
+      if (targetData[i].targetA !== 0) {
+        let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'A', targetData[i].targetA);
+      } else if (targetData[i].targetB !== 0) {
+        let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'B', targetData[i].targetB);
+      } else if (targetData[i].targetC !== 0) {
+        let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'C', targetData[i].targetC);
+      } else {
         console.log('No target found');
       }
     }
 
 
     console.log("Successfully retrieved target crop verity");
-    res.status(200).json({status:true, messsage:"Target Assigned Successfully"});
+    res.status(200).json({ status: true, messsage: "Target Assigned Successfully" });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving target crop verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+  }
+};
+
+
+exports.getTargetDetailsToPass = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+
+    const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
+    const userId = req.user.userId;
+    const resultTarget = await TargetDAO.getTargetDetailsToPassDao(id);
+    const resultOfficer = await TargetDAO.getOfficersToPassTargetDao(userId);
+
+
+    console.log("Successfully retrieved target crop verity");
+    res.status(200).json({ resultTarget, resultOfficer });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving target crop verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+  }
+};
+
+
+exports.getOfficersToPassTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+
+    // const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
+
+    const result = await TargetDAO.getOfficersToPassTargetDao(id);
+
+    console.log("Successfully retrieved target crop verity");
+    res.status(200).json(result);
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
