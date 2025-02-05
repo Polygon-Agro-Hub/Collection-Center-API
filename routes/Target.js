@@ -76,10 +76,10 @@ router.get(
     TargetEP.getTargetDetailsToPass
 )
 
-router.get(
-    '/get-officers-to-pass-target/:id',
+router.patch(
+    '/pass-target-to-officer',
     authMiddleware,
-    TargetEP.getOfficersToPassTarget
+    TargetEP.passTargetToOfficer
 )
 
 

@@ -772,13 +772,16 @@ exports.getTargetDetailsToPassDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
                     SELECT 
-                        ODT.id, 
+                        ODT.id,
+                        DT.id AS targetId,
+                        CV.id AS cropId,
                         CV.varietyNameEnglish, 
                         ODT.target, 
                         ODT.complete,
                         DT.toDate,
                         DT.toTime,
                         COF.empId,
+                        ODT.grade,
                         (ODT.target - ODT.complete) AS todo
                     FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
                     WHERE ODT.id = ? AND ODT.dailyTargetId = DT.id AND ODT.officerId = COF.id AND ODT.varietyId = CV.id
@@ -810,3 +813,32 @@ exports.getOfficersToPassTargetDao = (id) => {
     });
 };
 
+
+exports.getPassingOfficerDao = (data, officerId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+                SELECT 
+                    ODT.id,
+                    DT.id AS targetId,
+                    CV.id AS cropId,
+                    CV.varietyNameEnglish, 
+                    ODT.target, 
+                    ODT.complete,
+                    DT.toDate,
+                    DT.toTime,
+                    ODT.grade,
+                    (ODT.target - ODT.complete) AS todo
+                FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT
+                WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
+
+                `;
+        console.log("gg---",data.targetId, officerId, data.cropId, data.grade);
+
+        collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};

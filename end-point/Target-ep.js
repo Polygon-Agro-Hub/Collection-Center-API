@@ -433,17 +433,30 @@ exports.getTargetDetailsToPass = async (req, res) => {
 };
 
 
-exports.getOfficersToPassTarget = async (req, res) => {
+exports.passTargetToOfficer = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
+    const target = req.body;
+    const targetResult = await TargetDAO.getTargetDetailsToPassDao(target.target);
+    const passingOfficer = await TargetDAO.getPassingOfficerDao(targetResult, target.officerId);
 
-    // const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
+    if(passingOfficer.length === 0){
+      console.log(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+      
+      // const result = await TargetDAO.AssignOfficerTargetDao(targetResult.targetId, targetResult.cropId, officerId, targetResult.grade, parseFloat(target.amount));
+    }else{
+      console.log("wfjwkf");
+      
+    }
+    console.log("target-",target);
+    console.log("targetResult-",targetResult);
+    console.log("passingOfficer-",passingOfficer);
 
-    const result = await TargetDAO.getOfficersToPassTargetDao(id);
+
 
     console.log("Successfully retrieved target crop verity");
-    res.status(200).json(result);
+    res.status(200).json(req.body);
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
