@@ -82,5 +82,11 @@ router.patch(
     TargetEP.passTargetToOfficer
 )
 
+router.get(
+    '/get-officer-target-data',
+    authMiddleware,
+    TargetEP.getOfficerTarget
+)
+
 
 module.exports = router;

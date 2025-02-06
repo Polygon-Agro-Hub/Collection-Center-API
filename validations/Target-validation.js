@@ -50,3 +50,10 @@ exports.assignDailyTargetSchema = Joi.object({
 exports.IdValidationSchema = Joi.object({
     id: Joi.number().integer().required()
 });
+
+exports.getOfficerTargetSchema = Joi.object({
+    status: Joi.string().optional(),
+    search: Joi.string().optional(),
+    limit: Joi.string().optional(),
+    
+});
