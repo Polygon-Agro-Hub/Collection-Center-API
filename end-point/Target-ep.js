@@ -511,9 +511,9 @@ exports.getSelectedOfficerTarget = async (req, res) => {
     console.log("success fully fetched results");
     return res.status(200).json({ items: results });
   } catch (error) {
-    // if (error.isJoi) {
-    //   return res.status(400).json({ error: error.details[0].message });
-    // }
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
     console.error("Error fetching collection officers:", error);
 
 
