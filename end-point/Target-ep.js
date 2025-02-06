@@ -437,36 +437,52 @@ exports.passTargetToOfficer = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
-    const target = req.body;
+    const target = await TargetValidate.PassTargetValidationSchema.validateAsync(req.body);
+
     const targetResult = await TargetDAO.getTargetDetailsToPassDao(target.target);
     const passingOfficer = await TargetDAO.getPassingOfficerDao(targetResult, target.officerId);
 
-    if(passingOfficer.length === 0){
-      console.log(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
-      
-      // const result = await TargetDAO.AssignOfficerTargetDao(targetResult.targetId, targetResult.cropId, officerId, targetResult.grade, parseFloat(target.amount));
-    }else{
-      console.log("wfjwkf");
-      
+    let resultUpdate
+    let result
+
+    console.log("target-", target);
+    console.log("targetResult-", targetResult);
+    console.log("passingOfficer-", passingOfficer);
+    const amount = targetResult.target - target.amount;
+    console.log("Amont-", amount);
+
+    if (passingOfficer.length === 0) {
+      // console.log(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+      resultUpdate = await TargetDAO.updateTargetDao(targetResult.id, amount);
+      if (resultUpdate.affectedRows > 0) {
+        result = await TargetDAO.AssignOfficerTargetDao(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+      }else{
+        return  res.json({status:false, message:"Target Passing Unsccessfull!"});
+      }
+    } else {
+      resultUpdate = await TargetDAO.updateTargetDao(targetResult.id, amount);
+      if (resultUpdate.affectedRows > 0) {
+        console.log("else part - ", passingOfficer[0].target, target.amount);
+
+        const newAmount = parseFloat(passingOfficer[0].target) + target.amount;        
+        result = await TargetDAO.updateTargetDao(passingOfficer[0].id, newAmount);
+      }else{
+        return  res.json({status:false, message:"Target Passing Unsccessfull!"});
+      }
     }
-    console.log("target-",target);
-    console.log("targetResult-",targetResult);
-    console.log("passingOfficer-",passingOfficer);
 
-
-
-    console.log("Successfully retrieved target crop verity");
-    res.status(200).json(req.body);
+    console.log("Successfully passing target");
+    res.status(200).json({status:true, message:"Target Passing successfull!"});
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    console.error("Error retrieving target crop verity:", error);
-    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+    console.error("Error passing target:", error);
+    return res.status(500).json({ error: "An error occurred while passing target" });
   }
 
-  
+
 };
 
 exports.getOfficerTarget = async (req, res) => {
@@ -475,13 +491,13 @@ exports.getOfficerTarget = async (req, res) => {
 
   try {
     console.log(req.query);
-  
+
     const userId = req.user.userId;
 
     const { status, search } = await TargetValidate.getOfficerTargetSchema.validateAsync(req.query);;
     console.log(status, search);
 
-    const  results  = await TargetDAO.getOfficerTargetDao(userId, status, search);
+    const results = await TargetDAO.getOfficerTargetDao(userId, status, search);
     console.log(results)
     return res.status(200).json({ items: results });
   } catch (error) {

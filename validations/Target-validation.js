@@ -57,3 +57,10 @@ exports.getOfficerTargetSchema = Joi.object({
     limit: Joi.string().optional(),
     
 });
+
+
+exports.PassTargetValidationSchema = Joi.object({
+    officerId: Joi.number().integer().required(),
+    target: Joi.number().integer().required(),
+    amount: Joi.number().required(),
+});

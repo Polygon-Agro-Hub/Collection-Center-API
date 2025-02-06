@@ -770,8 +770,8 @@ exports.AssignOfficerTargetDao = (targetId, verityId, offficerId, grade, target)
 
 exports.getOfficerTargetDao = (userId, status, search) => {
     return new Promise((resolve, reject) => {
-        let sql = 
-        `SELECT 
+        let sql =
+            `SELECT 
             ODT.id, 
             ODT.dailyTargetId, 
             ODT.varietyId, 
@@ -833,8 +833,8 @@ exports.getOfficerTargetDao = (userId, status, search) => {
 
 exports.getOfficerTargetDao = (userId, status, search) => {
     return new Promise((resolve, reject) => {
-        let sql = 
-        `SELECT 
+        let sql =
+            `SELECT 
             ODT.id, 
             ODT.dailyTargetId, 
             ODT.varietyId, 
@@ -959,9 +959,27 @@ exports.getPassingOfficerDao = (data, officerId) => {
                 WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
 
                 `;
-        console.log("gg---",data.targetId, officerId, data.cropId, data.grade);
+        console.log("gg---", data.targetId, officerId, data.cropId, data.grade);
 
         collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.updateTargetDao = (id, amount) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE officerdailytarget
+            SET target = ?
+            WHERE id = ?
+        `;
+
+        collectionofficer.query(sql, [amount, id], (err, results) => {
             if (err) {
                 return reject(err);
             }
