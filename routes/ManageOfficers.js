@@ -86,4 +86,10 @@ router.get('/get-target-details/:id',
     ManageOfficerEP.getTargetDetails
 );
 
+router.patch(
+    '/edit-officer-target',
+    authMiddleware,
+    ManageOfficerEP.editOfficerTarget
+)
+
 module.exports = router;

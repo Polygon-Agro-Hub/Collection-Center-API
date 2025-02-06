@@ -386,3 +386,56 @@ exports.getTargetDetails = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
   }
 };
+
+
+exports.editOfficerTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+    const target = await ManageOfficerValidate.PassTargetValidationSchema.validateAsync(req.body);
+
+    const targetResult = await ManageOfficerDAO.getTargetDetailsToPassDao(target.target);
+    const passingOfficer = await ManageOfficerDAO.getPassingOfficerDao(targetResult, target.officerId);
+
+    let resultUpdate
+    let result
+
+    console.log("target-", target);
+    console.log("targetResult-", targetResult);
+    console.log("passingOfficer-", passingOfficer);
+    const amount = targetResult.target - target.amount;
+    console.log("Amont-", amount);
+
+    if (passingOfficer.length === 0) {
+      // console.log(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+      resultUpdate = await ManageOfficerDAO.updateTargetDao(targetResult.id, amount);
+      if (resultUpdate.affectedRows > 0) {
+        result = await ManageOfficerDAO.AssignOfficerTargetDao(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+      }else{
+        return  res.json({status:false, message:"Target Passing Unsccessfull!"});
+      }
+    } else {
+      resultUpdate = await ManageOfficerDAO.updateTargetDao(targetResult.id, amount);
+      if (resultUpdate.affectedRows > 0) {
+        console.log("else part - ", passingOfficer[0].target, target.amount);
+
+        const newAmount = parseFloat(passingOfficer[0].target) + target.amount;        
+        result = await ManageOfficerDAO.updateTargetDao(passingOfficer[0].id, newAmount);
+      }else{
+        return  res.json({status:false, message:"Target Passing Unsccessfull!"});
+      }
+    }
+
+    console.log("Successfully passing target");
+    res.status(200).json({status:true, message:"Target Passing successfull!"});
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error passing target:", error);
+    return res.status(500).json({ error: "An error occurred while passing target" });
+  }
+
+
+};
