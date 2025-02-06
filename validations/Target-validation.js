@@ -64,3 +64,10 @@ exports.PassTargetValidationSchema = Joi.object({
     target: Joi.number().integer().required(),
     amount: Joi.number().required(),
 });
+
+exports.getSelectedOfficerTargetSchema = Joi.object({
+    officerId: Joi.number().integer().optional(),
+    status: Joi.string().optional(),
+    search: Joi.string().optional(),
+    
+});
