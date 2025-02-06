@@ -81,4 +81,9 @@ router.patch('/claim-officer',
     ManageOfficerEP.claimOfficer
 );
 
+router.get('/get-target-details/:id',
+    authMiddleware,
+    ManageOfficerEP.getTargetDetails
+);
+
 module.exports = router;

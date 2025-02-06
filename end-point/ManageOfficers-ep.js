@@ -286,7 +286,7 @@ exports.updateCollectionOfficer = async (req, res) => {
 exports.disclaimOfficer = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     console.log(id);
 
     const result = await ManageOfficerDAO.disclaimOfficerDetailsDao(id);
@@ -361,3 +361,28 @@ exports.claimOfficer = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while fetching officer" });
   }
 }
+
+
+exports.getTargetDetails = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+
+    const { id } = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
+
+    const resultTarget = await ManageOfficerDAO.getTargetDetailsToPassDao(id);
+    const resultOfficer = await ManageOfficerDAO.getOfficersToPassTargetDao(resultTarget.officerId, resultTarget.companyId, resultTarget.centerId);
+    console.log(resultOfficer);
+
+
+    console.log("Successfully retrieved target crop verity");
+    res.status(200).json({ resultTarget, resultOfficer });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving target crop verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+  }
+};
