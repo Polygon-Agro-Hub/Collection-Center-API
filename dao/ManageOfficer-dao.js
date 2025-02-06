@@ -832,3 +832,25 @@ exports.updateTargetDao = (id, amount) => {
         });
     });
 };
+
+
+exports.AssignOfficerTargetDao = (targetId, verityId, offficerId, grade, target) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        INSERT INTO officerdailytarget (dailyTargetId, varietyId, officerId, grade, target) VALUES (?, ?, ?, ?, ?)
+        `
+
+        collectionofficer.query(sql, [
+            targetId,
+            verityId,
+            offficerId,
+            grade,
+            target
+        ], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
