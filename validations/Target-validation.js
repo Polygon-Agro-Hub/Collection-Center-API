@@ -57,3 +57,10 @@ exports.getOfficerTargetSchema = Joi.object({
     limit: Joi.string().optional(),
     
 });
+
+exports.getSelectedOfficerTargetSchema = Joi.object({
+    officerId: Joi.number().integer().optional(),
+    status: Joi.string().optional(),
+    search: Joi.string().optional(),
+    
+});

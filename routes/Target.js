@@ -88,5 +88,12 @@ router.get(
     TargetEP.getOfficerTarget
 )
 
+router.get(
+    '/get-selected-officer-target-data',
+    authMiddleware,
+    TargetEP.getSelectedOfficerTarget
+)
+
 
 module.exports = router;
+
