@@ -70,5 +70,11 @@ router.post(
     TargetEP.AssignOfficerTarget
 )
 
+router.get(
+    '/get-officer-target-data',
+    authMiddleware,
+    TargetEP.getOfficerTarget
+)
+
 
 module.exports = router;
