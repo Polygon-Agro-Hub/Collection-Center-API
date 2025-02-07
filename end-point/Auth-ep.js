@@ -134,6 +134,7 @@ exports.getProfile = async (req, res) => {
     console.log("User ID:", userId);
 
     const officerData = await AuthDAO.getUserDAO(userId);
+    console.log(officerData);
 
     if (!officerData || officerData.length === 0) {
       return res.status(404).json({ error: "officer not found" });

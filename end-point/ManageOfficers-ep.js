@@ -307,6 +307,7 @@ exports.disclaimOfficer = async (req, res) => {
     console.log(id);
 
     const result = await ManageOfficerDAO.disclaimOfficerDetailsDao(id);
+    console.log(result)
 
 
     res.json({ message: 'Collection officer details updated successfully' });

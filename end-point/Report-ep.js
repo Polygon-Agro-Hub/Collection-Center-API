@@ -149,6 +149,8 @@ exports.getFarmerReport = async (req, res) => {
     const UserResult = await ReportDAO.getFarmerDetailsDao(id);
     const CropResult = await ReportDAO.getFarmerCropsDetailsDao(id);
 
+    console.log(UserResult);
+
 
     if (UserResult.length === 0 || CropResult.length === 0) {
       return res.json({ message: "No report items found", status: false });
