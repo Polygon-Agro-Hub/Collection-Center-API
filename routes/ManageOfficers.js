@@ -64,6 +64,7 @@ router.get(
 router.put(
     '/update-officer/:id', 
     authMiddleware, 
+    upload.single("file"),
     ManageOfficerEP.updateCollectionOfficer
 );
 

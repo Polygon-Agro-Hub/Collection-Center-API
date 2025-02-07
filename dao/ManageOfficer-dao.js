@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const uploadFileToS3 = require('../middlewares/s3upload');
+const deleteFromS3 = require('../middlewares/s3delete');
 
 exports.GetAllCenterDAO = () => {
     return new Promise((resolve, reject) => {
@@ -43,8 +44,8 @@ exports.getForCreateIdDao = (role) => {
 
 exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image) => {
     return new Promise(async (resolve, reject) => {
-        console.log(officerData,'------fnae----');
-        
+        console.log(officerData, '------fnae----');
+
         try {
             // Debugging: Check if officerData exists
             if (!officerData || !officerData.firstNameEnglish) {
@@ -53,7 +54,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
 
             console.log("Officer Data:", officerData);
             console.log("Center ID:", centerId, "Company ID:", companyId, "Manager ID:", managerID, "Image:", image);
-            
+
             // Generate QR Code
             const qrData = JSON.stringify({ empId: officerData.empId });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
@@ -522,18 +523,6 @@ exports.getOfficerByIdDAO = (id) => {
 
             const officer = results[0];
 
-            // Process image field if present
-            if (officer.image) {
-                const base64Image = Buffer.from(officer.image).toString("base64");
-                officer.image = `data:image/png;base64,${base64Image}`;
-            }
-
-            // Process QRcode field if present
-            if (officer.QRcode) {
-                const base64QRcode = Buffer.from(officer.QRcode).toString("base64");
-                officer.QRcode = `data:image/png;base64,${base64QRcode}`;
-            }
-
             const empIdWithoutPrefix = officer.empId ? officer.empId.substring(3) : null;
 
             resolve({
@@ -580,12 +569,30 @@ exports.getOfficerByIdDAO = (id) => {
 };
 
 
-exports.updateOfficerDetails = (id, officerData) => {
-    return new Promise((resolve, reject) => {
-        collectionofficer.beginTransaction((err) => {
-            if (err) return reject(err);
 
-            const updateOfficerSQL = `
+exports.updateOfficerDetails = (id, officerData, image) => {
+    return new Promise(async (resolve, reject) => {
+
+        try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
+
+            console.log("Officer Data:", officerData);
+
+            // Generate QR Code
+            await deleteFromS3(officerData.previousQR);
+
+            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+
+            console.log("QR Code URL:", qrcodeURL);
+
+            // Define SQL Query before execution
+            const sql = `
                 UPDATE collectionofficer
                 SET firstNameEnglish = ?,
                     firstNameSinhala = ?,
@@ -615,7 +622,9 @@ exports.updateOfficerDetails = (id, officerData) => {
                     accNumber = ?,
                     bankName = ?,
                     branchName = ?,
-                    status = ?
+                    status = ?,
+                    image = ?,
+                    QRcode = ?
                 WHERE id = ?
             `;
 
@@ -649,19 +658,28 @@ exports.updateOfficerDetails = (id, officerData) => {
                 officerData.bankName,
                 officerData.branchName,
                 "Not Approved",
+                image,
+                qrcodeURL,
                 parseInt(id),
             ];
 
-            collectionofficer.query(updateOfficerSQL, updateOfficerParams, (err, result) => {
-                if (err) {
-                    return collectionofficer.rollback(() => reject(err));
+            // Execute SQL Query
+            collectionofficer.query(
+                sql, updateOfficerParams,
+                (err, results) => {
+                    if (err) {
+                        console.error("Database Error:", err);
+                        return reject(err);
+                    }
+                    resolve(results);
                 }
-                resolve(result);
-            });
-        });
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
     });
 };
-
 
 //not
 exports.CreateQRCodeForOfficerDao = (id) => {

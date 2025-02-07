@@ -287,10 +287,26 @@ exports.getOfficerById = async (req, res) => {
 exports.updateCollectionOfficer = async (req, res) => {
   try {
     const { id } = req.params;
-    const officerData = req.body
+
+    if (!req.body.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const officerData =  JSON.parse(req.body.officerData)
     console.log(officerData);
 
-    const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData);
+    await deleteFromS3(officerData.previousImage);
+    const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
+    const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
+    const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
+
+    const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
+    const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+
+    const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
+
+
+    const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData, profileImageUrl);
 
 
     res.json({ message: 'Collection officer details updated successfully' });
