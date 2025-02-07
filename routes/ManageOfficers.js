@@ -1,6 +1,7 @@
 const express = require('express');
 const ManageOfficerEP = require('../end-point/ManageOfficers-ep');
 const authMiddleware = require('../middlewares/authMiddleware');
+const upload = require("../middlewares/uploadMiddleware");
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router.get(
 router.post(
     "/create-officer",
     authMiddleware,
+    upload.single("file"),
     ManageOfficerEP.createOfficer
 )
 

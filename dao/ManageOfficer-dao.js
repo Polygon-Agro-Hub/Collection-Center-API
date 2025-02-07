@@ -3,6 +3,7 @@ const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const uploadFileToS3 = require('../middlewares/s3upload');
 
 exports.GetAllCenterDAO = () => {
     return new Promise((resolve, reject) => {
@@ -40,19 +41,44 @@ exports.getForCreateIdDao = (role) => {
 };
 
 
-exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID) => {
+exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image) => {
     return new Promise(async (resolve, reject) => {
+        console.log(officerData,'------fnae----');
+        
         try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
+
+            console.log("Officer Data:", officerData);
+            console.log("Center ID:", centerId, "Company ID:", companyId, "Manager ID:", managerID, "Image:", image);
+            
+            // Generate QR Code
+            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+
+            console.log("QR Code URL:", qrcodeURL);
+
+            // Define SQL Query before execution
             const sql = `
-                INSERT INTO collectionofficer (centerId, companyId, irmId, 
-                    firstNameEnglish, firstNameSinhala, firstNameTamil, lastNameEnglish, lastNameSinhala, lastNameTamil, 
-                    jobRole, empId, empType, phoneCode01, phoneNumber01, phoneCode02, phoneNumber02, 
-                    nic, email, passwordUpdated, houseNumber, streetName, city, district, province, country, languages, 
-                    accHolderName, accNumber, bankName, branchName, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,  'Not Approved')
+                INSERT INTO collectionofficer (
+                    centerId, companyId, irmId, 
+                    firstNameEnglish, firstNameSinhala, firstNameTamil, 
+                    lastNameEnglish, lastNameSinhala, lastNameTamil, 
+                    jobRole, empId, empType, 
+                    phoneCode01, phoneNumber01, phoneCode02, phoneNumber02, 
+                    nic, email, passwordUpdated, houseNumber, streetName, city, 
+                    district, province, country, languages, 
+                    accHolderName, accNumber, bankName, branchName, 
+                    status, image, QRcode
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Not Approved', ?, ?)
             `;
 
-            // Database query with QR image data added
+            // Execute SQL Query
             collectionofficer.query(
                 sql,
                 [
@@ -86,22 +112,24 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
                     officerData.accNumber,
                     officerData.bankName,
                     officerData.branchName,
-
-
+                    image,
+                    qrcodeURL
                 ],
                 (err, results) => {
                     if (err) {
-                        console.log(err);
+                        console.error("Database Error:", err);
                         return reject(err);
                     }
                     resolve(results);
                 }
             );
         } catch (error) {
+            console.error("Error:", error);
             reject(error);
         }
     });
 };
+
 
 
 exports.createCollectionOfficerCompany = (companyData, collectionOfficerId) => {
@@ -554,8 +582,6 @@ exports.getOfficerByIdDAO = (id) => {
 
 exports.updateOfficerDetails = (id, officerData) => {
     return new Promise((resolve, reject) => {
-
-
         collectionofficer.beginTransaction((err) => {
             if (err) return reject(err);
 
@@ -637,6 +663,7 @@ exports.updateOfficerDetails = (id, officerData) => {
 };
 
 
+//not
 exports.CreateQRCodeForOfficerDao = (id) => {
     return new Promise(async (resolve, reject) => {
 
@@ -769,7 +796,7 @@ exports.getTargetDetailsToPassDao = (id) => {
 
 exports.getOfficersToPassTargetDao = (id, company, center) => {
     console.log(id, company, center);
-    
+
     return new Promise((resolve, reject) => {
         const sql = `
             SELECT id, firstNameEnglish, lastNameEnglish
