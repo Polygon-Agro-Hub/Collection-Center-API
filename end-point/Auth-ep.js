@@ -69,6 +69,7 @@ exports.loginUser = async (req, res) => {
           role: user.jobRole,
           userName: user.empId,
           updatedPassword: user.passwordUpdated,
+          image:user.image
         };
 
         return res.json(data);
