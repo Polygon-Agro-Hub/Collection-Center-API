@@ -25,16 +25,18 @@ exports.getChart = async (req, res) => {
     const centerId = req.user.centerId
     
     const dateFilter = req.query.filter
-    console.log(dateFilter);
+
 
     const chartData = await DashboardDAO.getChartDetails(centerId, dateFilter);
     res.json(chartData)
-    console.log(chartData);
+
   } catch (err) {
     console.error('Error fetching market details', err);
     res.status(500).json({ error: 'Error fetching market details' });
   }
 };
+
+
 
 
 

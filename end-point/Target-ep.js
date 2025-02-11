@@ -26,7 +26,7 @@ exports.getAllCropCatogory = async (req, res) => {
 exports.addDailyTarget = async (req, res) => {
   try {
     const target = req.body;
-    console.log(target.TargetItems.length, req.user);
+    
     const companyId = req.user.companyId;
     const userId = req.user.userId;
 
@@ -38,7 +38,7 @@ exports.addDailyTarget = async (req, res) => {
     }
 
     for (let i = 0; i < target.TargetItems.length; i++) {
-      console.log(i);
+      
       await TargetDAO.createDailyTargetItemsDao(target.TargetItems[i], targetId);
     }
 
@@ -65,7 +65,7 @@ exports.getAllDailyTarget = async (req, res) => {
     const { searchText, page, limit } = await TargetValidate.getAllDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
 
-    console.log(searchText, page, limit, centerId);
+    
 
     const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(centerId, page, limit, searchText);
     const combinedData = [];
@@ -138,7 +138,7 @@ exports.downloadDailyTarget = async (req, res) => {
     const { fromDate, toDate } = await TargetValidate.downloadDailyTargetSchema.validateAsync(req.query);
     const companyId = req.user.companyId
 
-    console.log(fromDate, toDate, companyId);
+    
 
     const resultTarget = await TargetDAO.downloadAllDailyTargetDao(companyId, fromDate, toDate);
     // const resultComplete = await TargetDAO.downloadAllDailyTargetCompleteDAO(companyId, fromDate, toDate);
@@ -186,8 +186,7 @@ exports.downloadDailyTarget = async (req, res) => {
       }
     }
 
-    console.log(combinedData);
-
+    
 
     console.log("Successfully transformed data");
     return res.status(200).json({ message: 'Daily tartget find', status: true, data: combinedData });
@@ -203,12 +202,12 @@ exports.downloadDailyTarget = async (req, res) => {
 
 exports.getCenterDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  // console.log(fullUrl);
+  
   try {
     const companyId = req.user.companyId;
     const { province, district, searchText, page, limit } = req.query;
 
-    // console.log(companyId, province, district, searchText, page, limit);
+    
 
     const { totalItems, items } = await TargetDAO.getCenterDetailsDao(
       companyId,
@@ -220,8 +219,7 @@ exports.getCenterDetails = async (req, res) => {
     );
 
     console.log("Successfully retrieved company data");
-    // console.log(items);
-    // console.log(totalItems);
+    
 
     res.status(200).json({ items, totalItems });
   } catch (error) {
@@ -240,8 +238,7 @@ exports.getOfficerDetails = async (req, res) => {
 
 
     const { centerId, page, limit, role, status, searchText } = validatedQuery;
-    // console.log(centerId);
-    // console.log(centerId, page, limit, role, status, searchText);
+    
 
     const { items, total } = await TargetDAO.getOfficerDetailsDAO(centerId, page, limit, role, status, searchText);
 
@@ -274,7 +271,7 @@ exports.getCenterDashbord = async (req, res) => {
     const totExpences = await TargetDAO.getTotExpencesDao(id);
     const difExpences = await TargetDAO.differenceBetweenExpences(id);
 
-    console.log(difExpences);
+    
     const limitedResentCollection = resentCollection.slice(0, 5);
 
 
@@ -302,7 +299,7 @@ exports.getAllPriceDetails = async (req, res) => {
 
     const { items, total } = await TargetDAO.getAllPriceDetailsDao(centerId, page, limit, grade, searchText);
 
-    console.log({ items, total });
+    
 
     console.log("Successfully retrieved price list");
     res.status(200).json({ items, total });
@@ -324,11 +321,11 @@ exports.getAssignCenterTarget = async (req, res) => {
     const { page, limit } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
 
-    console.log(centerId);
+    
 
     const { resultTarget, total } = await TargetDAO.getAssignCenterTargetDAO(centerId, page, limit);
 
-    console.log({ resultTarget, total });
+    
 
     console.log("Successfully transformed data");
     return res.status(200).json({ items: resultTarget, total: total });
@@ -358,7 +355,7 @@ exports.getTargetVerity = async (req, res) => {
       return res.status(400).json({ error: "No data found" });
     }
 
-    console.log({ crop: resultCrop, officer: resultOfficer });
+    
 
     console.log("Successfully retrieved target crop verity");
     res.status(200).json({ crop: resultCrop, officer: resultOfficer });
@@ -377,7 +374,7 @@ exports.AssignOfficerTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
-    console.log(req.body);
+    
     const id = parseInt(req.body.id);
     const verityId = parseInt(req.body.varietyId);
     const targetData = req.body.OfficerData;
@@ -445,14 +442,11 @@ exports.passTargetToOfficer = async (req, res) => {
     let resultUpdate
     let result
 
-    console.log("target-", target);
-    console.log("targetResult-", targetResult);
-    console.log("passingOfficer-", passingOfficer);
+    
     const amount = targetResult.target - target.amount;
-    console.log("Amont-", amount);
-
+    
     if (passingOfficer.length === 0) {
-      // console.log(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+      
       resultUpdate = await TargetDAO.updateTargetDao(targetResult.id, amount);
       if (resultUpdate.affectedRows > 0) {
         result = await TargetDAO.AssignOfficerTargetDao(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
@@ -462,7 +456,7 @@ exports.passTargetToOfficer = async (req, res) => {
     } else {
       resultUpdate = await TargetDAO.updateTargetDao(targetResult.id, amount);
       if (resultUpdate.affectedRows > 0) {
-        console.log("else part - ", passingOfficer[0].target, target.amount);
+        
 
         const newAmount = parseFloat(passingOfficer[0].target) + target.amount;        
         result = await TargetDAO.updateTargetDao(passingOfficer[0].id, newAmount);
@@ -490,15 +484,15 @@ exports.getOfficerTarget = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    console.log(req.query);
+    
 
     const userId = req.user.userId;
 
     const { status, search } = await TargetValidate.getOfficerTargetSchema.validateAsync(req.query);;
-    console.log(status, search);
+    
 
     const results = await TargetDAO.getOfficerTargetDao(userId, status, search);
-    console.log(results)
+    
     return res.status(200).json({ items: results });
   } catch (error) {
     if (error.isJoi) {
@@ -520,10 +514,10 @@ exports.getSelectedOfficerTarget = async (req, res) => {
     // const { officerId, status, search } = req.query
 
     const { officerId, status, search } = await TargetValidate.getSelectedOfficerTargetSchema.validateAsync(req.query);
-    console.log(status, search);
+    
 
     const  results  = await TargetDAO.getOfficerTargetDao(officerId, status, search);
-    console.log(results)
+    
     console.log("success fully fetched results");
     return res.status(200).json({ items: results });
   } catch (error) {
@@ -536,6 +530,8 @@ exports.getSelectedOfficerTarget = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while fetching collection officers" });
   }
 };
+
+
 
 
 

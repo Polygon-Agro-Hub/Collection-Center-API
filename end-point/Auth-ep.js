@@ -29,7 +29,7 @@ exports.loginUser = async (req, res) => {
     const { userName, password } = req.body;
     const [user] = await AuthDAO.loginUser(userName);
     let verify_password;
-    console.log(user);
+ 
     
 
     if (!user) {
@@ -45,7 +45,7 @@ exports.loginUser = async (req, res) => {
     }
 
     if (user) {
-      console.log(user.password, password);
+   
 
 
       verify_password = bcrypt.compareSync(password, user.password);
@@ -61,7 +61,7 @@ exports.loginUser = async (req, res) => {
           { expiresIn: "5h" }
         );
 
-        console.log("Token--- ",token);
+        
 
         const data = {
           token,
@@ -92,8 +92,8 @@ exports.updatePassword = async (req, res) => {
     const id = req.user.userId;
 
     // Log the incoming values for debugging
-    console.log('Received ID:', id);
-    console.log('Received newPassword:', password);
+    
+    
 
     if (!password) {
       return res.status(400).json({ error: "newPassword is required." });
@@ -101,7 +101,7 @@ exports.updatePassword = async (req, res) => {
 
     // Encrypt the new password using bcrypt
     const hashedPassword = await bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS));
-    console.log('Hashed Password:', hashedPassword);
+
 
     // Call the DAO function to update the password
     const result = await AuthDAO.updatePasswordDAO(id, hashedPassword);
@@ -132,10 +132,10 @@ exports.test = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.userId; // Assuming the user ID is stored in the token payload
-    console.log("User ID:", userId);
+
 
     const officerData = await AuthDAO.getUserDAO(userId);
-    console.log(officerData);
+
 
     if (!officerData || officerData.length === 0) {
       return res.status(404).json({ error: "officer not found" });

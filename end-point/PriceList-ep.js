@@ -6,7 +6,7 @@ exports.getAllPrices = async (req, res) => {
     console.log(fullUrl);
     try {
         const centerId = req.user.centerId
-        console.log(centerId);
+        
 
         const { page, limit, grade, searchText } = await PriceListValidate.getAllPriceListSchema.validateAsync(req.query);
         const { items, total } = await PriceListDAO.getAllPriceListDao(centerId, page, limit, grade, searchText);
@@ -28,13 +28,13 @@ exports.updatePrice = async (req, res) => {
     try {
         const { id } = req.params;
         const { value } = req.body;
-        console.log(value);
+        
 
         // const { id} = await PriceListValidate.getAllPriceListSchema.validateAsync(req.query);
         // const { value } = await PriceListValidate.getAllPriceListSchema.validateAsync(req.query);
 
         const result = await PriceListDAO.updatePriceDao(id, value);
-        console.log(result);
+
         if (result.affectedRows === 0) {
             console.log("faild to update price");
             return res.json({ status: false, message: "Faild to update price" })
@@ -55,11 +55,11 @@ exports.getAllRequest = async (req, res) => {
     console.log(fullUrl);
     try {
         const centerId = req.user.centerId
-        console.log(req.query);
+        
         
         const { page, limit, grade, status, searchText } = await PriceListValidate.getRequestPriceSchema.validateAsync(req.query);
         const { items, total } = await PriceListDAO.getAllPriceRequestDao(centerId, page, limit, grade, status, searchText);
-        console.log(page, limit, grade, status);
+        
         
 
         console.log("Successfully retrieved price list");
@@ -81,7 +81,7 @@ exports.changeRequestStatus = async (req, res) => {
         const { status } = req.body;
 
         const result = await PriceListDAO.ChangeRequestStatusDao(id, status);
-        console.log(result);
+        
         if (result.affectedRows === 0) {
             console.log("faild to update request status");
             return res.json({ status: false, message: "Faild to update request status" })
@@ -95,3 +95,4 @@ exports.changeRequestStatus = async (req, res) => {
         res.status(500).json({ error: 'Failed to update request status details' });
     }
 };
+

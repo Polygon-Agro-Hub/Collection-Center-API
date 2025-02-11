@@ -55,17 +55,17 @@ exports.createOfficer = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    // console.log("create",req.body.officerData);
+    
 
 
     if (!req.body.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // console.log(req.body.file);
+   
 
     const officerData = JSON.parse(req.body.officerData);
-    // console.log(req.body);
+    
     const centerId = req.user.centerId;
     const companyId = req.user.companyId;
     const managerID = req.user.userId;
@@ -78,7 +78,7 @@ exports.createOfficer = async (req, res) => {
     const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
 
     const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
-    console.log(profileImageUrl);
+    
 
 
 
@@ -123,8 +123,7 @@ exports.getAllOfficers = async (req, res) => {
   try {
     // Validate query parameters      
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
-    console.log(validatedQuery);
-
+    
     const centerId = req.user.centerId;
 
     const { page, limit, status, role, searchText } = validatedQuery;
@@ -195,9 +194,7 @@ exports.deleteOfficer = async (req, res) => {
 exports.UpdateStatusAndSendPassword = async (req, res) => {
   try {
     const { id, status } = req.params;
-    console.log(id, status);
-
-
+    
     if (!id || !status) {
       return res.status(400).json({ message: 'ID and status are required.', status: false });
     }
@@ -208,7 +205,7 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
     }
 
     const { email, firstNameEnglish, empId, Existstatus } = officerData;
-    console.log(`Email: ${email}, Name: ${firstNameEnglish}, Emp ID: ${empId}`, Existstatus);
+    
 
     if (Existstatus === status) {
       return res.json({ message: 'Status already updated.', status: false });
@@ -217,7 +214,7 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
 
     if (status === 'Approved') {
       const generatedPassword = Math.random().toString(36).slice(-8);
-      console.log(generatedPassword);
+      
 
       const hashedPassword = await bcrypt.hash(generatedPassword, parseInt(process.env.SALT_ROUNDS));
 
@@ -293,7 +290,7 @@ exports.updateCollectionOfficer = async (req, res) => {
     }
 
     const officerData =  JSON.parse(req.body.officerData)
-    console.log(officerData);
+    
 
     await deleteFromS3(officerData.previousImage);
     const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
@@ -320,10 +317,9 @@ exports.disclaimOfficer = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log(id);
-
+    
     const result = await ManageOfficerDAO.disclaimOfficerDetailsDao(id);
-    console.log(result)
+    
 
 
     res.json({ message: 'Collection officer details updated successfully' });
@@ -340,7 +336,7 @@ exports.getOfficerByEmpId = async (req, res) => {
 
   try {
     const { id } = await ManageOfficerValidate.getparmasEmpIdSchema.validateAsync(req.params);
-    console.log(id);
+    
 
 
     const result = await ManageOfficerDAO.getOfficerByEmpIdDao(id)
@@ -375,7 +371,7 @@ exports.claimOfficer = async (req, res) => {
     const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.body);
     const userId = req.user.userId;
     const centerId = req.user.centerId;
-    console.log(id, userId, centerId);
+    
 
     const results = await ManageOfficerDAO.claimOfficerDao(id, userId, centerId)
 
@@ -406,8 +402,7 @@ exports.getTargetDetails = async (req, res) => {
 
     const resultTarget = await ManageOfficerDAO.getTargetDetailsToPassDao(id);
     const resultOfficer = await ManageOfficerDAO.getOfficersToPassTargetDao(resultTarget.officerId, resultTarget.companyId, resultTarget.centerId);
-    console.log(resultOfficer);
-
+    
 
     console.log("Successfully retrieved target crop verity");
     res.status(200).json({ resultTarget, resultOfficer });
@@ -434,11 +429,9 @@ exports.editOfficerTarget = async (req, res) => {
     let resultUpdate
     let result
 
-    console.log("target-", target);
-    console.log("targetResult-", targetResult);
-    console.log("passingOfficer-", passingOfficer);
+    
     const amount = targetResult.target - target.amount;
-    console.log("Amont-", amount);
+    
 
     if (passingOfficer.length === 0) {
       // console.log(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
@@ -451,7 +444,7 @@ exports.editOfficerTarget = async (req, res) => {
     } else {
       resultUpdate = await ManageOfficerDAO.updateTargetDao(targetResult.id, amount);
       if (resultUpdate.affectedRows > 0) {
-        console.log("else part - ", passingOfficer[0].target, target.amount);
+        
 
         const newAmount = parseFloat(passingOfficer[0].target) + target.amount;
         result = await ManageOfficerDAO.updateTargetDao(passingOfficer[0].id, newAmount);
@@ -473,3 +466,5 @@ exports.editOfficerTarget = async (req, res) => {
 
 
 };
+
+

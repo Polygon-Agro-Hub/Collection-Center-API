@@ -9,13 +9,13 @@ exports.getAllCollectionReportsDetails = async (req, res) => {
 
   try {
     const validatedQuery = await ReportValidate.getAllOfficersSchema.validateAsync(req.query);
-    console.log(validatedQuery);
+    
 
     const { page, limit, searchText } = validatedQuery;
     const centerId = req.user.centerId;
 
     const { items, total } = await ReportDAO.getAllOfficersDAO(centerId, page, limit, searchText);
-    console.log(items);
+    
 
 
 
@@ -38,7 +38,7 @@ exports.getAllSalesReportsDetails = async (req, res) => {
 
   try {
     const validatedQuery = await ReportValidate.getAllOfficersSchema.validateAsync(req.query);
-    console.log(validatedQuery);
+    
 
     const { page, limit, searchText } = validatedQuery;
     const centerId = req.user.centerId;
@@ -67,7 +67,7 @@ exports.getCollectionFarmersList = async (req, res) => {
     const validatedQuery = await ReportValidate.getCollectionFarmerListQuaryParmsSchema.validateAsync(req.query);
     const { id } = await ReportValidate.IdParmsSchema.validateAsync(req.params);
 
-    console.log(validatedQuery);
+    
 
     const { page, limit, searchText, date } = validatedQuery;
     // const centerId = req.user.centerId;
@@ -92,7 +92,7 @@ exports.getCollectionFarmersList = async (req, res) => {
 exports.getDailyReport = async (req, res) => {
   try {
     const { id, date } = await ReportValidate.dailyReportSchema.validateAsync(req.params);
-    console.log(id, date);
+    
 
     const result = await ReportDAO.dailyReportDao(id, date);
 
@@ -118,7 +118,7 @@ exports.getDailyReport = async (req, res) => {
 exports.getMonthlyReportOfficer = async (req, res) => {
   try {
     const { id, startDate, endDate } = await ReportValidate.monthlyReportSchema.validateAsync(req.params);
-    console.log(id, startDate, endDate);
+    
 
     const resultOfficer = await ReportDAO.getMonthlyReportOfficerDao(id, startDate, endDate);
     const resultDates = await ReportDAO.getMonthlyReportDao(id, startDate, endDate);
@@ -149,7 +149,7 @@ exports.getFarmerReport = async (req, res) => {
     const UserResult = await ReportDAO.getFarmerDetailsDao(id);
     const CropResult = await ReportDAO.getFarmerCropsDetailsDao(id);
 
-    console.log(UserResult);
+    
 
 
     if (UserResult.length === 0 || CropResult.length === 0) {
@@ -169,4 +169,6 @@ exports.getFarmerReport = async (req, res) => {
     res.status(500).json({ error: "An error occurred while fetching news" });
   }
 };
+
+
 

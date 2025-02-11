@@ -8,9 +8,9 @@ exports.getAllRecivedComplain = async (req, res) => {
 
     try {
         const userId = req.user.userId
-        console.log(userId);
+        
         const { page, limit, searchText, status } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
-        console.log(page, limit, searchText, status);
+        
 
 
         const { items, total } = await ComplaintDAO.getAllRecivedComplainDao(userId, page, limit, status, searchText)
@@ -90,7 +90,7 @@ exports.replyComplain = async (req, res) => {
         const complain = await ComplaintValidate.replyComplainSchema.validateAsync(req.body)
 
         const result = await ComplaintDAO.replyComplainDao(complain)
-        console.log(result);
+        
 
         if (result.affectedRows === 0) {
             return res.json({ message: "Reply Does not send!", status: false })
@@ -116,15 +116,13 @@ exports.getAllSentComplaint = async (req, res) => {
 
     try {
         const userId = req.user.userId
-        console.log(req.user);
+        
 
         const companyId = req.user.companyId
 
-        console.log(userId, companyId);
+        
         const { page, limit, searchText, status, emptype } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
-        console.log(page, limit, searchText, status, emptype);
-        // console.log(req.query);
-
+        
 
         const { items, total } = await ComplaintDAO.getAllSendComplainDao(userId, companyId, page, limit, status, emptype, searchText)
 
@@ -148,7 +146,7 @@ exports.addComplaint = async (req, res) => {
     try {
         const { category, complaint } = await ComplaintValidate.addComplaintSchema.validateAsync(req.body);
         const officerId = req.user.userId
-        console.log(category, complaint);
+        
 
 
         const result = await ComplaintDAO.addComplaintDao(officerId, category, complaint);
@@ -177,12 +175,12 @@ exports.getAllRecivedCCHComplain = async (req, res) => {
     console.log(fullUrl);
 
     try {
-        console.log("ffffffffffffffffffffffffffffffffffffffffffff");
+        
         
         const companyId = req.user.companyId
-        console.log(companyId);
+        
         const { page, limit, searchText, status } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
-        console.log(page, limit, searchText, status);
+       
 
 
         const { items, total } = await ComplaintDAO.getAllRecivedCCHComplainDao(companyId, page, limit, status, searchText)
@@ -207,15 +205,13 @@ exports.getAllSentCCHComplaint = async (req, res) => {
 
     try {
         const userId = req.user.userId
-        console.log(req.user);
+        
 
         const companyId = req.user.companyId
 
-        console.log(userId, companyId);
+       
         const { page, limit, searchText, status, emptype } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
-        console.log(page, limit, searchText, status, emptype);
-        // console.log(req.query);
-
+        
 
         const { items, total } = await ComplaintDAO.getAllSendCCHComplainDao(userId, companyId, page, limit, status, emptype, searchText)
 
@@ -267,7 +263,7 @@ exports.addComplaintCCH = async (req, res) => {
     try {
         const { category, complaint } = await ComplaintValidate.addComplaintSchema.validateAsync(req.body);
         const officerId = req.user.userId
-        console.log(category, complaint);
+        
 
 
         const result = await ComplaintDAO.addComplaintCCHDao(officerId, category, complaint);
