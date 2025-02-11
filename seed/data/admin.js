@@ -33,3 +33,5 @@ const createSuperAdmin = async () => {
 module.exports = {
   createSuperAdmin
 };
+
+

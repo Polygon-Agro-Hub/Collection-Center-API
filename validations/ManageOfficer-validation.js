@@ -39,3 +39,4 @@ exports.PassTargetValidationSchema = Joi.object({
     target: Joi.number().integer().required(),
     amount: Joi.number().required(),
 });
+
