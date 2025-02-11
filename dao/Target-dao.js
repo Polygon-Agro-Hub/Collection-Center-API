@@ -173,8 +173,7 @@ exports.downloadAllDailyTargetDao = (companyId, fromDate, toDate) => {
                 { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
             ]);
 
-            // console.log(transformedTargetData);
-
+            
             resolve(transformedTargetData);
         });
     });
@@ -197,14 +196,14 @@ exports.downloadAllDailyTargetCompleteDAO = (companyId, fromDate, toDate) => {
             if (err) {
                 return reject(err);
             }
-            // console.log(results);
+           
 
             const transformedCompleteData = results.flatMap(item => [
                 { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totA: item.totA, grade: "A", buyDate: item.createdAt },
                 { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totB: item.totB, grade: "B", buyDate: item.createdAt },
                 { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totC: item.totC, grade: "C", buyDate: item.createdAt }
             ]);
-            // console.log(transformedCompleteData);
+
 
             resolve(transformedCompleteData);
         });
@@ -278,7 +277,7 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
         dataSql += ` LIMIT ? OFFSET ? `;
         queryParams.push(limit, offset);
 
-        // console.log("Final SQL Query:", dataSql, "Query Params:", queryParams);
+        
 
         // Execute the query
         collectionofficer.query(dataSql, queryParams, (dataErr, dataResults) => {
@@ -959,7 +958,7 @@ exports.getPassingOfficerDao = (data, officerId) => {
                 WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
 
                 `;
-        console.log("gg---", data.targetId, officerId, data.cropId, data.grade);
+        
 
         collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
             if (err) {
@@ -1046,3 +1045,4 @@ exports.getSelectedOfficerTarget = (officerId, status, search) => {
         });
     });
 };
+

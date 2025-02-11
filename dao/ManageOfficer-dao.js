@@ -44,16 +44,13 @@ exports.getForCreateIdDao = (role) => {
 
 exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image) => {
     return new Promise(async (resolve, reject) => {
-        console.log(officerData, '------fnae----');
-
         try {
             // Debugging: Check if officerData exists
             if (!officerData || !officerData.firstNameEnglish) {
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-            console.log("Officer Data:", officerData);
-            console.log("Center ID:", centerId, "Company ID:", companyId, "Manager ID:", managerID, "Image:", image);
+            
 
             // Generate QR Code
             const qrData = JSON.stringify({ empId: officerData.empId });
@@ -61,7 +58,6 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
             const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
 
-            console.log("QR Code URL:", qrcodeURL);
 
             // Define SQL Query before execution
             const sql = `
@@ -366,7 +362,7 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
         `;
         collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err); // Reject promise if an error occurs
             }
             resolve(results); // Resolve with the query results
@@ -486,7 +482,7 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.response);
+        
 
         return { success: true, message: 'Email sent successfully!' };
 
@@ -579,8 +575,7 @@ exports.updateOfficerDetails = (id, officerData, image) => {
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-            console.log("Officer Data:", officerData);
-
+           
             // Generate QR Code
             await deleteFromS3(officerData.previousQR);
 
@@ -589,7 +584,7 @@ exports.updateOfficerDetails = (id, officerData, image) => {
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
             const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
 
-            console.log("QR Code URL:", qrcodeURL);
+            
 
             // Define SQL Query before execution
             const sql = `
@@ -813,8 +808,6 @@ exports.getTargetDetailsToPassDao = (id) => {
 
 
 exports.getOfficersToPassTargetDao = (id, company, center) => {
-    console.log(id, company, center);
-
     return new Promise((resolve, reject) => {
         const sql = `
             SELECT id, firstNameEnglish, lastNameEnglish
@@ -849,7 +842,7 @@ exports.getPassingOfficerDao = (data, officerId) => {
                 WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
 
                 `;
-        console.log("gg---", data.targetId, officerId, data.cropId, data.grade);
+        
 
         collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
             if (err) {
@@ -899,3 +892,4 @@ exports.AssignOfficerTargetDao = (targetId, verityId, offficerId, grade, target)
         });
     });
 };
+

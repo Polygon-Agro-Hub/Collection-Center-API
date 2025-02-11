@@ -89,7 +89,7 @@ exports.updatePriceDao = (id, value) => {
 exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
-        console.log(grade);
+
 
 
         let countSql = `

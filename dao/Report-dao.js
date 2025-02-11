@@ -85,7 +85,7 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
             WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND RFP.collectionOfficerId = ?
             
         `;
-        console.log(officerId);
+        
 
         const countParams = [officerId];
         const dataParams = [officerId];
@@ -222,15 +222,15 @@ exports.dailyReportDao = (id, date) => {
         GROUP BY CV.varietyNameEnglish
         `;
 
-        console.log(date.toISOString().slice(0, 10));
+        
 
         collectionofficer.query(sql, [id, date.toISOString().slice(0, 10)], (err, results) => {
             if (err) {
-                console.log(err);
+                
 
                 return reject(err);
             }
-            console.log(results);
+            
             resolve(results);
         });
     });
@@ -249,7 +249,7 @@ exports.getMonthlyReportOfficerDao = (id, startDate, endDate) => {
 
         collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err);
             }
             resolve(results);
@@ -282,10 +282,10 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
 
         collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err);
             }
-            console.log(results);
+            
             resolve(results);
         });
     });
@@ -304,7 +304,7 @@ exports.getFarmerDetailsDao = (id) => {
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err);
             }
             resolve(results);
@@ -324,10 +324,11 @@ exports.getFarmerCropsDetailsDao = (id) => {
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err);
             }
             resolve(results);
         });
     });
 };
+
