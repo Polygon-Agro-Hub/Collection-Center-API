@@ -331,17 +331,19 @@ exports.AssignOfficerTarget = async (req, res) => {
     const id = parseInt(req.body.id);
     const verityId = parseInt(req.body.varietyId);
     const targetData = req.body.OfficerData;
+    console.log(req.body);
+    
 
 
     for (let i = 0; i < targetData.length; i++) {
       if (targetData[i].targetA !== 0) {
         let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'A', targetData[i].targetA);
-      } else if (targetData[i].targetB !== 0) {
+      }
+      if (targetData[i].targetB !== 0) {
         let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'B', targetData[i].targetB);
-      } else if (targetData[i].targetC !== 0) {
+      }
+      if (targetData[i].targetC !== 0) {
         let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'C', targetData[i].targetC);
-      } else {
-        console.log('No target found');
       }
     }
     console.log("Successfully retrieved target crop verity");
