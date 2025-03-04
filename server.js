@@ -14,6 +14,8 @@ const ReportRoutes = require('./routes/Report');
 const TargetRoutes  =require('./routes/Target');
 const ComplaintRoutes = require('./routes/Complaints')
 
+const heathRoutes = require('./routes/healthRoutes')
+
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -56,6 +58,7 @@ plantcare.connect(err => {
   });
 
 
+app.use("", heathRoutes);
 
 app.use(`${BASE_API_PATH}/test`, (req, res) => {
     res.json("Testing run!")
