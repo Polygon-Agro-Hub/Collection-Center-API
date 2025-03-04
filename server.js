@@ -3,6 +3,9 @@ require('dotenv').config();
 const cors = require('cors');
 const {  plantcare, collectionofficer, marketPlace, dash } = require('./startup/database');
 
+// Base API path constant
+const BASE_API_PATH = '/agro-api/collection-center-api';
+
 //routers
 const AuthRoutes = require('./routes/Auth');
 const ManageOffcerRoutes  = require('./routes/ManageOfficers');
@@ -54,15 +57,15 @@ plantcare.connect(err => {
 
 
 
-app.use('/api/test', (req, res) => {
+app.use(`${BASE_API_PATH}/test`, (req, res) => {
     res.json("Testing run!")
 })
-app.use('/api/auth', AuthRoutes);
-app.use('/api/manage-officers', ManageOffcerRoutes);
-app.use('/api/price-list', PriceListRoutes);
-app.use('/api/report', ReportRoutes);
-app.use('/api/target', TargetRoutes);
-app.use('/api/complaint', ComplaintRoutes);
+app.use(`${BASE_API_PATH}/auth`, AuthRoutes);
+app.use(`${BASE_API_PATH}/manage-officers`, ManageOffcerRoutes);
+app.use(`${BASE_API_PATH}/price-list`, PriceListRoutes);
+app.use(`${BASE_API_PATH}/report`, ReportRoutes);
+app.use(`${BASE_API_PATH}/target`, TargetRoutes);
+app.use(`${BASE_API_PATH}/complaint`, ComplaintRoutes);
 
 
 app.listen(port, () => {
