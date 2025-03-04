@@ -69,7 +69,7 @@ app.use(`${BASE_API_PATH}/price-list`, PriceListRoutes);
 app.use(`${BASE_API_PATH}/report`, ReportRoutes);
 app.use(`${BASE_API_PATH}/target`, TargetRoutes);
 app.use(`${BASE_API_PATH}/complaint`, ComplaintRoutes);
-app.use(`${BASE_API_PATH}/health`, heathRoutes);
+app.use(`${BASE_API_PATH}`, heathRoutes);
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
