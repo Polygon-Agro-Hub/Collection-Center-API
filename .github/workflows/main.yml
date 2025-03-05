@@ -1,5 +1,7 @@
 name: Docker image build and publish
 on:
+  push:
+    tags: ['*']  # This will trigger on any tag
   workflow_dispatch:
     inputs:
       path_to_dockerfile:
@@ -18,6 +20,7 @@ on:
         description: Target AWS Region
         default: "ap-southeast-2"
         type: string
+        required: true
 
 jobs:
   docker:
