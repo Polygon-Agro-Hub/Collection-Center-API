@@ -63,12 +63,12 @@ plantcare.connect(err => {
 app.use(`${BASE_API_PATH}/test`, (req, res) => {
     res.json("Testing run!")
 })
-app.use(`${BASE_API_PATH}/auth`, AuthRoutes);
-app.use(`${BASE_API_PATH}/manage-officers`, ManageOffcerRoutes);
-app.use(`${BASE_API_PATH}/price-list`, PriceListRoutes);
-app.use(`${BASE_API_PATH}/report`, ReportRoutes);
-app.use(`${BASE_API_PATH}/target`, TargetRoutes);
-app.use(`${BASE_API_PATH}/complaint`, ComplaintRoutes);
+app.use(`${BASE_API_PATH}/api/auth`, AuthRoutes);
+app.use(`${BASE_API_PATH}/api/manage-officers`, ManageOffcerRoutes);
+app.use(`${BASE_API_PATH}/api/price-list`, PriceListRoutes);
+app.use(`${BASE_API_PATH}/api/report`, ReportRoutes);
+app.use(`${BASE_API_PATH}/api/target`, TargetRoutes);
+app.use(`${BASE_API_PATH}/api/complaint`, ComplaintRoutes);
 app.use(`${BASE_API_PATH}`, heathRoutes);
 
 app.listen(port, () => {
