@@ -17,7 +17,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, searchText) => {
                         Coff.lastNameEnglish,
                         Coff.empId
                      FROM collectionofficer Coff, company Com 
-                     WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CUO%' AND Coff.centerId = ? 
+                     WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CUO%' AND Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ? 
                  `;
 
         const countParams = [centerId];
@@ -41,7 +41,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, searchText) => {
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += " ORDER BY Coff.createdAt DESC ";
+        dataSql += " ORDER BY CASE WHEN Coff.empId LIKE 'CCM%' THEN 0 ELSE 1 END, Coff.createdAt DESC ";
 
         // Add pagination to the data query
         dataSql += " LIMIT ? OFFSET ?";
