@@ -28,3 +28,15 @@ exports.getOfficerByIdSchema = Joi.object({
 exports.getparmasEmpIdSchema = Joi.object({
     id: Joi.string().required()
 });
+
+
+exports.IdValidationSchema = Joi.object({
+    id: Joi.number().integer().required(),
+});
+
+exports.PassTargetValidationSchema = Joi.object({
+    officerId: Joi.number().integer().required(),
+    target: Joi.number().integer().required(),
+    amount: Joi.number().required(),
+});
+

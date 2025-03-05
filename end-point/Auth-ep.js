@@ -34,7 +34,7 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ error: "User not found." });
     }
 
-    if (user.jobRole != 'Collection Center Manager') {
+    if (user.jobRole !== 'Collection Center Manager' && user.jobRole !== 'Collection Center Head') {
       return res.status(401).json({ error: "User have not access for this web" });
     }
 
@@ -43,11 +43,7 @@ exports.loginUser = async (req, res) => {
     }
 
     if (user) {
-      console.log(user.password, password);
-
-
       verify_password = bcrypt.compareSync(password, user.password);
-
       if (!verify_password) {
         return res.status(401).json({ error: "Wrong password." });
       }
@@ -59,12 +55,15 @@ exports.loginUser = async (req, res) => {
           { expiresIn: "5h" }
         );
 
+
+
         const data = {
           token,
           userId: user.id,
           role: user.jobRole,
           userName: user.empId,
           updatedPassword: user.passwordUpdated,
+          image: user.image
         };
 
         return res.json(data);
@@ -86,17 +85,12 @@ exports.updatePassword = async (req, res) => {
     const { password } = await AuthValidate.logInUpdate.validateAsync(req.body);
     const id = req.user.userId;
 
-    // Log the incoming values for debugging
-    console.log('Received ID:', id);
-    console.log('Received newPassword:', password);
-
     if (!password) {
       return res.status(400).json({ error: "newPassword is required." });
     }
 
     // Encrypt the new password using bcrypt
     const hashedPassword = await bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS));
-    console.log('Hashed Password:', hashedPassword);
 
     // Call the DAO function to update the password
     const result = await AuthDAO.updatePasswordDAO(id, hashedPassword);
@@ -114,7 +108,7 @@ exports.updatePassword = async (req, res) => {
 
 exports.test = async (req, res) => {
   try {
-    
+
   } catch (err) {
     if (err.isJoi) {
       return res.status(400).json({ error: err.details[0].message });
@@ -123,4 +117,22 @@ exports.test = async (req, res) => {
     res.status(500).send("An error occurred while fetching data.");
   }
 };
+
+exports.getProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId; // Assuming the user ID is stored in the token payload
+  
+    const officerData = await AuthDAO.getUserDAO(userId);
+
+    if (!officerData || officerData.length === 0) {
+      return res.status(404).json({ error: "officer not found" });
+    }
+
+    res.status(200).json({ officerData });
+  } catch (error) {
+    console.error("Error fetching officer profile:", error);
+    res.status(500).json({ error: "An error occurred while fetching the usofficer profile" });
+  }
+};
+
 

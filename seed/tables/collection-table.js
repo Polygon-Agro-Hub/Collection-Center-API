@@ -103,6 +103,7 @@ const createMarketPriceServeTable = () => {
       price DECIMAL(15,2) DEFAULT NULL,
       updatedPrice DECIMAL(15,2) DEFAULT NULL,
       collectionCenterId INT(11) DEFAULT NULL,
+      updateAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (marketPriceId) REFERENCES marketprice(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
@@ -297,7 +298,7 @@ const createFarmerPaymensCrops = () => {
 
 
 
-const createFarmerComplains  = () => {
+const createFarmerComplains = () => {
     const sql = `
    CREATE TABLE IF NOT EXISTS farmercomplains (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -370,6 +371,7 @@ const createDailyTargetTable = () => {
     const sql = `
     CREATE TABLE IF NOT EXISTS dailytarget (
       id INT AUTO_INCREMENT PRIMARY KEY,
+      centerId INT(11) DEFAULT NULL,
       companyId INT(11) DEFAULT NULL,
       fromDate DATE  NOT NULL,
       toDate DATE  NOT NULL,
@@ -377,6 +379,9 @@ const createDailyTargetTable = () => {
       toTime TIME NOT NULL,
       createdBy INT(11) DEFAULT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (centerId) REFERENCES collectioncenter(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
       FOREIGN KEY (companyId) REFERENCES company(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
@@ -429,7 +434,7 @@ const createDailyTargetItemsTable = () => {
     });
 };
 
-const createOfficerComplainsTable  = () => {
+const createOfficerComplainsTable = () => {
     const sql = `
    CREATE TABLE IF NOT EXISTS officercomplains (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -459,6 +464,65 @@ const createOfficerComplainsTable  = () => {
 };
 
 
+const createCompanyCenterTable = () => {
+    const sql = `
+    CREATE TABLE IF NOT EXISTS companycenter (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      centerId INT(11) NULL,
+      companyId INT(11) NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (centerId) REFERENCES collectioncenter(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+      FOREIGN KEY (companyId) REFERENCES company(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+    )
+  `;
+    return new Promise((resolve, reject) => {
+        collectionofficer.query(sql, (err, result) => {
+            if (err) {
+                reject('Error creating Daily Target request table: ' + err);
+            } else {
+                resolve('Daily Target table created request successfully.');
+            }
+        });
+    });
+};
+
+const createOficerDailyTargetTable = () => {
+    const sql = `
+    CREATE TABLE officerdailytarget (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dailyTargetId INT NOT NULL,
+    varietyId INT NOT NULL,
+    officerId INT NOT NULL,
+    grade VARCHAR(10) NOT NULL,
+    target DECIMAL(10,2) NOT NULL,
+    complete DECIMAL(10,2) DEFAULT 0,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (dailyTargetId) REFERENCES dailytarget(id) 
+      ON DELETE CASCADE 
+      ON UPDATE CASCADE,
+    FOREIGN KEY (varietyId) REFERENCES plant_care.cropvariety(id) 
+      ON DELETE CASCADE 
+      ON UPDATE CASCADE,
+    FOREIGN KEY (officerId) REFERENCES collectionofficer(id) 
+      ON DELETE CASCADE 
+      ON UPDATE CASCADE
+  )
+  `;
+    return new Promise((resolve, reject) => {
+        collectionofficer.query(sql, (err, result) => {
+            if (err) {
+                reject('Error creating Officer Daily Target request table: ' + err);
+            } else {
+                resolve('Officer Daily Target table created request successfully.');
+            }
+        });
+    });
+};
+
 
 module.exports = {
     createXlsxHistoryTable,
@@ -473,5 +537,7 @@ module.exports = {
     createMarketPriceRequestTable,
     createDailyTargetTable,
     createDailyTargetItemsTable,
-    createOfficerComplainsTable
+    createOfficerComplainsTable,
+    createCompanyCenterTable,
+    createOficerDailyTargetTable
 };

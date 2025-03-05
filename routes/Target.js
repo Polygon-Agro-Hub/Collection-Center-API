@@ -28,6 +28,75 @@ router.get(
     TargetEP.downloadDailyTarget
 )
 
+router.get(
+    "/get-all-centers",
+    authMiddleware,
+    TargetEP.getCenterDetails
+)
+
+router.get(
+    "/get-center-dashboard/:id",
+    authMiddleware,
+    TargetEP.getCenterDashbord
+)
+
+router.get(
+    "/get-all-officers",
+    authMiddleware,
+    TargetEP.getOfficerDetails
+)
+
+router.get(
+    '/get-all-price',
+    authMiddleware,
+    TargetEP.getAllPriceDetails
+)
+
+router.get(
+    "/assign-all-daily-target",
+    authMiddleware,
+    TargetEP.getAssignCenterTarget
+)
+
+router.get(
+    '/get-target-verity/:id',
+    authMiddleware,
+    TargetEP.getTargetVerity
+)
+
+router.post(
+    '/assing-officer-target',
+    authMiddleware,
+    TargetEP.AssignOfficerTarget
+)
+
+router.get(
+    '/get-officer-target-by-id/:id',
+    authMiddleware,
+    TargetEP.getTargetDetailsToPass
+)
+
+router.patch(
+    '/pass-target-to-officer',
+    authMiddleware,
+    TargetEP.passTargetToOfficer
+)
+
+router.get(
+    '/get-officer-target-data',
+    authMiddleware,
+    TargetEP.getOfficerTarget
+)
+
+router.get(
+    '/get-selected-officer-target-data',
+    authMiddleware,
+    TargetEP.getSelectedOfficerTarget
+)
 
 
 module.exports = router;
+
+
+
+

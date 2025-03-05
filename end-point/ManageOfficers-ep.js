@@ -1,17 +1,18 @@
 const ManageOfficerValidate = require('../validations/ManageOfficer-validation')
 const ManageOfficerDAO = require('../dao/ManageOfficer-dao')
 const bcrypt = require("bcryptjs");
+const uploadFileToS3 = require("../middlewares/s3upload");
+const deleteFromS3 = require("../middlewares/s3delete");
+
 
 
 exports.getAllCollectionCenter = async (req, res) => {
   try {
-
     const result = await ManageOfficerDAO.GetAllCenterDAO()
 
     if (result.length === 0) {
       return res.json({ message: "No news items found", data: result });
     }
-
     console.log("Successfully retrieved all collection center");
     res.json(result);
   } catch (err) {
@@ -20,7 +21,6 @@ exports.getAllCollectionCenter = async (req, res) => {
       console.error("Validation error:", err.details[0].message);
       return res.status(400).json({ error: err.details[0].message });
     }
-
     console.error("Error fetching news:", err);
     res.status(500).json({ error: "An error occurred while fetching news" });
   }
@@ -52,21 +52,25 @@ exports.createOfficer = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    const officerData = req.body
-    console.log(req.body);
+    if (!req.body.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    const officerData = JSON.parse(req.body.officerData);
+
     const centerId = req.user.centerId;
     const companyId = req.user.companyId;
     const managerID = req.user.userId;
 
-    // const companyId = 1;
-    // const centerId = 1;
-    // const managerID = 11;
+    const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
+    const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
+    const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
 
+    const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
+    const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
 
-    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID);
-    const cresteQR = await ManageOfficerDAO.CreateQRCodeForOfficerDao(result.insertId);
-    console.log(cresteQR);
+    const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
 
+    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl);
 
     console.log("Collection Officer created successfully");
     return res.status(201).json({ message: "Collection Officer created successfully", status: true });
@@ -83,10 +87,8 @@ exports.createOfficer = async (req, res) => {
 
 exports.getManagerIdByCenterId = async (req, res) => {
   try {
-
     const { centerId } = await ManageOfficerValidate.getCenterIdShema.validateAsync(req.params);
     const results = await ManageOfficerDAO.getManagerIdByCenterIdDAO(centerId);
-
 
     res.status(200).json({ result: results, status: true });
   } catch (err) {
@@ -106,7 +108,6 @@ exports.getAllOfficers = async (req, res) => {
   try {
     // Validate query parameters      
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
-    console.log(validatedQuery);
 
     const centerId = req.user.centerId;
 
@@ -114,7 +115,6 @@ exports.getAllOfficers = async (req, res) => {
 
     // Call the DAO to get all collection officers
     const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(centerId, page, limit, status, role, searchText);
-
 
     console.log("Successfully fetched collection officers");
     return res.status(200).json({ items, total });
@@ -142,7 +142,6 @@ exports.getAllCompanyNames = async (req, res) => {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
     }
-
     console.error("Error retrieving district reports:", error);
     return res.status(500).json({ error: "An error occurred while fetching the reports" });
   }
@@ -178,20 +177,16 @@ exports.deleteOfficer = async (req, res) => {
 exports.UpdateStatusAndSendPassword = async (req, res) => {
   try {
     const { id, status } = req.params;
-    console.log(id, status);
-
 
     if (!id || !status) {
       return res.status(400).json({ message: 'ID and status are required.', status: false });
     }
-
     const officerData = await ManageOfficerDAO.getCollectionOfficerEmailDao(id);
     if (!officerData) {
       return res.status(404).json({ message: 'Collection officer not found.', status: false });
     }
-
     const { email, firstNameEnglish, empId, Existstatus } = officerData;
-    console.log(`Email: ${email}, Name: ${firstNameEnglish}, Emp ID: ${empId}`, Existstatus);
+
 
     if (Existstatus === status) {
       return res.json({ message: 'Status already updated.', status: false });
@@ -200,10 +195,7 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
 
     if (status === 'Approved') {
       const generatedPassword = Math.random().toString(36).slice(-8);
-      console.log(generatedPassword);
-
       const hashedPassword = await bcrypt.hash(generatedPassword, parseInt(process.env.SALT_ROUNDS));
-
 
       const updateResult = await ManageOfficerDAO.UpdateCollectionOfficerStatusAndPasswordDao({
         id,
@@ -214,7 +206,6 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
       if (updateResult.affectedRows === 0) {
         return res.status(400).json({ message: 'Failed to update status and password.', status: false });
       }
-
 
       const emailResult = await ManageOfficerDAO.SendGeneratedPasswordDao(email, generatedPassword, empId, firstNameEnglish);
 
@@ -270,11 +261,24 @@ exports.getOfficerById = async (req, res) => {
 exports.updateCollectionOfficer = async (req, res) => {
   try {
     const { id } = req.params;
-    const officerData = req.body
-    console.log(officerData);
 
-    const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData);
+    if (!req.body.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
+    const officerData = JSON.parse(req.body.officerData)
+
+    await deleteFromS3(officerData.previousImage);
+    const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
+    const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
+    const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
+
+    const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
+    const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+
+    const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
+
+    const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData, profileImageUrl);
 
     res.json({ message: 'Collection officer details updated successfully' });
   } catch (err) {
@@ -286,11 +290,7 @@ exports.updateCollectionOfficer = async (req, res) => {
 exports.disclaimOfficer = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    console.log(id);
-
     const result = await ManageOfficerDAO.disclaimOfficerDetailsDao(id);
-
 
     res.json({ message: 'Collection officer details updated successfully' });
   } catch (err) {
@@ -303,14 +303,10 @@ exports.disclaimOfficer = async (req, res) => {
 exports.getOfficerByEmpId = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
-
   try {
     const { id } = await ManageOfficerValidate.getparmasEmpIdSchema.validateAsync(req.params);
-    console.log(id);
-
 
     const result = await ManageOfficerDAO.getOfficerByEmpIdDao(id)
-
     if (result.length === 0) {
       return res.json({ message: "no data found!", status: false })
     }
@@ -341,7 +337,6 @@ exports.claimOfficer = async (req, res) => {
     const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.body);
     const userId = req.user.userId;
     const centerId = req.user.centerId;
-    console.log(id, userId, centerId);
 
     const results = await ManageOfficerDAO.claimOfficerDao(id, userId, centerId)
 
@@ -361,3 +356,76 @@ exports.claimOfficer = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while fetching officer" });
   }
 }
+
+
+exports.getTargetDetails = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+
+    const { id } = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
+
+    const resultTarget = await ManageOfficerDAO.getTargetDetailsToPassDao(id);
+    const resultOfficer = await ManageOfficerDAO.getOfficersToPassTargetDao(resultTarget.officerId, resultTarget.companyId, resultTarget.centerId);
+
+    console.log("Successfully retrieved target crop verity");
+    res.status(200).json({ resultTarget, resultOfficer });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving target crop verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+  }
+};
+
+
+exports.editOfficerTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+    const target = await ManageOfficerValidate.PassTargetValidationSchema.validateAsync(req.body);
+
+    const targetResult = await ManageOfficerDAO.getTargetDetailsToPassDao(target.target);
+    const passingOfficer = await ManageOfficerDAO.getPassingOfficerDao(targetResult, target.officerId);
+
+    let resultUpdate
+    let result
+
+    const amount = targetResult.target - target.amount;
+
+
+    if (passingOfficer.length === 0) {
+      // console.log(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+      resultUpdate = await ManageOfficerDAO.updateTargetDao(targetResult.id, amount);
+      if (resultUpdate.affectedRows > 0) {
+        result = await ManageOfficerDAO.AssignOfficerTargetDao(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+      } else {
+        return res.json({ status: false, message: "Target Passing Unsccessfull!" });
+      }
+    } else {
+      resultUpdate = await ManageOfficerDAO.updateTargetDao(targetResult.id, amount);
+      if (resultUpdate.affectedRows > 0) {
+        const newAmount = parseFloat(passingOfficer[0].target) + target.amount;
+        result = await ManageOfficerDAO.updateTargetDao(passingOfficer[0].id, newAmount);
+      } else {
+        return res.json({ status: false, message: "Target Passing Unsccessfull!" });
+      }
+    }
+
+    console.log("Successfully passing target");
+    res.status(200).json({ status: true, message: "Target Passing successfull!" });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error passing target:", error);
+    return res.status(500).json({ error: "An error occurred while passing target" });
+  }
+
+
+};
+
+

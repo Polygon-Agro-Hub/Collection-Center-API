@@ -13,7 +13,7 @@ const PriceListRoutes = require('./routes/PriceList');
 const ReportRoutes = require('./routes/Report');
 const TargetRoutes  =require('./routes/Target');
 const ComplaintRoutes = require('./routes/Complaints')
-
+const DashbordRoutes = require('./routes/Dashboards')
 const heathRoutes = require('./routes/healthRoutes')
 
 
@@ -70,7 +70,12 @@ app.use(`${BASE_API_PATH}/report`, ReportRoutes);
 app.use(`${BASE_API_PATH}/target`, TargetRoutes);
 app.use(`${BASE_API_PATH}/complaint`, ComplaintRoutes);
 app.use(`${BASE_API_PATH}`, heathRoutes);
+app.use('/api/dashboard', DashbordRoutes);
+
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
+
+
+

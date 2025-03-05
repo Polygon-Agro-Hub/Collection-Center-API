@@ -85,7 +85,7 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
             WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND RFP.collectionOfficerId = ?
             
         `;
-        console.log(officerId);
+        
 
         const countParams = [officerId];
         const dataParams = [officerId];
@@ -222,15 +222,15 @@ exports.dailyReportDao = (id, date) => {
         GROUP BY CV.varietyNameEnglish
         `;
 
-        console.log(date.toISOString().slice(0, 10));
+        
 
         collectionofficer.query(sql, [id, date.toISOString().slice(0, 10)], (err, results) => {
             if (err) {
-                console.log(err);
+                
 
                 return reject(err);
             }
-            console.log(results);
+            
             resolve(results);
         });
     });
@@ -249,7 +249,7 @@ exports.getMonthlyReportOfficerDao = (id, startDate, endDate) => {
 
         collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err);
             }
             resolve(results);
@@ -282,10 +282,10 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
 
         collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err);
             }
-            console.log(results);
+            
             resolve(results);
         });
     });
@@ -295,15 +295,16 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
 exports.getFarmerDetailsDao = (id) => {
     return new Promise((resolve, reject) => {
         let sql = `
-        SELECT RFP.id, U.firstName, U.lastName, U.phoneNumber, U.NICnumber, U.houseNo, U.streetName, U.city, U.district, UB.accNumber, UB.accHolderName, UB.bankName, UB.branchName, RFP.createdAt
-        FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U, plant_care.userbankdetails UB
-        WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND U.id = UB.userId AND RFP.id = ?
+        SELECT RFP.id, U.firstName, U.lastName, U.phoneNumber, U.NICnumber, U.houseNo, U.streetName, U.city, U.district, UB.accNumber, UB.accHolderName, UB.bankName, UB.branchName, RFP.createdAt, CO.QRcode AS officerQr, U.farmerQr   
+        FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U, collectionofficer CO, plant_care.userbankdetails UB 
+        WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND U.id = UB.userId AND RFP.collectionOfficerId = CO.id AND RFP.id = ? 
+        LIMIT 1 
         `;
 
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err);
             }
             resolve(results);
@@ -323,10 +324,11 @@ exports.getFarmerCropsDetailsDao = (id) => {
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                console.log(err);
+                
                 return reject(err);
             }
             resolve(results);
         });
     });
 };
+

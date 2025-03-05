@@ -3,6 +3,8 @@ const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const uploadFileToS3 = require('../middlewares/s3upload');
+const deleteFromS3 = require('../middlewares/s3delete');
 
 exports.GetAllCenterDAO = () => {
     return new Promise((resolve, reject) => {
@@ -40,19 +42,40 @@ exports.getForCreateIdDao = (role) => {
 };
 
 
-exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID) => {
+exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image) => {
     return new Promise(async (resolve, reject) => {
         try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
+
+            
+
+            // Generate QR Code
+            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+
+
+            // Define SQL Query before execution
             const sql = `
-                INSERT INTO collectionofficer (centerId, companyId, irmId, 
-                    firstNameEnglish, firstNameSinhala, firstNameTamil, lastNameEnglish, lastNameSinhala, lastNameTamil, 
-                    jobRole, empId, empType, phoneCode01, phoneNumber01, phoneCode02, phoneNumber02, 
-                    nic, email, passwordUpdated, houseNumber, streetName, city, district, province, country, languages, 
-                    accHolderName, accNumber, bankName, branchName, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,  'Not Approved')
+                INSERT INTO collectionofficer (
+                    centerId, companyId, irmId, 
+                    firstNameEnglish, firstNameSinhala, firstNameTamil, 
+                    lastNameEnglish, lastNameSinhala, lastNameTamil, 
+                    jobRole, empId, empType, 
+                    phoneCode01, phoneNumber01, phoneCode02, phoneNumber02, 
+                    nic, email, passwordUpdated, houseNumber, streetName, city, 
+                    district, province, country, languages, 
+                    accHolderName, accNumber, bankName, branchName, 
+                    status, image, QRcode
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Not Approved', ?, ?)
             `;
 
-            // Database query with QR image data added
+            // Execute SQL Query
             collectionofficer.query(
                 sql,
                 [
@@ -86,22 +109,24 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
                     officerData.accNumber,
                     officerData.bankName,
                     officerData.branchName,
-
-
+                    image,
+                    qrcodeURL
                 ],
                 (err, results) => {
                     if (err) {
-                        console.log(err);
+                        console.error("Database Error:", err);
                         return reject(err);
                     }
                     resolve(results);
                 }
             );
         } catch (error) {
+            console.error("Error:", error);
             reject(error);
         }
     });
 };
+
 
 
 exports.createCollectionOfficerCompany = (companyData, collectionOfficerId) => {
@@ -337,6 +362,7 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
         `;
         collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
             if (err) {
+                
                 return reject(err); // Reject promise if an error occurs
             }
             resolve(results); // Resolve with the query results
@@ -456,7 +482,7 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.response);
+        
 
         return { success: true, message: 'Email sent successfully!' };
 
@@ -492,18 +518,6 @@ exports.getOfficerByIdDAO = (id) => {
             }
 
             const officer = results[0];
-
-            // Process image field if present
-            if (officer.image) {
-                const base64Image = Buffer.from(officer.image).toString("base64");
-                officer.image = `data:image/png;base64,${base64Image}`;
-            }
-
-            // Process QRcode field if present
-            if (officer.QRcode) {
-                const base64QRcode = Buffer.from(officer.QRcode).toString("base64");
-                officer.QRcode = `data:image/png;base64,${base64QRcode}`;
-            }
 
             const empIdWithoutPrefix = officer.empId ? officer.empId.substring(3) : null;
 
@@ -551,14 +565,29 @@ exports.getOfficerByIdDAO = (id) => {
 };
 
 
-exports.updateOfficerDetails = (id, officerData) => {
-    return new Promise((resolve, reject) => {
 
+exports.updateOfficerDetails = (id, officerData, image) => {
+    return new Promise(async (resolve, reject) => {
 
-        collectionofficer.beginTransaction((err) => {
-            if (err) return reject(err);
+        try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
 
-            const updateOfficerSQL = `
+           
+            // Generate QR Code
+            await deleteFromS3(officerData.previousQR);
+
+            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+
+            
+
+            // Define SQL Query before execution
+            const sql = `
                 UPDATE collectionofficer
                 SET firstNameEnglish = ?,
                     firstNameSinhala = ?,
@@ -588,7 +617,9 @@ exports.updateOfficerDetails = (id, officerData) => {
                     accNumber = ?,
                     bankName = ?,
                     branchName = ?,
-                    status = ?
+                    status = ?,
+                    image = ?,
+                    QRcode = ?
                 WHERE id = ?
             `;
 
@@ -622,20 +653,30 @@ exports.updateOfficerDetails = (id, officerData) => {
                 officerData.bankName,
                 officerData.branchName,
                 "Not Approved",
+                image,
+                qrcodeURL,
                 parseInt(id),
             ];
 
-            collectionofficer.query(updateOfficerSQL, updateOfficerParams, (err, result) => {
-                if (err) {
-                    return collectionofficer.rollback(() => reject(err));
+            // Execute SQL Query
+            collectionofficer.query(
+                sql, updateOfficerParams,
+                (err, results) => {
+                    if (err) {
+                        console.error("Database Error:", err);
+                        return reject(err);
+                    }
+                    resolve(results);
                 }
-                resolve(result);
-            });
-        });
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
     });
 };
 
-
+//not
 exports.CreateQRCodeForOfficerDao = (id) => {
     return new Promise(async (resolve, reject) => {
 
@@ -732,3 +773,123 @@ exports.claimOfficerDao = (id, userid, centerid) => {
         });
     });
 };
+
+
+exports.getTargetDetailsToPassDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+                    SELECT 
+                        ODT.id,
+                        DT.id AS targetId,
+                        CV.id AS cropId,
+                        ODT.officerId,
+                        CV.varietyNameEnglish, 
+                        ODT.target, 
+                        ODT.complete,
+                        DT.toDate,
+                        DT.toTime,
+                        COF.empId,
+                        COF.centerId,
+                        COF.companyId,
+                        ODT.grade,
+                        (ODT.target - ODT.complete) AS todo
+                    FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
+                    WHERE ODT.id = ? AND ODT.dailyTargetId = DT.id AND ODT.officerId = COF.id AND ODT.varietyId = CV.id
+                `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results[0]);
+        });
+    });
+};
+
+
+
+exports.getOfficersToPassTargetDao = (id, company, center) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT id, firstNameEnglish, lastNameEnglish
+            FROM collectionofficer
+            WHERE companyId = ? AND centerId = ? AND id != ? AND empId NOT LIKE 'CUO%' AND empId NOT LIKE 'CCH%'
+        `;
+        collectionofficer.query(sql, [company, center, id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.getPassingOfficerDao = (data, officerId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+                SELECT 
+                    ODT.id,
+                    DT.id AS targetId,
+                    CV.id AS cropId,
+                    CV.varietyNameEnglish, 
+                    ODT.target, 
+                    ODT.complete,
+                    DT.toDate,
+                    DT.toTime,
+                    ODT.grade,
+                    (ODT.target - ODT.complete) AS todo
+                FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT
+                WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
+
+                `;
+        
+
+        collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.updateTargetDao = (id, amount) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE officerdailytarget
+            SET target = ?
+            WHERE id = ?
+        `;
+
+        collectionofficer.query(sql, [amount, id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.AssignOfficerTargetDao = (targetId, verityId, offficerId, grade, target) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        INSERT INTO officerdailytarget (dailyTargetId, varietyId, officerId, grade, target) VALUES (?, ?, ?, ?, ?)
+        `
+
+        collectionofficer.query(sql, [
+            targetId,
+            verityId,
+            offficerId,
+            grade,
+            target
+        ], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+

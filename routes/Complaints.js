@@ -36,4 +36,25 @@ router.post('/add-complain',
     ComplaintEP.addComplaint
 );
 
+router.get('/get-recived-cch-complaints', 
+    authMiddleware,
+    ComplaintEP.getAllRecivedCCHComplain
+);
+
+router.get('/get-all-sent-cch-complaint',
+    authMiddleware,
+    ComplaintEP.getAllSentCCHComplaint
+)
+
+router.patch('/forword-complain-admin/:id',
+    authMiddleware,
+    ComplaintEP.forwordComplaintToAdmin
+);
+
+
+router.post('/add-complain-cch',
+    authMiddleware,
+    ComplaintEP.addComplaintCCH
+);
+
 module.exports = router;

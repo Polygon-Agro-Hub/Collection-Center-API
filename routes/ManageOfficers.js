@@ -1,6 +1,7 @@
 const express = require('express');
 const ManageOfficerEP = require('../end-point/ManageOfficers-ep');
 const authMiddleware = require('../middlewares/authMiddleware');
+const upload = require("../middlewares/uploadMiddleware");
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router.get(
 router.post(
     "/create-officer",
     authMiddleware,
+    upload.single("file"),
     ManageOfficerEP.createOfficer
 )
 
@@ -62,6 +64,7 @@ router.get(
 router.put(
     '/update-officer/:id', 
     authMiddleware, 
+    upload.single("file"),
     ManageOfficerEP.updateCollectionOfficer
 );
 
@@ -81,4 +84,16 @@ router.patch('/claim-officer',
     ManageOfficerEP.claimOfficer
 );
 
+router.get('/get-target-details/:id',
+    authMiddleware,
+    ManageOfficerEP.getTargetDetails
+);
+
+router.patch(
+    '/edit-officer-target',
+    authMiddleware,
+    ManageOfficerEP.editOfficerTarget
+)
+
 module.exports = router;
+

@@ -20,5 +20,11 @@ router.post(
     AuthEP.updatePassword
 )
 
+router.get(
+    "/get-profile",
+    authMiddleware,
+    AuthEP.getProfile
+)
 
 module.exports = router;
+

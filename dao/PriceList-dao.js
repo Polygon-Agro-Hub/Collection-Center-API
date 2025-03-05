@@ -73,7 +73,7 @@ exports.updatePriceDao = (id, value) => {
     return new Promise((resolve, reject) => {
         const sql = `
             UPDATE marketpriceserve 
-            SET updatedPrice = ?
+            SET updatedPrice = ?, updateAt = NOW()
             WHERE id = ?
         `
         collectionofficer.query(sql, [value, id], (err, results) => {
@@ -89,7 +89,7 @@ exports.updatePriceDao = (id, value) => {
 exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
-        console.log(grade);
+
 
 
         let countSql = `
