@@ -92,14 +92,14 @@ exports.createDailyTargetItemsDao = (data, targetId) => {
 
 exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
     return new Promise((resolve, reject) => {
-        const offset = (page - 1) * limit;
+        // const offset = (page - 1) * limit;
 
 
-        let countSql = `
-            SELECT COUNT(*) AS total
-            FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ?
-        `
+        // let countSql = `
+        //     SELECT COUNT(*) AS total
+        //     FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
+        //     WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ?
+        // `
 
 
         let targetSql = `
@@ -108,7 +108,7 @@ exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ? 
         `
         const sqlParams = [centerId];
-        const countParams = [centerId]
+        // const countParams = [centerId]
 
 
         if (searchText) {
@@ -119,17 +119,18 @@ exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
             sqlParams.push(searchValue);
         }
 
-        targetSql += " LIMIT ? OFFSET ? ";
-        sqlParams.push(limit, offset);
+        // targetSql += " LIMIT ? OFFSET ? ";
+        // sqlParams.push(limit, offset);
 
 
-        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
-            if (countErr) {
-                console.error('Error in count query:', countErr);
-                return reject(countErr);
-            }
+        // collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+        //     if (countErr) {
+        //         console.error('Error in count query:', countErr);
+        //         return reject(countErr);
+        //     }
 
-            const total = countResults[0].total;
+            // const total = countResults[0].total;
+            const total = 0;
 
             // Execute data query
             collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
@@ -147,7 +148,7 @@ exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
                 resolve({ resultTarget: transformedTargetData, total });
             });
         });
-    });
+    // });
 };
 
 

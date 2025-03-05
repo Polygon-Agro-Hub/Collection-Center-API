@@ -36,7 +36,7 @@ router.get(
 
 router.get(
     "/get-farmer-report-details/:id",
-    // authMiddleware,
+    authMiddleware,
     ReporttEP.getFarmerReport
 )
 

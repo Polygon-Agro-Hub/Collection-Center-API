@@ -100,8 +100,8 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
             const searchCondition = `
                 AND (
                     U.firstName LIKE ?
-                    OR U.firstName LIKE ?
-                    OR U.firstName LIKE ?
+                    OR U.lastName LIKE ?
+                    OR U.NICnumber LIKE ?
                 )
             `;
             countSql += searchCondition;
@@ -113,6 +113,9 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
 
         dataSql += " GROUP BY RFP.id, U.firstName, U.lastName, U.NICnumber ";
         countSql += " GROUP BY RFP.id, U.firstName, U.lastName, U.NICnumber ";
+
+        dataSql += " ORDER BY U.firstName ASC ";
+
 
         // Add pagination to the data query
         dataSql += " LIMIT ? OFFSET ?";
@@ -295,7 +298,7 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
 exports.getFarmerDetailsDao = (id) => {
     return new Promise((resolve, reject) => {
         let sql = `
-        SELECT RFP.id, U.firstName, U.lastName, U.phoneNumber, U.NICnumber, U.houseNo, U.streetName, U.city, U.district, UB.accNumber, UB.accHolderName, UB.bankName, UB.branchName, RFP.createdAt, CO.QRcode AS officerQr, U.farmerQr   
+        SELECT RFP.id, U.firstName, U.lastName, U.phoneNumber, U.NICnumber, U.houseNo, U.streetName, U.city, U.district, UB.accNumber, UB.accHolderName, UB.bankName, UB.branchName, RFP.createdAt, CO.QRcode AS officerQr, U.farmerQr, RFP.invNo 
         FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U, collectionofficer CO, plant_care.userbankdetails UB 
         WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND U.id = UB.userId AND RFP.collectionOfficerId = CO.id AND RFP.id = ? 
         LIMIT 1 
