@@ -424,8 +424,64 @@ exports.editOfficerTarget = async (req, res) => {
     console.error("Error passing target:", error);
     return res.status(500).json({ error: "An error occurred while passing target" });
   }
-
-
 };
 
+
+
+exports.getAllOfficersForCCH = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    // Validate query parameters      
+    const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
+
+    const companyId = req.user.companyId;
+
+    const { page, limit, status, role, searchText, center } = validatedQuery;
+
+    // Call the DAO to get all collection officers
+    const { items, total } = await ManageOfficerDAO.getAllOfficersForCCHDAO(companyId, page, limit, status, role, searchText, center);
+
+    console.log("Successfully fetched collection officers");
+    return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+exports.getCCHOwnCenters = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    // Validate query parameters      
+    // const validatedQuery = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
+
+    const companyId = req.user.companyId;
+
+    // const { page, limit, status, role, searchText } = validatedQuery;
+
+    // Call the DAO to get all collection officers
+    const result = await ManageOfficerDAO.getCCHOwnCenters(companyId);
+
+    console.log("Successfully fetched collection officers");
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
 

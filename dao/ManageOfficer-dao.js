@@ -205,7 +205,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
         let countSql = `
             SELECT COUNT(*) AS total
             FROM collectionofficer Coff, company Com 
-            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%' AND Coff.centerId = ?
+            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
         `;
 
         let dataSql = `
@@ -216,7 +216,6 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
                         Coff.lastNameEnglish,
                         Coff.phoneCode01,
                         Coff.phoneCode02,
-                        Com.companyNameEnglish,
                         Coff.empId,
                         Coff.jobRole,
                         Coff.phoneNumber01,
@@ -224,8 +223,8 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
                         Coff.nic,
                         Coff.district,
                         Coff.status
-                     FROM collectionofficer Coff, company Com 
-                     WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%' AND Coff.centerId = ?
+                     FROM collectionofficer Coff
+                     WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
 
                  `;
 
@@ -264,7 +263,8 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += " ORDER BY Coff.createdAt DESC ";
+        dataSql += " ORDER BY CASE WHEN Coff.empId LIKE 'CCM%' THEN 0 ELSE 1 END";
+
 
         // Add pagination to the data query
         dataSql += " LIMIT ? OFFSET ?";
@@ -893,3 +893,123 @@ exports.AssignOfficerTargetDao = (targetId, verityId, offficerId, grade, target)
     });
 };
 
+
+
+exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchText, center) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        let countSql = `
+            SELECT COUNT(*) AS total
+            FROM collectionofficer Coff, company Com 
+            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%' AND Coff.companyId = ?
+        `;
+
+        let dataSql = `
+                     SELECT
+                        Coff.id,
+                        Coff.image,
+                        Coff.firstNameEnglish,
+                        Coff.lastNameEnglish,
+                        Coff.phoneCode01,
+                        Coff.phoneCode02,
+                        Cen.centerName,
+                        Coff.empId,
+                        Coff.jobRole,
+                        Coff.phoneNumber01,
+                        Coff.phoneNumber02,
+                        Coff.nic,
+                        Coff.district,
+                        Coff.status
+                     FROM collectionofficer Coff, collectioncenter Cen 
+                     WHERE Coff.companyId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+
+                 `;
+
+        const countParams = [companyId];
+        const dataParams = [companyId];
+
+        // Apply filters for company ID
+        if (center) {
+            countSql += " AND Coff.centerId = ?";
+            dataSql += " AND Coff.centerId = ?";
+            countParams.push(center);
+            dataParams.push(center);
+        }
+
+        if (status) {
+            countSql += " AND Coff.status LIKE ?";
+            dataSql += " AND Coff.status LIKE ?";
+            countParams.push(status);
+            dataParams.push(status);
+        }
+
+        if (role) {
+            countSql += " AND Coff.jobRole LIKE ?";
+            dataSql += " AND Coff.jobRole LIKE ?";
+            countParams.push(role);
+            dataParams.push(role);
+        }
+
+        // Apply search filters for NIC or related fields
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    Coff.nic LIKE ?
+                    OR Coff.firstNameEnglish LIKE ?
+                    OR Coff.lastNameEnglish LIKE ?
+                    OR Coff.empId LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue, searchValue, searchValue, searchValue);
+            dataParams.push(searchValue, searchValue, searchValue, searchValue);
+        }
+
+        dataSql += " ORDER BY Coff.createdAt DESC ";
+
+        // Add pagination to the data query
+        dataSql += " LIMIT ? OFFSET ?";
+        dataParams.push(limit, offset);
+
+        // Execute count query
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
+
+
+exports.getCCHOwnCenters = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT CC.id, CC.centerName
+            FROM collectioncenter CC, companycenter COMC
+            WHERE COMC.centerId = CC.id AND COMC.companyId = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};

@@ -14,7 +14,9 @@ exports.getAllOfficersSchema = Joi.object({
     limit: Joi.number().integer().min(1).max(100).default(10).optional(),
     searchText: Joi.string().allow('').optional(),
     status: Joi.string().optional(),
-    role: Joi.string().optional()
+    role: Joi.string().optional(),
+    center: Joi.number().integer().optional()
+    
 });
 
 exports.deleteOfficerSchema = Joi.object({

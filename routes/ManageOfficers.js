@@ -95,5 +95,18 @@ router.patch(
     ManageOfficerEP.editOfficerTarget
 )
 
+router.get(
+    "/get-all-officers-for-cch",
+    authMiddleware,
+    ManageOfficerEP.getAllOfficersForCCH
+)
+
+router.get(
+    "/get-centers-cch-own",
+    authMiddleware,
+    ManageOfficerEP.getCCHOwnCenters
+)
+
+
 module.exports = router;
 
