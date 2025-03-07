@@ -108,5 +108,19 @@ router.get(
 )
 
 
+router.get(
+    "/get-center-managers/:id",
+    authMiddleware,
+    ManageOfficerEP.getCenterManager
+)
+
+router.post(
+    "/cch-create-officer",
+    authMiddleware,
+    upload.single("file"),
+    ManageOfficerEP.CCHcreateOfficer
+)
+
+
 module.exports = router;
 

@@ -1013,3 +1013,109 @@ exports.getCCHOwnCenters = (id) => {
         });
     });
 };
+
+
+exports.getCenterManagerDao = (companyId, centerId) => {
+    return new Promise((resolve, reject) => {
+        console.log(companyId,centerId);
+        
+        const sql = `
+            SELECT id, firstNameEnglish, lastNameEnglish
+            FROM collectionofficer
+            WHERE companyId = ? AND centerId = ? AND empId LIKE 'CCM%'
+        `;
+
+        collectionofficer.query(sql, [companyId, centerId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
+
+            
+
+            // Generate QR Code
+            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+
+
+            // Define SQL Query before execution
+            const sql = `
+                INSERT INTO collectionofficer (
+                    centerId, companyId, irmId, 
+                    firstNameEnglish, firstNameSinhala, firstNameTamil, 
+                    lastNameEnglish, lastNameSinhala, lastNameTamil, 
+                    jobRole, empId, empType, 
+                    phoneCode01, phoneNumber01, phoneCode02, phoneNumber02, 
+                    nic, email, passwordUpdated, houseNumber, streetName, city, 
+                    district, province, country, languages, 
+                    accHolderName, accNumber, bankName, branchName, 
+                    status, image, QRcode
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Not Approved', ?, ?)
+            `;
+
+            // Execute SQL Query
+            collectionofficer.query(
+                sql,
+                [
+                    officerData.centerId,
+                    companyId,
+                    officerData.irmId,
+                    officerData.firstNameEnglish,
+                    officerData.firstNameSinhala,
+                    officerData.firstNameTamil,
+                    officerData.lastNameEnglish,
+                    officerData.lastNameSinhala,
+                    officerData.lastNameTamil,
+                    officerData.jobRole,
+                    officerData.empId,
+                    officerData.employeeType,
+                    officerData.phoneNumber01Code,
+                    officerData.phoneNumber01,
+                    officerData.phoneNumber02Code,
+                    officerData.phoneNumber02,
+                    officerData.nic,
+                    officerData.email,
+                    0,
+                    officerData.houseNumber,
+                    officerData.streetName,
+                    officerData.city,
+                    officerData.district,
+                    officerData.province,
+                    officerData.country,
+                    officerData.languages,
+                    officerData.accHolderName,
+                    officerData.accNumber,
+                    officerData.bankName,
+                    officerData.branchName,
+                    image,
+                    qrcodeURL
+                ],
+                (err, results) => {
+                    if (err) {
+                        console.error("Database Error:", err);
+                        return reject(err);
+                    }
+                    resolve(results);
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};

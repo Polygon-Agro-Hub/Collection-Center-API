@@ -72,6 +72,10 @@ exports.createOfficer = async (req, res) => {
 
     const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl);
 
+    if (result.affectedRows === 0) {
+      return res.json({ message: "User not found or no changes were made.", status: false });
+    }
+
     console.log("Collection Officer created successfully");
     return res.status(201).json({ message: "Collection Officer created successfully", status: true });
   } catch (error) {
@@ -485,3 +489,72 @@ exports.getCCHOwnCenters = async (req, res) => {
   }
 };
 
+
+exports.getCenterManager = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    // Validate q[uery parameters      
+    const { id } = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
+
+    const companyId = req.user.companyId
+    // Call the DAO to get all collection officers
+    const result = await ManageOfficerDAO.getCenterManagerDao(companyId, id);
+
+    console.log("Successfully fetched collection officers");
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+
+exports.CCHcreateOfficer = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    if (!req.body.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    const officerData = JSON.parse(req.body.officerData);
+
+    // const centerId = req.user.centerId;
+    const companyId = req.user.companyId;
+    // const managerID = req.user.userId;
+
+    const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
+    const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
+    const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
+
+    const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
+    const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+
+    const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
+
+    const result = await ManageOfficerDAO.createCollectionOfficerPersonalCCH(officerData, companyId, profileImageUrl);
+
+    if (result.affectedRows === 0) {
+      return res.json({ message: "User not found or no changes were made.", status: false });
+    }
+
+    console.log("Collection Officer created successfully");
+    return res.status(201).json({ message: "Collection Officer created successfully", status: true });
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error creating collection officer:", error);
+    return res.status(500).json({ error: "An error occurred while creating the collection officer" });
+  }
+};
