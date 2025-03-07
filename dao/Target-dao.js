@@ -129,25 +129,25 @@ exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
         //         return reject(countErr);
         //     }
 
-            // const total = countResults[0].total;
-            const total = 0;
+        // const total = countResults[0].total;
+        const total = 0;
 
-            // Execute data query
-            collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
-                if (dataErr) {
-                    console.error('Error in data query:', dataErr);
-                    return reject(dataErr);
-                }
+        // Execute data query
+        collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
+            if (dataErr) {
+                console.error('Error in data query:', dataErr);
+                return reject(dataErr);
+            }
 
-                const transformedTargetData = dataResults.flatMap(item => [
-                    { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
-                    { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
-                    { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
-                ]);
+            const transformedTargetData = dataResults.flatMap(item => [
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
+            ]);
 
-                resolve({ resultTarget: transformedTargetData, total });
-            });
+            resolve({ resultTarget: transformedTargetData, total });
         });
+    });
     // });
 };
 
@@ -174,7 +174,7 @@ exports.downloadAllDailyTargetDao = (companyId, fromDate, toDate) => {
                 { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
             ]);
 
-            
+
             resolve(transformedTargetData);
         });
     });
@@ -197,7 +197,7 @@ exports.downloadAllDailyTargetCompleteDAO = (companyId, fromDate, toDate) => {
             if (err) {
                 return reject(err);
             }
-           
+
 
             const transformedCompleteData = results.flatMap(item => [
                 { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, totA: item.totA, grade: "A", buyDate: item.createdAt },
@@ -278,7 +278,7 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
         dataSql += ` LIMIT ? OFFSET ? `;
         queryParams.push(limit, offset);
 
-        
+
 
         // Execute the query
         collectionofficer.query(dataSql, queryParams, (dataErr, dataResults) => {
@@ -582,14 +582,20 @@ exports.differenceBetweenExpences = (centerId) => {
         `
         collectionofficer.query(sql, [centerId], (err, results) => {
             if (err) {
+                console.log(err);
+                
                 return reject(err);
             }
 
-            if (results.length < 2) {
-                return reject(new Error("Not enough data to compare two months."));
+            // if (results.length < 2) {
+            //     return reject(new Error("Not enough data to compare two months."));
+            // }
+
+            let difExpences = 0
+            if (results.length >= 2) {
+                difExpences = ((results[0].monthexpences - results[1].monthexpences) / results[0].monthexpences) * 100;
             }
 
-            const difExpences = ((results[0].monthexpences - results[1].monthexpences) / results[0].monthexpences) * 100;
             const roundedDifExpences = parseFloat(difExpences.toFixed(2));
 
             resolve(roundedDifExpences);
@@ -959,7 +965,7 @@ exports.getPassingOfficerDao = (data, officerId) => {
                 WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
 
                 `;
-        
+
 
         collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
             if (err) {
@@ -990,8 +996,8 @@ exports.updateTargetDao = (id, amount) => {
 
 exports.getSelectedOfficerTarget = (officerId, status, search) => {
     return new Promise((resolve, reject) => {
-        let sql = 
-        `SELECT 
+        let sql =
+            `SELECT 
             ODT.id, 
             ODT.dailyTargetId, 
             ODT.varietyId, 
