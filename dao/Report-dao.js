@@ -1,6 +1,6 @@
 const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
 
-exports.getAllOfficersDAO = (centerId, page, limit, searchText) => {
+exports.getAllOfficersDAO = (centerId, companyId, userId, role, page, limit, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -15,13 +15,23 @@ exports.getAllOfficersDAO = (centerId, page, limit, searchText) => {
                         Coff.id,
                         Coff.firstNameEnglish,
                         Coff.lastNameEnglish,
-                        Coff.empId
-                     FROM collectionofficer Coff, company Com 
-                     WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CUO%' AND Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ? 
+                        Coff.empId,
+                        CEN.centerName
+                     FROM collectionofficer Coff, company Com, collectioncenter CEN
+                     WHERE Coff.companyId = Com.id AND Coff.centerId = CEN.id AND Coff.empId NOT LIKE 'CUO%' AND Coff.empId NOT LIKE 'CCH%' AND companyId = ? 
                  `;
 
-        const countParams = [centerId];
-        const dataParams = [centerId];
+        const countParams = [companyId]
+        const dataParams = [companyId]
+
+        if (role === 'CCM') {
+            countSql += ` AND Coff.centerId = ? AND (Coff.irmId = ? OR Coff.id = ?)`
+            dataSql += ` AND Coff.centerId = ? AND (Coff.irmId = ? OR Coff.id = ?)`
+            countParams.push(centerId, userId, userId);
+            dataParams.push(centerId, userId, userId);
+        }
+
+
 
 
         // Apply search filters for NIC or related fields
@@ -57,6 +67,8 @@ exports.getAllOfficersDAO = (centerId, page, limit, searchText) => {
             const total = countResults[0].total;
 
             // Execute data query
+            // console.log(dataSql, dataParams);
+            
             collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
                 if (dataErr) {
                     console.error('Error in data query:', dataErr);
@@ -85,7 +97,7 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
             WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND RFP.collectionOfficerId = ?
             
         `;
-        
+
 
         const countParams = [officerId];
         const dataParams = [officerId];
@@ -225,15 +237,15 @@ exports.dailyReportDao = (id, date) => {
         GROUP BY CV.varietyNameEnglish
         `;
 
-        
+
 
         collectionofficer.query(sql, [id, date.toISOString().slice(0, 10)], (err, results) => {
             if (err) {
-                
+
 
                 return reject(err);
             }
-            
+
             resolve(results);
         });
     });
@@ -252,7 +264,7 @@ exports.getMonthlyReportOfficerDao = (id, startDate, endDate) => {
 
         collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
             if (err) {
-                
+
                 return reject(err);
             }
             resolve(results);
@@ -285,10 +297,10 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
 
         collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
             if (err) {
-                
+
                 return reject(err);
             }
-            
+
             resolve(results);
         });
     });
@@ -307,7 +319,7 @@ exports.getFarmerDetailsDao = (id) => {
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                
+
                 return reject(err);
             }
             resolve(results);
@@ -327,7 +339,7 @@ exports.getFarmerCropsDetailsDao = (id) => {
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                
+
                 return reject(err);
             }
             resolve(results);

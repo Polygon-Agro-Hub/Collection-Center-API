@@ -7,12 +7,18 @@ exports.getAllCollectionReportsDetails = async (req, res) => {
 
   try {
     const validatedQuery = await ReportValidate.getAllOfficersSchema.validateAsync(req.query);
-    const { page, limit, searchText } = validatedQuery;
+    const { page, limit, searchText, role } = validatedQuery;
+    console.log(validatedQuery);
+    
     const centerId = req.user.centerId;
+    const companyId = req.user.companyId;
+    const userId = req.user.userId
 
-    const { items, total } = await ReportDAO.getAllOfficersDAO(centerId, page, limit, searchText);
+    const { items, total } = await ReportDAO.getAllOfficersDAO(centerId, companyId, userId, role, page, limit, searchText);
 
     console.log("Successfully fetched collection officers");
+    console.log(items, total);
+    
     return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
