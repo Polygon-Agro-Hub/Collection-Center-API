@@ -121,6 +121,13 @@ router.post(
     ManageOfficerEP.CCHcreateOfficer
 )
 
+router.put(
+    '/cch-update-officer/:id', 
+    authMiddleware, 
+    upload.single("file"),
+    ManageOfficerEP.CCHupdateCollectionOfficer
+);
+
 
 module.exports = router;
 

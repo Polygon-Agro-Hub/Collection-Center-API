@@ -554,7 +554,11 @@ exports.getOfficerByIdDAO = (id) => {
                     bankName: officer.bankName,
                     branchName: officer.branchName,
                     companyNameEnglish: officer.companyNameEnglish,
-                    centerName: officer.centerName
+                    centerName: officer.centerName,
+                    centerId:officer.centerId,
+                    companyId:officer.companyId,
+                    irmId:officer.irmId
+
 
 
 
@@ -1105,6 +1109,121 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
                     image,
                     qrcodeURL
                 ],
+                (err, results) => {
+                    if (err) {
+                        console.error("Database Error:", err);
+                        return reject(err);
+                    }
+                    resolve(results);
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};
+
+
+exports.CCHupdateOfficerDetails = (id, officerData, image) => {
+    return new Promise(async (resolve, reject) => {
+
+        try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
+
+
+            // Generate QR Code
+            await deleteFromS3(officerData.previousQR);
+
+            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+
+
+
+            // Define SQL Query before execution
+            const sql = `
+                UPDATE collectionofficer
+                SET firstNameEnglish = ?,
+                    firstNameSinhala = ?,
+                    firstNameTamil = ?,
+                    lastNameEnglish = ?,
+                    lastNameSinhala = ?,
+                    lastNameTamil = ?,
+                    jobRole = ?,
+                    empId = ?,
+                    empType = ?,
+                    phoneCode01 = ?,
+                    phoneNumber01 = ?,
+                    phoneCode02 = ?,
+                    phoneNumber02 = ?,
+                    nic = ?,
+                    email = ?,
+                    password = ?,
+                    passwordUpdated = ?,
+                    houseNumber = ?,
+                    streetName = ?,
+                    city = ?,
+                    district = ?,
+                    province = ?,
+                    country = ?,
+                    languages = ?,
+                    accHolderName = ?,
+                    accNumber = ?,
+                    bankName = ?,
+                    branchName = ?,
+                    status = ?,
+                    image = ?,
+                    QRcode = ?,
+                    centerId = ?,
+                    irmId = ?
+                WHERE id = ?
+            `;
+
+            const updateOfficerParams = [
+                officerData.firstNameEnglish,
+                officerData.firstNameSinhala,
+                officerData.firstNameTamil,
+                officerData.lastNameEnglish,
+                officerData.lastNameSinhala,
+                officerData.lastNameTamil,
+                officerData.jobRole,
+                officerData.empId,
+                officerData.employeeType,
+                officerData.phoneCode01,
+                officerData.phoneNumber01,
+                officerData.phoneCode02,
+                officerData.phoneNumber02,
+                officerData.nic,
+                officerData.email,
+                null,
+                0,
+                officerData.houseNumber,
+                officerData.streetName,
+                officerData.city,
+                officerData.district,
+                officerData.province,
+                officerData.country,
+                officerData.languages,
+                officerData.accHolderName,
+                officerData.accNumber,
+                officerData.bankName,
+                officerData.branchName,
+                "Not Approved",
+                image,
+                qrcodeURL,
+                officerData.centerId,
+                officerData.irmId,
+                parseInt(id),
+            ];
+
+            // Execute SQL Query
+            collectionofficer.query(
+                sql, updateOfficerParams,
                 (err, results) => {
                     if (err) {
                         console.error("Database Error:", err);

@@ -558,3 +558,44 @@ exports.CCHcreateOfficer = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while creating the collection officer" });
   }
 };
+
+
+exports.CCHupdateCollectionOfficer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let result;
+
+    if (!req.body.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const officerData = JSON.parse(req.body.officerData)
+    console.log(officerData);
+
+    console.log("req file:",req.body.file);
+    if (req.body.file === "null") {      
+      result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, officerData.previousImage);
+
+    } else {
+      const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
+      const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
+      const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
+
+      const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
+      const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+
+      const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
+      await deleteFromS3(officerData.previousImage);
+
+      result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, profileImageUrl);
+
+    }
+
+    console.log(result);
+
+    res.json({ message: 'Collection officer details updated successfully' });
+  } catch (err) {
+    console.error('Error updating collection officer details:', err);
+    res.status(500).json({ error: 'Failed to update collection officer details' });
+  }
+};
