@@ -801,7 +801,7 @@ exports.getOfficerTargetDao = (userId, status, search) => {
         FROM dailytarget DT 
         JOIN officerdailytarget ODT ON ODT.dailyTargetId = DT.id 
         JOIN plant_care.cropvariety CV ON ODT.varietyId = CV.id 
-        JOIN plant_care.CropGroup CG ON CV.cropGroupId = CG.id
+        JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
         JOIN collectionofficer CO ON ODT.officerId = CO.id
         WHERE CO.id = ?`;
 
@@ -864,7 +864,7 @@ exports.getOfficerTargetDao = (userId, status, search) => {
         FROM dailytarget DT 
         JOIN officerdailytarget ODT ON ODT.dailyTargetId = DT.id 
         JOIN plant_care.cropvariety CV ON ODT.varietyId = CV.id 
-        JOIN plant_care.CropGroup CG ON CV.cropGroupId = CG.id
+        JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
         JOIN collectionofficer CO ON ODT.officerId = CO.id
         WHERE CO.id = ?`;
 
@@ -1021,7 +1021,7 @@ exports.getSelectedOfficerTarget = (officerId, status, search) => {
         FROM dailytarget DT 
         JOIN officerdailytarget ODT ON ODT.dailyTargetId = DT.id 
         JOIN plant_care.cropvariety CV ON ODT.varietyId = CV.id 
-        JOIN plant_care.CropGroup CG ON CV.cropGroupId = CG.id
+        JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
         JOIN collectionofficer CO ON ODT.officerId = CO.id
         WHERE CO.id = ?`;
 
