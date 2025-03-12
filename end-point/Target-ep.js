@@ -185,7 +185,9 @@ exports.getCenterDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
 
   try {
+    console.log(fullUrl);
     const companyId = req.user.companyId;
+    console.log(companyId);
     const { province, district, searchText, page, limit } = req.query;
 
     const { totalItems, items } = await TargetDAO.getCenterDetailsDao(
