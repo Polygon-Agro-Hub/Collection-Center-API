@@ -1047,6 +1047,10 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
+            if(officerData.jobRole === 'Collection Center Manager'){
+                officerData.irmId = null;
+            }
+
             
 
             // Generate QR Code

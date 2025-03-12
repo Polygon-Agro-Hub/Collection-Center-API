@@ -24,9 +24,8 @@ exports.loginUser = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    await AuthValidate.loginUserSchema.validateAsync(req.body);
+    const { userName, password } = await AuthValidate.loginUserSchema.validateAsync(req.body);
 
-    const { userName, password } = req.body;
     const [user] = await AuthDAO.loginUser(userName);
     let verify_password;
 
@@ -124,9 +123,9 @@ exports.getProfile = async (req, res) => {
   
     const officerData = await AuthDAO.getUserDAO(userId);
 
-    if (!officerData || officerData.length === 0) {
-      return res.status(404).json({ error: "officer not found" });
-    }
+    // if (!officerData === null) {
+    //   return res.status(404).json({ error: "officer not found" });
+    // }
 
     res.status(200).json({ officerData });
   } catch (error) {

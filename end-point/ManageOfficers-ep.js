@@ -526,6 +526,8 @@ exports.CCHcreateOfficer = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     const officerData = JSON.parse(req.body.officerData);
+    console.log(officerData);
+    
 
     // const centerId = req.user.centerId;
     const companyId = req.user.companyId;

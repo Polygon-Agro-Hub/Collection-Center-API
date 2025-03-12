@@ -48,33 +48,37 @@ exports.updatePasswordDAO = (id, hashedPassword) => {
 
 exports.getUserDAO = (userId) => {
   return new Promise((resolve, reject) => {
-      const sql = `
-          SELECT 
-              COF.firstNameEnglish,
-              COF.lastNameEnglish,
-              COF.email,
-              COF.nic,
-              COF.phoneNumber01,
-              COF.phoneNumber02,
-              COF.houseNumber,
-              COF.city,
-              COF.province,
-              COF.streetName,
-              COF.country,
-              COF.district,
-              COF.bankName,
-              COF.accNumber,
-              COF.branchName,
-              COF.image,
-              COF.accHolderName,
-              COF.jobRole,
-              COF.empId,
-              COM.companyNameEnglish,
-              CEN.centerName
-          FROM 
-              collectionofficer COF, company COM, collectioncenter CEN
-          WHERE 
-           COF.centerId = CEN.id AND COF.companyId = COM.id AND COF.id = ?`;
+    const sql = `
+    SELECT 
+        COF.firstNameEnglish,
+        COF.lastNameEnglish,
+        COF.email,
+        COF.nic,
+        COF.phoneNumber01,
+        COF.phoneNumber02,
+        COF.houseNumber,
+        COF.city,
+        COF.province,
+        COF.streetName,
+        COF.country,
+        COF.district,
+        COF.bankName,
+        COF.accNumber,
+        COF.branchName,
+        COF.image,
+        COF.accHolderName,
+        COF.jobRole,
+        COF.empId,
+        COM.companyNameEnglish,
+        CEN.centerName
+    FROM 
+        collectionofficer COF
+    LEFT JOIN 
+        company COM ON COF.companyId = COM.id
+    LEFT JOIN 
+        collectioncenter CEN ON COF.centerId = CEN.id
+    WHERE 
+        COF.id = ?`;
 
       collectionofficer.query(sql, [userId], (err, results) => {
           if (err) {
