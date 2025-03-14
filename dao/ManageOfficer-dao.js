@@ -905,8 +905,8 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM collectionofficer Coff, company Com 
-            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCM%' AND Coff.companyId = ?
+            FROM collectionofficer Coff, collectioncenter Cen 
+            WHERE Coff.companyId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
         `;
 
         let dataSql = `
@@ -935,22 +935,22 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
 
         // Apply filters for company ID
         if (center) {
-            countSql += " AND Coff.centerId = ?";
-            dataSql += " AND Coff.centerId = ?";
+            countSql += " AND Coff.centerId = ? ";
+            dataSql += " AND Coff.centerId = ? ";
             countParams.push(center);
             dataParams.push(center);
         }
 
         if (status) {
-            countSql += " AND Coff.status LIKE ?";
-            dataSql += " AND Coff.status LIKE ?";
+            countSql += " AND Coff.status LIKE ? ";
+            dataSql += " AND Coff.status LIKE ? ";
             countParams.push(status);
             dataParams.push(status);
         }
 
         if (role) {
-            countSql += " AND Coff.jobRole LIKE ?";
-            dataSql += " AND Coff.jobRole LIKE ?";
+            countSql += " AND Coff.jobRole LIKE ? ";
+            dataSql += " AND Coff.jobRole LIKE ? ";
             countParams.push(role);
             dataParams.push(role);
         }

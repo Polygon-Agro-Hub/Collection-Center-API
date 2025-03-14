@@ -246,8 +246,11 @@ exports.getCenterDashbord = async (req, res) => {
 
     const limitedResentCollection = resentCollection.slice(0, 5);
 
+    console.log(transCount);
+    
+
     console.log("Successfully fetched gatogory");
-    return res.status(200).json({ officerCount, transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
+    return res.status(200).json({ officerCount, transCount:transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
   } catch (error) {
     if (error.isJoi) {
       // Handle validation error

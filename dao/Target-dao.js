@@ -447,14 +447,20 @@ exports.getTransactionCountDao = (centerId) => {
         const sql = `
             SELECT COUNT(RFP.id) AS transactionCount
             FROM registeredfarmerpayments RFP, collectionofficer COF
-            WHERE DATE(RFP.createdAt) = '2024-12-31' AND RFP.collectionOfficerId = COF.id AND COF.centerId = ?
+            WHERE DATE(RFP.createdAt) = CURDATE() AND RFP.collectionOfficerId = COF.id AND COF.centerId = ?
             GROUP BY DATE(RFP.createdAt);
 
         `
         collectionofficer.query(sql, [centerId], (err, results) => {
             if (err) {
+                console.log(err);
                 return reject(err);
             }
+
+            if (results.length === 0) {
+                return resolve({ transactionCount: 0 })
+            }
+
             resolve(results[0]);
         });
     });
@@ -472,6 +478,10 @@ exports.getTransactionAmountCountDao = (centerId) => {
         collectionofficer.query(sql, [centerId], (err, results) => {
             if (err) {
                 return reject(err);
+            }
+
+            if (results.length === 0) {
+                return resolve({ transAmountCount: 0 })
             }
             resolve(results[0]);
         });
@@ -564,6 +574,9 @@ exports.getTotExpencesDao = (centerId) => {
             if (err) {
                 return reject(err);
             }
+            if(results.length === 0){
+                return resolve({totExpences: 0.00})
+            }            
             resolve(results[0]);
         });
     });
@@ -595,7 +608,7 @@ exports.differenceBetweenExpences = (centerId) => {
             //     return reject(new Error("Not enough data to compare two months."));
             // }
 
-            let difExpences = 0
+            let difExpences = 0.00
             if (results.length >= 2) {
                 difExpences = ((results[0].monthexpences - results[1].monthexpences) / results[0].monthexpences) * 100;
             }
