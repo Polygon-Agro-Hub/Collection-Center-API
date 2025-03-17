@@ -1,23 +1,23 @@
 const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
 
-exports.getAllPriceListDao = (centerId, page, limit, grade, searchText) => {
+exports.getAllPriceListDao = (companyId, centerId, page, limit, grade, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
         let countSql = `
             SELECT COUNT(*) AS total
             FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
-            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.collectionCenterId = ? 
+            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.companyCenterId = (SELECT id FROM companycenter WHERE companyId = ? AND centerId = ?)
         `;
 
         let dataSql = `
             SELECT MPS.id, CG.cropNameEnglish, CV.varietyNameEnglish,  MP.averagePrice, MP.grade, MPS.updatedPrice, MP.createdAt
             FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
-            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.collectionCenterId = ?
+            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.companyCenterId = (SELECT id FROM companycenter WHERE companyId = ? AND centerId = ?)
         `;
 
-        const countParams = [centerId];
-        const dataParams = [centerId];
+        const countParams = [companyId, centerId];
+        const dataParams = [companyId, centerId];
 
         if (grade) {
             countSql += " AND MP.grade LIKE ?";

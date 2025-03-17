@@ -6,8 +6,9 @@ exports.getAllPrices = async (req, res) => {
     console.log(fullUrl);
     try {
         const centerId = req.user.centerId
+        const companyId = req.user.companyId
         const { page, limit, grade, searchText } = await PriceListValidate.getAllPriceListSchema.validateAsync(req.query);
-        const { items, total } = await PriceListDAO.getAllPriceListDao(centerId, page, limit, grade, searchText);
+        const { items, total } = await PriceListDAO.getAllPriceListDao(companyId, centerId, page, limit, grade, searchText);
 
         console.log("Successfully retrieved price list");
         res.status(200).json({ items, total });
