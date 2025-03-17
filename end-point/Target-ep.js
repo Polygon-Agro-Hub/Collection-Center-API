@@ -266,10 +266,11 @@ exports.getAllPriceDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
+    const companyId = req.user.companyId
     const { centerId, page, limit, grade, searchText } = await TargetValidate.getAllPriceDetailSchema.validateAsync(req.query);
     // const { items, total } = await PriceListDAO.getAllPriceListDao(centerId, page, limit, grade, searchText);
 
-    const { items, total } = await TargetDAO.getAllPriceDetailsDao(centerId, page, limit, grade, searchText);
+    const { items, total } = await TargetDAO.getAllPriceDetailsDao(companyId, centerId, page, limit, grade, searchText);
 
     console.log("Successfully retrieved price list");
     res.status(200).json({ items, total });
