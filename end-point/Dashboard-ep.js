@@ -9,6 +9,10 @@ exports.getOfficerCount = async (req, res) => {
     const CUOCount = await DashboardDAO.getCustomerOfficerCountDetails(centerId);
     const activities = await DashboardDAO.getActivityDetails();
 
+    console.log('====================================');
+    console.log( CUOCount);
+    console.log('====================================');
+
     res.json({ COOCount, CUOCount, activities });
   } catch (err) {
     console.error('Error getting officer count', err);

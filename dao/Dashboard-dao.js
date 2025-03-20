@@ -14,7 +14,15 @@ exports.getCollectionOfficerCountDetails = (id) => {
             if (err) {
                 return reject(err); // Reject the promise if an error occurs
             }
-            resolve(results[0]); // Resolve with the query results
+
+            let count;
+            if (results.length === 0) {
+                count = { "COOCount": 0 }
+            } else {
+                count = results[0]
+            }
+
+            resolve(count); // Resolve with the query results
         });
     });
 };
@@ -33,7 +41,14 @@ exports.getCustomerOfficerCountDetails = (id) => {
             if (err) {
                 return reject(err); // Reject the promise if an error occurs
             }
-            resolve(results[0]); // Resolve with the query results
+            let count;
+            if (results.length === 0) {
+                count = { "CUOCount": 0 }
+            } else {
+                count = results[0]
+            }
+
+            resolve(count); // Resolve with the query results
         });
     });
 };
