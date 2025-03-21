@@ -1132,6 +1132,10 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
 exports.CCHupdateOfficerDetails = (id, officerData, image) => {
     return new Promise(async (resolve, reject) => {
 
+        if(officerData.jobRole === 'officerData.jobRole'){
+            officerData.irmId = null;
+        }
+
         try {
             // Debugging: Check if officerData exists
             if (!officerData || !officerData.firstNameEnglish) {
