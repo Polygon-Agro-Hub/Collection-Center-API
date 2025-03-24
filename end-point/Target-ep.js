@@ -190,7 +190,7 @@ exports.getCenterDetails = async (req, res) => {
     console.log(companyId);
     const { province, district, searchText, page, limit } = req.query;
 
-    const { totalItems, items } = await TargetDAO.getCenterDetailsDao(
+    const { totalItems, items } = await TargetDAO.getCenterDetailsDaoNew(
       companyId,
       province,
       district,

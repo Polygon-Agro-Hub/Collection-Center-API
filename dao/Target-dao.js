@@ -211,124 +211,240 @@ exports.downloadAllDailyTargetCompleteDAO = (companyId, fromDate, toDate) => {
     });
 };
 
-exports.getCenterDetailsDao = (companyId, province, district, searchText, page, limit) => {
-    return new Promise((resolve, reject) => {
-        let countSql = `
-        SELECT COUNT(DISTINCT CC.id) AS totalCount
-        FROM companycenter COMC
-        JOIN collectioncenter CC ON COMC.centerId = CC.id
-        JOIN collectionofficer COF ON COF.centerId = CC.id
-        WHERE COMC.companyId = ?
-    `;
+// exports.getCenterDetailsDao = (companyId, province, district, searchText, page, limit) => {
+//     return new Promise((resolve, reject) => {
+//         let countSql = `
+//         SELECT COUNT(DISTINCT CC.id) AS totalCount
+//         FROM companycenter COMC
+//         JOIN collectioncenter CC ON COMC.centerId = CC.id
+//         JOIN collectionofficer COF ON COF.centerId = CC.id
+//         WHERE COMC.companyId = ?
+//     `;
 
-        // Base SQL query
+//         // Base SQL query
+//         let dataSql = `
+//             SELECT 
+//                 CC.id AS centerId,
+//                 CC.centerName, 
+//                 CC.province,
+//                 CC.district,
+//                 CC.city,
+//                 CC.contact01,
+//                 CC.regCode,
+//                 COF.jobRole, 
+//                 COUNT(COF.id) AS totCount
+//             FROM 
+//                 companycenter COMC
+//             JOIN 
+//                 collectioncenter CC ON COMC.centerId = CC.id
+//             JOIN 
+//                 collectionofficer COF ON COF.centerId = CC.id
+//             WHERE 
+//                 COMC.companyId = ? `;
+
+//         // Add conditions for province if provided
+//         const queryParams = [companyId];
+//         const countParams = [companyId];
+
+//         if (province) {
+//             dataSql += ` AND CC.province = ? `;
+//             countSql += ` AND CC.province = ? `;
+//             queryParams.push(province);
+//             countParams.push(province);
+//         }
+
+//         if (district) {
+//             dataSql += ` AND CC.district = ? `;
+//             countSql += ` AND CC.district = ? `;
+//             queryParams.push(district);
+//             countParams.push(district);
+//         }
+
+//         if (searchText) {
+//             dataSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?) `;
+//             countSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?) `;
+//             queryParams.push(`%${searchText}%`, `%${searchText}%`);
+//             countParams.push(`%${searchText}%`, `%${searchText}%`);
+//         }
+
+//         // Group and order the results
+//         dataSql += `
+//             GROUP BY 
+//                 CC.id, CC.centerName, CC.province, CC.district, CC.city, CC.contact01, CC.regCode, COF.jobRole
+//         `;
+
+//         // Add pagination
+//         const offset = (page - 1) * limit;
+//         dataSql += ` LIMIT ? OFFSET ? `;
+//         queryParams.push(limit, offset);
+
+
+
+//         // Execute the query
+//         collectionofficer.query(dataSql, queryParams, (dataErr, dataResults) => {
+//             if (dataErr) {
+//                 console.error('Error in data query:', dataErr);
+//                 return reject(dataErr);
+//             }
+//             console.log('data results', dataResults);
+
+//             const jobRoles = ["Collection Officer", "Customer Officer", "Collection Center Manager", "Customer Service"];
+//             const centerMap = new Map();
+
+//             dataResults.forEach(({ centerId, centerName, province, district, city, contact01, regCode, jobRole, totCount }) => {
+//                 if (!centerMap.has(centerId)) {
+//                     const centerData = {
+//                         id: centerId,
+//                         centerName,
+//                         province,
+//                         district,
+//                         city,
+//                         contact01,
+//                         regCode
+//                     };
+//                     jobRoles.forEach(role => {
+//                         centerData[role.replace(/\s+/g, '')] = 0;
+//                     });
+//                     console.log('this is center data', centerData);
+//                     centerMap.set(centerId, centerData);
+//                     console.log('this is center map', centerMap);
+//                 }
+//                 const center = centerMap.get(centerId);
+//                 if (jobRole) {
+//                     center[jobRole.replace(/\s+/g, '')] = totCount;
+//                 }
+//             });
+
+//             const transformedResults = Array.from(centerMap.values());
+//             console.log('this is transformed data', transformedResults);
+//             collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+//                 if (countErr) {
+//                     console.error('Error in count query:', countErr);
+//                     return reject(countErr);
+//                 }
+
+//                 const totalItems = countResults[0].totalCount;
+//                 resolve({ totalItems, items: transformedResults });
+//             });
+//         });
+//     });
+// };
+
+
+
+exports.getCenterDetailsDaoNew = (companyId, province, district, searchText, page, limit) => {
+    return new Promise((resolve, reject) => {
+        // Validate input parameters
+        if (!companyId) {
+            return reject(new Error('Company ID is required'));
+        }
+
+        page = page || 1;
+        limit = limit || 10;
+
+        // Base count query to get total number of centers
+        let countSql = `
+            SELECT COUNT(DISTINCT CC.id) AS totalCount
+            FROM companycenter COMC
+            JOIN collectioncenter CC ON COMC.centerId = CC.id
+            WHERE COMC.companyId = ?
+        `;
+
+        // Base data query to fetch center details
         let dataSql = `
             SELECT 
                 CC.id AS centerId,
+                CC.regCode,
                 CC.centerName, 
+                CC.city,
                 CC.province,
                 CC.district,
-                CC.city,
                 CC.contact01,
-                CC.regCode,
-                COF.jobRole, 
-                COUNT(COF.id) AS totCount
+                CC.contact02,
+                COALESCE(SUM(CASE WHEN COF.jobRole = 'Collection Officer' THEN 1 ELSE 0 END), 0) AS collectionOfficerCount,
+                COALESCE(SUM(CASE WHEN COF.jobRole = 'Customer Officer' THEN 1 ELSE 0 END), 0) AS customerOfficerCount,
+                COALESCE(SUM(CASE WHEN COF.jobRole = 'Collection Center Manager' THEN 1 ELSE 0 END), 0) AS collectionCenterManagerCount,
+                COALESCE(SUM(CASE WHEN COF.jobRole = 'Customer Service' THEN 1 ELSE 0 END), 0) AS customerServiceCount
             FROM 
                 companycenter COMC
             JOIN 
                 collectioncenter CC ON COMC.centerId = CC.id
-            JOIN 
+            LEFT JOIN 
                 collectionofficer COF ON COF.centerId = CC.id
             WHERE 
-                COMC.companyId = ? `;
+                COMC.companyId = ?
+        `;
 
-        // Add conditions for province if provided
+        // Prepare query parameters
         const queryParams = [companyId];
         const countParams = [companyId];
 
+        // Add conditions for province if provided
         if (province) {
-            dataSql += ` AND CC.province = ? `;
-            countSql += ` AND CC.province = ? `;
+            dataSql += ` AND CC.province = ?`;
+            countSql += ` AND CC.province = ?`;
             queryParams.push(province);
             countParams.push(province);
         }
 
+        // Add conditions for district if provided
         if (district) {
-            dataSql += ` AND CC.district = ? `;
-            countSql += ` AND CC.district = ? `;
+            dataSql += ` AND CC.district = ?`;
+            countSql += ` AND CC.district = ?`;
             queryParams.push(district);
             countParams.push(district);
         }
 
+        // Add search conditions if searchText is provided
         if (searchText) {
-            dataSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?) `;
-            countSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?) `;
+            dataSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?)`;
+            countSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?)`;
             queryParams.push(`%${searchText}%`, `%${searchText}%`);
             countParams.push(`%${searchText}%`, `%${searchText}%`);
         }
 
-        // Group and order the results
+        // Group the results by center details
         dataSql += `
             GROUP BY 
-                CC.id, CC.centerName, CC.province, CC.district, CC.city, CC.contact01, CC.regCode, COF.jobRole
+                CC.id, CC.regCode, CC.centerName, CC.province, 
+                CC.district, CC.contact01, CC.contact02
         `;
 
         // Add pagination
         const offset = (page - 1) * limit;
-        dataSql += ` LIMIT ? OFFSET ? `;
+        dataSql += ` LIMIT ? OFFSET ?`;
         queryParams.push(limit, offset);
 
-
-
-        // Execute the query
+        // First, execute the data query
         collectionofficer.query(dataSql, queryParams, (dataErr, dataResults) => {
             if (dataErr) {
                 console.error('Error in data query:', dataErr);
                 return reject(dataErr);
             }
-            console.log('data results', dataResults);
 
-            const jobRoles = ["Collection Officer", "Customer Officer", "Collection Center Manager", "Customer Service"];
-            const centerMap = new Map();
-
-            dataResults.forEach(({ centerId, centerName, province, district, city, contact01, regCode, jobRole, totCount }) => {
-                if (!centerMap.has(centerId)) {
-                    const centerData = {
-                        id: centerId,
-                        centerName,
-                        province,
-                        district,
-                        city,
-                        contact01,
-                        regCode
-                    };
-                    jobRoles.forEach(role => {
-                        centerData[role.replace(/\s+/g, '')] = 0;
-                    });
-                    console.log('this is center data', centerData);
-                    centerMap.set(centerId, centerData);
-                    console.log('this is center map', centerMap);
-                }
-                const center = centerMap.get(centerId);
-                if (jobRole) {
-                    center[jobRole.replace(/\s+/g, '')] = totCount;
-                }
-            });
-
-            const transformedResults = Array.from(centerMap.values());
-            console.log('this is transformed data', transformedResults);
+            // Then, execute the count query
             collectionofficer.query(countSql, countParams, (countErr, countResults) => {
                 if (countErr) {
                     console.error('Error in count query:', countErr);
                     return reject(countErr);
                 }
 
+                // Prepare the response
                 const totalItems = countResults[0].totalCount;
-                resolve({ totalItems, items: transformedResults });
+                const totalPages = Math.ceil(totalItems / limit);
+
+                resolve({
+                    totalItems,
+                    totalPages,
+                    currentPage: page,
+                    itemsPerPage: limit,
+                    items: dataResults
+                });
             });
         });
     });
 };
+
 
 exports.getOfficerDetailsDAO = (centerId, page, limit, role, status, searchText) => {
     return new Promise((resolve, reject) => {
