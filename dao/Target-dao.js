@@ -1188,3 +1188,75 @@ exports.getAllPriceDetailsDao = (companyId, centerId, page, limit, grade, search
         });
     });
 };
+
+exports.createCenter = (centerData, companyId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Validate input data
+            if (!centerData || !centerData.centerName) {
+                return reject(new Error("Center data is missing or incomplete"));
+            }
+
+            // SQL query to insert data into collectioncenter
+            const insertCenterSQL = `
+                INSERT INTO collectioncenter (
+                    regCode, centerName, district, province, buildingNumber, city, street, country
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            // Execute the query to insert data into collectioncenter
+            collectionofficer.query(
+                insertCenterSQL,
+                [
+                    centerData.regCode,
+                    centerData.centerName,
+                    centerData.district,
+                    centerData.province,
+                    centerData.buildingNumber,
+                    centerData.city,
+                    centerData.street,
+                    centerData.country,
+                ],
+                (err, centerResults) => {
+                    if (err) {
+                        console.error("Database Error (collectioncenter):", err);
+                        return reject(err);
+                    }
+
+                    // Get the inserted ID for collectioncenter
+                    const centerId = centerResults.insertId;
+
+                    // SQL query to insert data into companycenter
+                    const insertCompanyCenterSQL = `
+                        INSERT INTO companycenter (centerId, companyId)
+                        VALUES (?, ?)
+                    `;
+
+                    // Execute the query to insert data into companycenter
+                    collectionofficer.query(
+                        insertCompanyCenterSQL,
+                        [centerId, companyId],
+                        (err, companyCenterResults) => {
+                            if (err) {
+                                console.error("Database Error (companycenter):", err);
+                                return reject(err);
+                            }
+
+                            // Return success response
+                            resolve({
+                                message: "Data inserted successfully",
+                                centerId: centerId,
+                                companyCenterId: companyCenterResults.insertId,
+                            });
+                        }
+                    );
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};
+

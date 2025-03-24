@@ -1,6 +1,7 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/authMiddleware');
-const TargetEP = require('../end-point/Target-ep')
+const TargetEP = require('../end-point/Target-ep');
+const upload = require("../middlewares/uploadMiddleware");
 
 const router = express.Router();
 
@@ -94,6 +95,15 @@ router.get(
     authMiddleware,
     TargetEP.getSelectedOfficerTarget
 )
+
+router.post(
+    '/create-center',
+    authMiddleware,
+    upload.single("file"),
+    TargetEP.createCenter
+)
+
+
 
 
 module.exports = router;
