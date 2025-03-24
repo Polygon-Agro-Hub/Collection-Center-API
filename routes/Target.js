@@ -95,6 +95,19 @@ router.get(
     TargetEP.getSelectedOfficerTarget
 )
 
+router.get(
+    // '/get-exist-veriety-target/:targetid/:cropid',
+    '/get-exist-veriety-target/:id',
+    authMiddleware,
+    TargetEP.getExsistVerityTarget
+)
+
+router.post(
+    '/edit-assigned-officer-target',
+    authMiddleware,
+    TargetEP.editAssignedOfficerTarget
+)
+
 
 module.exports = router;
 

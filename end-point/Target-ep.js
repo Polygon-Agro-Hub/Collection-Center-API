@@ -247,10 +247,10 @@ exports.getCenterDashbord = async (req, res) => {
     const limitedResentCollection = resentCollection.slice(0, 5);
 
     console.log(transCount);
-    
+
 
     console.log("Successfully fetched gatogory");
-    return res.status(200).json({ officerCount, transCount:transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
+    return res.status(200).json({ officerCount, transCount: transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
   } catch (error) {
     if (error.isJoi) {
       // Handle validation error
@@ -338,7 +338,7 @@ exports.AssignOfficerTarget = async (req, res) => {
     const verityId = parseInt(req.body.varietyId);
     const targetData = req.body.OfficerData;
     console.log(req.body);
-    
+
 
 
     for (let i = 0; i < targetData.length; i++) {
@@ -352,6 +352,14 @@ exports.AssignOfficerTarget = async (req, res) => {
         let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'C', targetData[i].targetC);
       }
     }
+
+    const updateStatus = await TargetDAO.updateTargetAssignStatus(id, verityId)
+    console.log(updateStatus);
+    if (updateStatus.affectedRows === 0) {
+      return res.json({ status: false, messsage: "Target Assigned Faild" });
+
+    }
+
     console.log("Successfully retrieved target crop verity");
     res.status(200).json({ status: true, messsage: "Target Assigned Successfully" });
   } catch (error) {
@@ -484,6 +492,93 @@ exports.getSelectedOfficerTarget = async (req, res) => {
 };
 
 
+exports.getExsistVerityTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+    // /:
+    // const { targetid, cropid } = await TargetValidate.getExsistVerityTargetSchema.validateAsync(req.params);
+    const targetid = req.params.id
+    const userId = req.user.userId;
+
+    const resultCrop = await TargetDAO.getTargetVerityDao(targetid);
+    const resultOfficer = await TargetDAO.getExsistVerityTargetDao(resultCrop.id, resultCrop.varietyId, userId);
+
+    console.log("Successfully retrieved target crop verity");
+    res.status(200).json({crop: resultCrop, officer:resultOfficer});
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving target crop verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+  }
+};
+
+
+
+exports.editAssignedOfficerTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  
+  try {
+    const id = parseInt(req.body.id);
+    const verityId = parseInt(req.body.varietyId);
+    const targetData = req.body.OfficerData;
+    console.log(req.body);
+
+    for (let i = 0; i < targetData.length; i++) {
+      const officerData = targetData[i];
+      
+      // Update existing targets if they changed
+      if (officerData.targetAId !== null && officerData.targetA !== officerData.prevousTargetA) {
+        console.log("hti01", officerData.targetAId, officerData.targetA, officerData);
+        await TargetDAO.updateTargetDao(officerData.targetAId, officerData.targetA);
+      }
+
+      if (officerData.targetBId !== null && officerData.targetB !== officerData.prevousTargetB) {
+        console.log("hti02", officerData.targetBId, officerData.targetB);
+        await TargetDAO.updateTargetDao(officerData.targetBId, officerData.targetB);
+      }
+
+      if (officerData.targetCId !== null && officerData.targetC !== officerData.prevousTargetC) {
+        console.log("hti03", officerData.targetCId, officerData.targetC);
+        await TargetDAO.updateTargetDao(officerData.targetCId, officerData.targetC);
+      }
+
+      // Create new targets if they don't exist
+      if (officerData.targetAId === null && officerData.targetA !== 0) {
+        console.log("hti04", id, verityId, officerData.id, 'A', officerData.targetA);
+        await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'A', officerData.targetA);
+      }
+      
+      if (officerData.targetBId === null && officerData.targetB !== 0) {
+        console.log("hti05", id, verityId, officerData.id, 'B', officerData.targetB);
+        await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'B', officerData.targetB);
+      }
+      
+      if (officerData.targetCId === null && officerData.targetC !== 0) {
+        console.log("hti06", id, verityId, officerData.id, 'C', officerData.targetC);
+        await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'C', officerData.targetC);
+      }
+    }
+
+    console.log("Successfully updated officer targets");
+    res.status(200).json({ status: true, message: "Target Assigned Successfully" });
+  } catch (error) {
+    console.error("Error updating officer targets:", error);
+    
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    return res.status(500).json({ 
+      error: "An error occurred while updating officer targets",
+      details: error.message 
+    });
+  }
+};
 
 
 

@@ -574,9 +574,9 @@ exports.getTotExpencesDao = (centerId) => {
             if (err) {
                 return reject(err);
             }
-            if(results.length === 0){
-                return resolve({totExpences: 0.00})
-            }            
+            if (results.length === 0) {
+                return resolve({ totExpences: 0.00 })
+            }
             resolve(results[0]);
         });
     });
@@ -1185,6 +1185,103 @@ exports.getAllPriceDetailsDao = (companyId, centerId, page, limit, grade, search
 
                 resolve({ items: dataResults, total });
             });
+        });
+    });
+};
+
+
+exports.updateTargetAssignStatus = (id, verietyId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        UPDATE dailytargetitems
+        SET isAssign = 1
+        WHERE targetId = ? AND varietyId = ?
+        `
+
+        collectionofficer.query(sql, [id, verietyId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.getExsistVerityTargetDao = (targetId, cropId, userId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                CO.id, 
+                CO.empId, 
+                CO.jobRole, 
+                CO.firstNameEnglish, 
+                CO.lastNameEnglish, 
+                ODT.grade, 
+                ODT.target, 
+                ODT.id AS officerTargetId
+            FROM 
+                collectionofficer CO
+            LEFT JOIN 
+                officerdailytarget ODT 
+                ON ODT.officerId = CO.id 
+                AND ODT.dailyTargetId = ? 
+                AND ODT.varietyId = ?
+            WHERE 
+                CO.irmId = ? 
+                OR CO.id = ?
+        `
+        // const sql = `
+        //    SELECT id, officerId, grade, target
+        //    FROM officerdailytarget
+        //    WHERE dailyTargetId = ? AND varietyId = ?
+        // `;
+        collectionofficer.query(sql, [targetId, cropId,userId, userId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            const transformedData = results.reduce((acc, item) => {
+                const { id, empId, jobRole, firstNameEnglish, lastNameEnglish, grade, target, officerTargetId} = item;
+
+                if (!acc[id]) {
+                    acc[id] = {
+                        id,
+                        empId,
+                        jobRole, 
+                        firstNameEnglish, 
+                        lastNameEnglish,
+                        targetAId: null,
+                        targetA: 0,
+                        prevousTargetA: 0,
+                        targetBId: null,
+                        targetB: 0,
+                        prevousTargetB: 0,
+                        targetCId: null,
+                        targetC: 0,
+                        prevousTargetC: 0,
+                    };
+                }
+
+                if (grade === "A") {
+                    acc[id].targetAId = officerTargetId;
+                    acc[id].targetA = parseFloat(target);
+                    acc[id].prevousTargetA = parseFloat(target);
+                } else if (grade === "B") {
+                    acc[id].targetBId = officerTargetId;
+                    acc[id].targetB = parseFloat(target);
+                    acc[id].prevousTargetB = parseFloat(target);
+                } else if (grade === "C") {
+                    acc[id].targetCId = officerTargetId;
+                    acc[id].targetC = parseFloat(target);
+                    acc[id].prevousTargetC = parseFloat(target);
+                }
+
+                return acc;
+            }, {});
+
+            const result = Object.values(transformedData);
+            resolve(result);
         });
     });
 };
