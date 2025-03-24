@@ -491,6 +491,53 @@ exports.getSelectedOfficerTarget = async (req, res) => {
   }
 };
 
+exports.createCenter = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    console.log(req.user);
+
+    // Ensure required data is provided
+    if (!req.body.centerData) {
+      return res.status(400).json({ error: "Center data is missing" });
+    }
+
+    const centerData = JSON.parse(req.body.centerData);
+    const companyId = req.user.companyId;
+
+    // Call the TargetDAO.createCenter function with the required parameters
+    const result = await TargetDAO.createCenter(centerData, companyId);
+
+    // Check if data was successfully inserted
+    if (result) {
+      console.log("Center created successfully");
+      console.log(result);
+      return res.status(201).json({
+        message: "Center created successfully",
+        status: true,
+        data: result,
+      });
+    } else {
+      return res.status(400).json({
+        message: "Data insertion failed or no changes were made",
+        status: false,
+      });
+    }
+  } catch (error) {
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error creating Center:", error);
+    return res.status(500).json({
+      error: "An error occurred while creating the Center",
+    });
+  }
+};
+
+
 
 exports.getExsistVerityTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
