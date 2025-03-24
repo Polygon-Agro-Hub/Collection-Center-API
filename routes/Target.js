@@ -1,6 +1,7 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/authMiddleware');
-const TargetEP = require('../end-point/Target-ep')
+const TargetEP = require('../end-point/Target-ep');
+const upload = require("../middlewares/uploadMiddleware");
 
 const router = express.Router();
 
@@ -94,6 +95,28 @@ router.get(
     authMiddleware,
     TargetEP.getSelectedOfficerTarget
 )
+
+router.get(
+    // '/get-exist-veriety-target/:targetid/:cropid',
+    '/get-exist-veriety-target/:id',
+    authMiddleware,
+    TargetEP.getExsistVerityTarget
+)
+
+router.post(
+    '/edit-assigned-officer-target',
+    authMiddleware,
+    TargetEP.editAssignedOfficerTarget
+)
+
+router.post(
+    '/create-center',
+    authMiddleware,
+    upload.single("file"),
+    TargetEP.createCenter
+)
+
+
 
 
 module.exports = router;

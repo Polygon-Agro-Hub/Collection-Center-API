@@ -72,4 +72,8 @@ exports.getSelectedOfficerTargetSchema = Joi.object({
     
 });
 
+exports.getExsistVerityTargetSchema = Joi.object({
+    targetid: Joi.number().integer().required(),
+    cropid: Joi.number().integer().required(),
+});
 

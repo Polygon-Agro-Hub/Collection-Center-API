@@ -574,9 +574,9 @@ exports.getTotExpencesDao = (centerId) => {
             if (err) {
                 return reject(err);
             }
-            if(results.length === 0){
-                return resolve({totExpences: 0.00})
-            }            
+            if (results.length === 0) {
+                return resolve({ totExpences: 0.00 })
+            }
             resolve(results[0]);
         });
     });
@@ -752,7 +752,7 @@ exports.getAssignCenterTargetDAO = (centerId, page, limit) => {
 
 
         let targetSql = `
-           SELECT DTI.id, CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC,DATE_FORMAT(DT.toDate, '%d/%m/%Y') AS toDate, DT.toTime, DT.fromTime
+           SELECT DTI.id, CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC,DATE_FORMAT(DT.toDate, '%d/%m/%Y') AS toDate, DT.toTime, DT.fromTime, DTI.isAssign
            FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ? 
         `
@@ -1185,6 +1185,178 @@ exports.getAllPriceDetailsDao = (companyId, centerId, page, limit, grade, search
 
                 resolve({ items: dataResults, total });
             });
+        });
+    });
+};
+
+exports.createCenter = (centerData, companyId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Validate input data
+            if (!centerData || !centerData.centerName) {
+                return reject(new Error("Center data is missing or incomplete"));
+            }
+
+            // SQL query to insert data into collectioncenter
+            const insertCenterSQL = `
+                INSERT INTO collectioncenter (
+                    regCode, centerName, district, province, buildingNumber, city, street, country
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            // Execute the query to insert data into collectioncenter
+            collectionofficer.query(
+                insertCenterSQL,
+                [
+                    centerData.regCode,
+                    centerData.centerName,
+                    centerData.district,
+                    centerData.province,
+                    centerData.buildingNumber,
+                    centerData.city,
+                    centerData.street,
+                    centerData.country,
+                ],
+                (err, centerResults) => {
+                    if (err) {
+                        console.error("Database Error (collectioncenter):", err);
+                        return reject(err);
+                    }
+
+                    // Get the inserted ID for collectioncenter
+                    const centerId = centerResults.insertId;
+
+                    // SQL query to insert data into companycenter
+                    const insertCompanyCenterSQL = `
+                        INSERT INTO companycenter (centerId, companyId)
+                        VALUES (?, ?)
+                    `;
+
+                    // Execute the query to insert data into companycenter
+                    collectionofficer.query(
+                        insertCompanyCenterSQL,
+                        [centerId, companyId],
+                        (err, companyCenterResults) => {
+                            if (err) {
+                                console.error("Database Error (companycenter):", err);
+                                return reject(err);
+                            }
+
+                            // Return success response
+                            resolve({
+                                message: "Data inserted successfully",
+                                centerId: centerId,
+                                companyCenterId: companyCenterResults.insertId,
+                            });
+                        }
+                    );
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};
+
+
+
+
+
+
+exports.updateTargetAssignStatus = (id, verietyId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        UPDATE dailytargetitems
+        SET isAssign = 1
+        WHERE targetId = ? AND varietyId = ?
+        `
+
+        collectionofficer.query(sql, [id, verietyId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.getExsistVerityTargetDao = (targetId, cropId, userId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                CO.id, 
+                CO.empId, 
+                CO.jobRole, 
+                CO.firstNameEnglish, 
+                CO.lastNameEnglish, 
+                ODT.grade, 
+                ODT.target, 
+                ODT.id AS officerTargetId
+            FROM 
+                collectionofficer CO
+            LEFT JOIN 
+                officerdailytarget ODT 
+                ON ODT.officerId = CO.id 
+                AND ODT.dailyTargetId = ? 
+                AND ODT.varietyId = ?
+            WHERE 
+                CO.irmId = ? 
+                OR CO.id = ?
+        `
+        // const sql = `
+        //    SELECT id, officerId, grade, target
+        //    FROM officerdailytarget
+        //    WHERE dailyTargetId = ? AND varietyId = ?
+        // `;
+        collectionofficer.query(sql, [targetId, cropId,userId, userId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            const transformedData = results.reduce((acc, item) => {
+                const { id, empId, jobRole, firstNameEnglish, lastNameEnglish, grade, target, officerTargetId} = item;
+
+                if (!acc[id]) {
+                    acc[id] = {
+                        id,
+                        empId,
+                        jobRole, 
+                        firstNameEnglish, 
+                        lastNameEnglish,
+                        targetAId: null,
+                        targetA: 0,
+                        prevousTargetA: 0,
+                        targetBId: null,
+                        targetB: 0,
+                        prevousTargetB: 0,
+                        targetCId: null,
+                        targetC: 0,
+                        prevousTargetC: 0,
+                    };
+                }
+
+                if (grade === "A") {
+                    acc[id].targetAId = officerTargetId;
+                    acc[id].targetA = parseFloat(target);
+                    acc[id].prevousTargetA = parseFloat(target);
+                } else if (grade === "B") {
+                    acc[id].targetBId = officerTargetId;
+                    acc[id].targetB = parseFloat(target);
+                    acc[id].prevousTargetB = parseFloat(target);
+                } else if (grade === "C") {
+                    acc[id].targetCId = officerTargetId;
+                    acc[id].targetC = parseFloat(target);
+                    acc[id].prevousTargetC = parseFloat(target);
+                }
+
+                return acc;
+            }, {});
+
+            const result = Object.values(transformedData);
+            resolve(result);
         });
     });
 };
