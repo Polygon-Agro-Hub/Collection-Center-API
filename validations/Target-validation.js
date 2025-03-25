@@ -77,3 +77,12 @@ exports.getExsistVerityTargetSchema = Joi.object({
     cropid: Joi.number().integer().required(),
 });
 
+exports.getCenterTargetSchema = Joi.object({
+    centerId: Joi.number().integer().min(1).default(1).optional(),
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    searchText: Joi.string().allow('').optional(),
+    
+});
+
+

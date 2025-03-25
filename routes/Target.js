@@ -116,6 +116,12 @@ router.post(
     TargetEP.createCenter
 )
 
+router.get(
+    "/get-center-target",
+    authMiddleware,
+    TargetEP.getCenterTarget
+)
+
 
 
 

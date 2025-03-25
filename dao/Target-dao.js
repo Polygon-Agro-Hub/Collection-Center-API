@@ -1476,3 +1476,64 @@ exports.getExsistVerityTargetDao = (targetId, cropId, userId) => {
         });
     });
 };
+
+exports.getCenterTargetDAO = (centerId, page, limit, searchText) => {
+    return new Promise((resolve, reject) => {
+        // const offset = (page - 1) * limit;
+
+
+        // let countSql = `
+        //     SELECT COUNT(*) AS total
+        //     FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
+        //     WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ?
+        // `
+
+
+        let targetSql = `
+           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, DATE_FORMAT(DT.toDate, '%d/%m/%Y') AS toDate, DT.toTime, DT.fromTime
+           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
+           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ? 
+        `
+        const sqlParams = [centerId];
+        // const countParams = [centerId]
+
+
+        if (searchText) {
+            const searchCondition =
+                ` AND  CV.varietyNameEnglish LIKE ? `;
+            targetSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            sqlParams.push(searchValue);
+        }
+
+        // targetSql += " LIMIT ? OFFSET ? ";
+        // sqlParams.push(limit, offset);
+
+
+        // collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+        //     if (countErr) {
+        //         console.error('Error in count query:', countErr);
+        //         return reject(countErr);
+        //     }
+
+        // const total = countResults[0].total;
+        const total = 0;
+
+        // Execute data query
+        collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
+            if (dataErr) {
+                console.error('Error in data query:', dataErr);
+                return reject(dataErr);
+            }
+
+            const transformedTargetData = dataResults.flatMap(item => [
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
+            ]);
+
+            resolve({ resultTarget: transformedTargetData, total });
+        });
+    });
+    // });
+};

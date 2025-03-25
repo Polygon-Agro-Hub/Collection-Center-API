@@ -627,5 +627,71 @@ exports.editAssignedOfficerTarget = async (req, res) => {
   }
 };
 
+exports.getCenterTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+    const { centerId, searchText, page, limit } = await TargetValidate.getCenterTargetSchema.validateAsync(req.query);
+
+    const { resultTarget, total } = await TargetDAO.getCenterTargetDAO(centerId, page, limit, searchText);
+    console.log(total);
+    const combinedData = [];
+
+    for (const target of resultTarget) {
+      if (target.qtyA !== undefined) {
+        combinedData.push({
+          cropNameEnglish: target.cropNameEnglish,
+          varietyNameEnglish: target.varietyNameEnglish,
+          toDate: target.toDate,
+          toTime: target.toTime,
+          grade: "A",
+          status: parseFloat(target.complteQtyA) >= parseFloat(target.qtyA) ? 'Completed' : 'Pending',
+          TargetQty: target.qtyA,
+          CompleteQty: target.complteQtyA || "0.00",
+        });
+      }
+
+      if (target.qtyB !== undefined) {
+        combinedData.push({
+          cropNameEnglish: target.cropNameEnglish,
+          varietyNameEnglish: target.varietyNameEnglish,
+          toDate: target.toDate,
+          toTime: target.toTime,
+          grade: "B",
+          status: parseFloat(target.complteQtyB) >= parseFloat(target.qtyB) ? 'Completed' : 'Pending',
+          TargetQty: target.qtyB,
+          CompleteQty: target.complteQtyB || "0.00",
+        });
+      }
+
+      if (target.qtyC !== undefined) {
+        combinedData.push({
+          cropNameEnglish: target.cropNameEnglish,
+          varietyNameEnglish: target.varietyNameEnglish,
+          toDate: target.toDate,
+          toTime: target.toTime,
+          grade: "C",
+          status: parseFloat(target.complteQtyC) >= parseFloat(target.qtyC) ? 'Completed' : 'Pending',
+          TargetQty: target.qtyC,
+          CompleteQty: target.complteQtyC || "0.00",
+        });
+      }
+    }
+
+
+    console.log("Successfully transformed data");
+    return res.status(200).json({
+      items: combinedData,
+      totalPages: total
+    });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching crop names and verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
+  }
+};
+
 
 
