@@ -891,7 +891,7 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff, collectioncenter Cen 
-                     WHERE Coff.companyId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+                     WHERE Coff.centerId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
 
                  `;
 
