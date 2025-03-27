@@ -439,7 +439,8 @@ exports.getAllOfficersForCCH = async (req, res) => {
   try {
     // Validate query parameters      
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
-
+    console.log(req.query);
+    
     const companyId = req.user.companyId;
 
     const { page, limit, status, role, searchText, center } = validatedQuery;

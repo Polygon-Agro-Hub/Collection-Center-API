@@ -969,7 +969,7 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
 exports.getCCHOwnCenters = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            SELECT CC.id, CC.centerName
+            SELECT CC.id, CC.centerName, CC.regCode
             FROM collectioncenter CC, companycenter COMC
             WHERE COMC.centerId = CC.id AND COMC.companyId = ?
         `;
