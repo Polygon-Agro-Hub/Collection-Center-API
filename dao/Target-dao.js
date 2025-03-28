@@ -1313,58 +1313,80 @@ exports.createCenter = (centerData, companyId) => {
                 return reject(new Error("Center data is missing or incomplete"));
             }
 
-            // SQL query to insert data into collectioncenter
-            const insertCenterSQL = `
-                INSERT INTO collectioncenter (
-                    regCode, centerName, district, province, buildingNumber, city, street, country
-                ) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            // SQL query to check for duplicate regCode
+            const checkDuplicateSQL = `
+                SELECT regCode FROM collectioncenter WHERE regCode = ?
             `;
 
-            // Execute the query to insert data into collectioncenter
+            // Check for duplicate regCode
             collectionofficer.query(
-                insertCenterSQL,
-                [
-                    centerData.regCode,
-                    centerData.centerName,
-                    centerData.district,
-                    centerData.province,
-                    centerData.buildingNumber,
-                    centerData.city,
-                    centerData.street,
-                    centerData.country,
-                ],
-                (err, centerResults) => {
+                checkDuplicateSQL,
+                [centerData.regCode],
+                (err, duplicateResults) => {
                     if (err) {
-                        console.error("Database Error (collectioncenter):", err);
+                        console.error("Database Error (check duplicate):", err);
                         return reject(err);
                     }
 
-                    // Get the inserted ID for collectioncenter
-                    const centerId = centerResults.insertId;
+                    // If a duplicate regCode exists, reject the promise with an error
+                    if (duplicateResults.length > 0) {
+                        return reject(new Error(`Duplicate regCode: ${centerData.regCode} already exists.`));
+                    }
 
-                    // SQL query to insert data into companycenter
-                    const insertCompanyCenterSQL = `
-                        INSERT INTO companycenter (centerId, companyId)
-                        VALUES (?, ?)
+                    // SQL query to insert data into collectioncenter
+                    const insertCenterSQL = `
+                        INSERT INTO collectioncenter (
+                            regCode, centerName, district, province, buildingNumber, city, street, country
+                        ) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     `;
 
-                    // Execute the query to insert data into companycenter
+                    // Execute the query to insert data into collectioncenter
                     collectionofficer.query(
-                        insertCompanyCenterSQL,
-                        [centerId, companyId],
-                        (err, companyCenterResults) => {
+                        insertCenterSQL,
+                        [
+                            centerData.regCode,
+                            centerData.centerName,
+                            centerData.district,
+                            centerData.province,
+                            centerData.buildingNumber,
+                            centerData.city,
+                            centerData.street,
+                            centerData.country,
+                        ],
+                        (err, centerResults) => {
                             if (err) {
-                                console.error("Database Error (companycenter):", err);
+                                console.error("Database Error (collectioncenter):", err);
                                 return reject(err);
                             }
 
-                            // Return success response
-                            resolve({
-                                message: "Data inserted successfully",
-                                centerId: centerId,
-                                companyCenterId: companyCenterResults.insertId,
-                            });
+                            // Get the inserted ID for collectioncenter
+                            const centerId = centerResults.insertId;
+
+                            // SQL query to insert data into companycenter
+                            const insertCompanyCenterSQL = `
+                                INSERT INTO companycenter (centerId, companyId)
+                                VALUES (?, ?)
+                            `;
+
+                            // Execute the query to insert data into companycenter
+                            collectionofficer.query(
+                                insertCompanyCenterSQL,
+                                [centerId, companyId],
+                                (err, companyCenterResults) => {
+                                    if (err) {
+                                        console.error("Database Error (companycenter):", err);
+                                        return reject(err);
+                                    }
+
+                                    // Return success response
+                                    resolve({
+                                        message: "Data inserted successfully",
+                                        centerId: centerId,
+                                        companyCenterId: companyCenterResults.insertId,
+                                    });
+                                }
+                            );
                         }
                     );
                 }
@@ -1375,6 +1397,7 @@ exports.createCenter = (centerData, companyId) => {
         }
     });
 };
+
 
 
 
