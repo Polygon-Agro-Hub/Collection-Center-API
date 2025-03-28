@@ -20,6 +20,8 @@ exports.GetAllCenterDAO = () => {
 
 exports.getForCreateIdDao = (role) => {
     return new Promise((resolve, reject) => {
+        console.log(role);
+        
         const sql = "SELECT empId FROM collectionofficer WHERE empId LIKE ? ORDER BY empId DESC LIMIT 1";
         collectionofficer.query(sql, [`${role}%`], (err, results) => {
             if (err) {

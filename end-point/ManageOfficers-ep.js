@@ -70,7 +70,7 @@ exports.createOfficer = async (req, res) => {
 
     const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
 
-    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl);
+    // const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl);
 
     if (result.affectedRows === 0) {
       return res.json({ message: "User not found or no changes were made.", status: false });
