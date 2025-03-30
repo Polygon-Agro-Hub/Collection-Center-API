@@ -52,11 +52,21 @@ exports.addDailyTarget = async (req, res) => {
 exports.getAllDailyTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
+
   try {
     const { searchText, page, limit } = await TargetValidate.getAllDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
+    console.log(centerId);
 
-    const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(centerId, page, limit, searchText);
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0]; // Get the current date in YYYY-MM-DD format
+    const currentTime = now.toTimeString().slice(0, 5); // Get the current time in HH:MM format
+
+    console.log("Current Date:", currentDate);  // Output: 2025-03-31
+    console.log("Current Time:", currentTime);  // Output: 14:25
+
+    const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(centerId, page, limit, searchText, currentDate, currentTime);
+    console.log('these are results', resultTarget);
     const combinedData = [];
 
     for (const target of resultTarget) {
@@ -291,7 +301,8 @@ exports.getAssignCenterTarget = async (req, res) => {
     const { page, limit } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
 
-    const { resultTarget, total } = await TargetDAO.getAssignCenterTargetDAO(centerId, page, limit);
+    const { resultTarget, total } = await TargetDAO.getAssignCenterTargetDAO(centerId);
+    console.log(resultTarget);
 
     console.log("Successfully transformed data");
     return res.status(200).json({ items: resultTarget, total: total });
@@ -496,49 +507,49 @@ exports.createCenter = async (req, res) => {
   console.log(fullUrl);
 
   try {
-      console.log(req.user);
+    console.log(req.user);
 
-      // Ensure required data is provided
-      if (!req.body.centerData) {
-          return res.status(400).json({ error: "Center data is missing" });
-      }
+    // Ensure required data is provided
+    if (!req.body.centerData) {
+      return res.status(400).json({ error: "Center data is missing" });
+    }
 
-      const centerData = JSON.parse(req.body.centerData);
-      const companyId = req.user.companyId;
+    const centerData = JSON.parse(req.body.centerData);
+    const companyId = req.user.companyId;
 
-      // Call the TargetDAO.createCenter function with the required parameters
-      const result = await TargetDAO.createCenter(centerData, companyId);
+    // Call the TargetDAO.createCenter function with the required parameters
+    const result = await TargetDAO.createCenter(centerData, companyId);
 
-      // Check if data was successfully inserted
-      if (result) {
-          console.log("Center created successfully");
-          console.log(result);
-          return res.status(201).json({
-              message: "Center created successfully",
-              status: true,
-              data: result,
-          });
-      } else {
-          return res.status(400).json({
-              message: "Data insertion failed or no changes were made",
-              status: false,
-          });
-      }
-  } catch (error) {
-      if (error.message.includes("Duplicate regCode")) {
-          // Handle duplicate regCode error
-          return res.status(409).json({ error: error.message });
-      }
-
-      if (error.isJoi) {
-          // Handle validation error
-          return res.status(400).json({ error: error.details[0].message });
-      }
-
-      console.error("Error creating Center:", error);
-      return res.status(500).json({
-          error: "An error occurred while creating the Center",
+    // Check if data was successfully inserted
+    if (result) {
+      console.log("Center created successfully");
+      console.log(result);
+      return res.status(201).json({
+        message: "Center created successfully",
+        status: true,
+        data: result,
       });
+    } else {
+      return res.status(400).json({
+        message: "Data insertion failed or no changes were made",
+        status: false,
+      });
+    }
+  } catch (error) {
+    if (error.message.includes("Duplicate regCode")) {
+      // Handle duplicate regCode error
+      return res.status(409).json({ error: error.message });
+    }
+
+    if (error.isJoi) {
+      // Handle validation error
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error creating Center:", error);
+    return res.status(500).json({
+      error: "An error occurred while creating the Center",
+    });
   }
 };
 
@@ -558,7 +569,7 @@ exports.getExsistVerityTarget = async (req, res) => {
     const resultOfficer = await TargetDAO.getExsistVerityTargetDao(resultCrop.id, resultCrop.varietyId, userId);
 
     console.log("Successfully retrieved target crop verity");
-    res.status(200).json({crop: resultCrop, officer:resultOfficer});
+    res.status(200).json({ crop: resultCrop, officer: resultOfficer });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -574,7 +585,7 @@ exports.getExsistVerityTarget = async (req, res) => {
 exports.editAssignedOfficerTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
-  
+
   try {
     const id = parseInt(req.body.id);
     const verityId = parseInt(req.body.varietyId);
@@ -583,7 +594,7 @@ exports.editAssignedOfficerTarget = async (req, res) => {
 
     for (let i = 0; i < targetData.length; i++) {
       const officerData = targetData[i];
-      
+
       // Update existing targets if they changed
       if (officerData.targetAId !== null && officerData.targetA !== officerData.prevousTargetA) {
         console.log("hti01", officerData.targetAId, officerData.targetA, officerData);
@@ -605,12 +616,12 @@ exports.editAssignedOfficerTarget = async (req, res) => {
         console.log("hti04", id, verityId, officerData.id, 'A', officerData.targetA);
         await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'A', officerData.targetA);
       }
-      
+
       if (officerData.targetBId === null && officerData.targetB !== 0) {
         console.log("hti05", id, verityId, officerData.id, 'B', officerData.targetB);
         await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'B', officerData.targetB);
       }
-      
+
       if (officerData.targetCId === null && officerData.targetC !== 0) {
         console.log("hti06", id, verityId, officerData.id, 'C', officerData.targetC);
         await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'C', officerData.targetC);
@@ -621,14 +632,14 @@ exports.editAssignedOfficerTarget = async (req, res) => {
     res.status(200).json({ status: true, message: "Target Assigned Successfully" });
   } catch (error) {
     console.error("Error updating officer targets:", error);
-    
+
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: "An error occurred while updating officer targets",
-      details: error.message 
+      details: error.message
     });
   }
 };
