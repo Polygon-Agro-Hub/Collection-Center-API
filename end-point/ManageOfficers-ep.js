@@ -527,15 +527,18 @@ exports.CCHcreateOfficer = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     const officerData = JSON.parse(req.body.officerData);
-    const driverData = JSON.parse(req.body.driverData);
-    console.log(driverData);
 
 
     // const centerId = req.user.centerId;
     const companyId = req.user.companyId;
-    // const managerID = req.user.userId;
 
-    // console.log(req.body.licBack);
+    const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
+    console.log("checkUserExist", checkUserExist);
+    
+    if(checkUserExist){
+      return res.json({ message: "This NiC Allready exist.", status: false });
+    }
+
 
 
     const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
@@ -552,6 +555,8 @@ exports.CCHcreateOfficer = async (req, res) => {
     }
 
     if (officerData.jobRole === "Driver") {
+
+      const driverData = JSON.parse(req.body.driverData);
       //license front
       const licFrontbase64String = req.body.licFront.split(",")[1]; // Extract the Base64 content
       // const licFrontmimeType = req.body.licFront.match(/data:(.*?);base64,/)[1]; // Extract MIME type

@@ -1247,3 +1247,25 @@ exports.vehicleRegisterDao = (id, driverData, licFrontImg, licBackImg, insFrontI
         });
     });
 };
+
+
+exports.checkExistOfficersDao = (nic) => {
+    return new Promise((resolve, reject) => {        
+        const sql = `
+            SELECT *
+            FROM collectionofficer
+            WHERE nic = ?
+        `;
+
+        collectionofficer.query(sql, [nic], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            let validationResult = false;
+            if(results.length > 0) {
+                validationResult = true; // NIC already exists
+            }
+            resolve(validationResult);
+        });
+    });
+};
