@@ -20,6 +20,8 @@ exports.GetAllCenterDAO = () => {
 
 exports.getForCreateIdDao = (role) => {
     return new Promise((resolve, reject) => {
+        console.log(role);
+        
         const sql = "SELECT empId FROM collectionofficer WHERE empId LIKE ? ORDER BY empId DESC LIMIT 1";
         collectionofficer.query(sql, [`${role}%`], (err, results) => {
             if (err) {
@@ -1012,7 +1014,7 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-            if(officerData.jobRole === 'Collection Center Manager'){
+            if(officerData.jobRole === 'Collection Center Manager' || officerData.jobRole === 'Driver'){
                 officerData.irmId = null;
             }
 
@@ -1209,5 +1211,61 @@ exports.CCHupdateOfficerDetails = (id, officerData, image) => {
             console.error("Error:", error);
             reject(error);
         }
+    });
+};
+
+exports.vehicleRegisterDao = (id, driverData, licFrontImg, licBackImg, insFrontImg, insBackImg, vehFrontImg, vehBackImg, vehSideImgA, vehSideImgB) => {
+    return new Promise((resolve, reject) => {
+        // console.log(companyId,centerId);
+        
+        const sql = `
+            INSERT INTO vehicleregistration (coId, licNo, insNo, insExpDate, vType, vCapacity, vRegNo, licFrontImg, licBackImg, insFrontImg, insBackImg, vehFrontImg, vehBackImg, vehSideImgA, vehSideImgB)
+            VaLUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        collectionofficer.query(sql, [
+            id,
+            driverData.licNo,
+            driverData.insNo,
+            driverData.insExpDate,
+            driverData.vType,
+            driverData.vCapacity,
+            driverData.vRegNo,
+            licFrontImg,
+            licBackImg,
+            insFrontImg,
+            insBackImg,
+            vehFrontImg,
+            vehBackImg,
+            vehSideImgA,
+            vehSideImgB
+        ], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.checkExistOfficersDao = (nic) => {
+    return new Promise((resolve, reject) => {        
+        const sql = `
+            SELECT *
+            FROM collectionofficer
+            WHERE nic = ?
+        `;
+
+        collectionofficer.query(sql, [nic], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            let validationResult = false;
+            if(results.length > 0) {
+                validationResult = true; // NIC already exists
+            }
+            resolve(validationResult);
+        });
     });
 };
