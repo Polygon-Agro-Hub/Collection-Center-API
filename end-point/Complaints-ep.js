@@ -31,6 +31,7 @@ exports.getRecivedComplainById = async (req, res) => {
 
     try {
         const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
+        console.log(id);
 
         const result = await ComplaintDAO.GetReciveReplyByIdDao(id)
         if (result.length === 0) {

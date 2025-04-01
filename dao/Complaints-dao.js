@@ -69,9 +69,9 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
 exports.GetReciveReplyByIdDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            SELECT OC.id, OC.refNo, OC.complainCategory, OC.complain, OC.createdAt, OC.reply, OC.language, COF.empId, COF.firstNameEnglish, COF.lastNameEnglish, COF.phoneCode01, COF.phoneNumber01, COF.phoneCode02, COF.phoneNumber02
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND OC.id = ?
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.createdAt, OC.reply, OC.language, COF.empId, COF.firstNameEnglish, COF.lastNameEnglish, COF.phoneCode01, COF.phoneNumber01, COF.phoneCode02, COF.phoneNumber02
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND OC.id = ?
         `;
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
