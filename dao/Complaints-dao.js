@@ -1,4 +1,4 @@
-const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
+const { plantcare, collectionofficer, marketPlace, dash, admin } = require('../startup/database');
 
 exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => {
     return new Promise((resolve, reject) => {
@@ -454,4 +454,22 @@ exports.addComplaintCCHDao = (officerId, category, complaint) => {
 
 
 
+exports.getAllCollectiOfficerCategoryDao = () => {
+    return new Promise((resolve, reject) => {
 
+        const sql = `
+            SELECT CC.id, CC.categoryEnglish
+            FROM systemapplications SA, complaincategory CC
+            WHERE CC.appId = SA.id AND SA.appName = 'CollectionOfficer'
+        `;
+
+        admin.query(sql, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            console.log(results);
+            
+            resolve(results);
+        });
+    });
+};
