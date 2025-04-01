@@ -90,8 +90,9 @@ exports.createDailyTargetItemsDao = (data, targetId) => {
 };
 
 
-exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
+exports.getAllDailyTargetDAO = (centerId, page, limit, searchText, currentDate, currentTime) => {
     return new Promise((resolve, reject) => {
+
         // const offset = (page - 1) * limit;
 
 
@@ -103,11 +104,22 @@ exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
 
 
         let targetSql = `
-           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, DATE_FORMAT(DT.toDate, '%d/%m/%Y') AS toDate, DT.toTime, DT.fromTime
-           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ? 
+        SELECT CG.cropNameEnglish, CV.varietyNameEnglish, 
+        DTI.qtyA, DTI.qtyB, DTI.qtyC, 
+        DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, 
+        DATE_FORMAT(DT.toDate, '%d/%m/%Y') AS toDate, 
+        DT.toTime, DT.fromTime
+ FROM dailytarget DT
+ JOIN dailytargetitems DTI ON DT.id = DTI.targetId
+ JOIN plant_care.cropvariety CV ON DTI.varietyId = CV.id
+ JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+ WHERE DT.centerId = ? 
+ AND (
+    DT.toDate > ? 
+    OR (DT.toDate = ? AND DT.toTime > ?)
+)
         `
-        const sqlParams = [centerId];
+        const sqlParams = [centerId, currentDate, currentDate, currentTime];
         // const countParams = [centerId]
 
 
@@ -134,16 +146,19 @@ exports.getAllDailyTargetDAO = (centerId, page, limit, searchText) => {
 
         // Execute data query
         collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
+            console.log(dataResults);
             if (dataErr) {
                 console.error('Error in data query:', dataErr);
                 return reject(dataErr);
             }
 
             const transformedTargetData = dataResults.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
+                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
             ]);
+
+            console.log(transformedTargetData);
 
             resolve({ resultTarget: transformedTargetData, total });
         });
@@ -855,9 +870,9 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
 };
 
 
-exports.getAssignCenterTargetDAO = (centerId, page, limit) => {
+exports.getAssignCenterTargetDAO = (centerId) => {
     return new Promise((resolve, reject) => {
-        const offset = (page - 1) * limit;
+        // const offset = (page - 1) * limit;
 
 
         let countSql = `
@@ -875,8 +890,8 @@ exports.getAssignCenterTargetDAO = (centerId, page, limit) => {
         const sqlParams = [centerId];
         const countParams = [centerId]
 
-        targetSql += " LIMIT ? OFFSET ? ";
-        sqlParams.push(limit, offset);
+        // targetSql += " LIMIT ? OFFSET ? ";
+        // sqlParams.push(limit, offset);
 
 
         collectionofficer.query(countSql, countParams, (countErr, countResults) => {
@@ -1540,3 +1555,6 @@ exports.getCenterTargetDAO = (centerId, page, limit, searchText) => {
         });
     });
 };
+
+
+
