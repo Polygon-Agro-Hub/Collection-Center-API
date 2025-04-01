@@ -56,7 +56,12 @@ exports.createOfficer = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     const officerData = JSON.parse(req.body.officerData);
+    const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
+    console.log("checkUserExist", checkUserExist);
 
+    if (checkUserExist) {
+      return res.json({ message: "This NiC Allready exist.", status: false });
+    }
     const centerId = req.user.centerId;
     const companyId = req.user.companyId;
     const managerID = req.user.userId;
@@ -534,8 +539,8 @@ exports.CCHcreateOfficer = async (req, res) => {
 
     const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
     console.log("checkUserExist", checkUserExist);
-    
-    if(checkUserExist){
+
+    if (checkUserExist) {
       return res.json({ message: "This NiC Allready exist.", status: false });
     }
 
