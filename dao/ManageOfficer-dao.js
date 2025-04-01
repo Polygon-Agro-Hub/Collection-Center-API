@@ -21,7 +21,7 @@ exports.GetAllCenterDAO = () => {
 exports.getForCreateIdDao = (role) => {
     return new Promise((resolve, reject) => {
         console.log(role);
-        
+
         const sql = "SELECT empId FROM collectionofficer WHERE empId LIKE ? ORDER BY empId DESC LIMIT 1";
         collectionofficer.query(sql, [`${role}%`], (err, results) => {
             if (err) {
@@ -52,7 +52,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-            
+
 
             // Generate QR Code
             const qrData = JSON.stringify({ empId: officerData.empId });
@@ -364,7 +364,7 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
         `;
         collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
             if (err) {
-                
+
                 return reject(err); // Reject promise if an error occurs
             }
             resolve(results); // Resolve with the query results
@@ -376,10 +376,10 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
 exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEnglish) => {
     try {
         const doc = new PDFDocument();
-        
+
         const chunks = [];
         doc.on('data', (chunk) => chunks.push(chunk));
-        
+
         // Add watermark (if needed)
         const watermarkPath = './assets/bg.png';
         doc.opacity(0.2)
@@ -469,11 +469,19 @@ exports.getOfficerByIdDAO = (id) => {
             SELECT 
                 COF.*,
                 COM.companyNameEnglish,
-                CEN.centerName
+                CEN.centerName,
+                VR.*
             FROM 
-                collectionofficer COF, company COM, collectioncenter CEN
+                collectionofficer COF
+            LEFT JOIN 
+                company COM ON COF.companyId = COM.id
+            LEFT JOIN 
+                collectioncenter CEN ON COF.centerId = CEN.id
+            LEFT JOIN
+                vehicleregistration VR ON COF.id = VR.coId 
             WHERE 
-             COF.centerId = CEN.id AND COF.companyId = COM.id AND COF.id = ?`;
+                COF.id = ?
+        `;
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
@@ -483,6 +491,9 @@ exports.getOfficerByIdDAO = (id) => {
             if (results.length === 0) {
                 return resolve(null); // No officer found
             }
+
+            console.log(results);
+
 
             const officer = results[0];
 
@@ -522,9 +533,24 @@ exports.getOfficerByIdDAO = (id) => {
                     branchName: officer.branchName,
                     companyNameEnglish: officer.companyNameEnglish,
                     centerName: officer.centerName,
-                    centerId:officer.centerId,
-                    companyId:officer.companyId,
-                    irmId:officer.irmId
+                    centerId: officer.centerId,
+                    companyId: officer.companyId,
+                    irmId: officer.irmId,
+                    licNo:officer.licNo,
+                    insNo:officer.insNo,
+                    insExpDate:officer.insExpDate,
+                    vType:officer.vType,
+                    vCapacity:officer.vCapacity,
+                    vRegNo:officer.vRegNo,
+                    licFrontImg:officer.licFrontImg, 
+                    licBackImg:officer.licBackImg, 
+                    insFrontImg:officer.insFrontImg,
+                    insBackImg:officer.insBackImg, 
+                    vehFrontImg:officer.vehFrontImg,
+                    vehBackImg:officer.vehBackImg, 
+                    vehSideImgA:officer.vehSideImgA,
+                    vehSideImgB:officer.vehSideImgB 
+
 
 
 
@@ -546,7 +572,7 @@ exports.updateOfficerDetails = (id, officerData, image) => {
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-           
+
             // Generate QR Code
             await deleteFromS3(officerData.previousQR);
 
@@ -555,7 +581,7 @@ exports.updateOfficerDetails = (id, officerData, image) => {
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
             const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
 
-            
+
 
             // Define SQL Query before execution
             const sql = `
@@ -813,7 +839,7 @@ exports.getPassingOfficerDao = (data, officerId) => {
                 WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
 
                 `;
-        
+
 
         collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
             if (err) {
@@ -988,8 +1014,8 @@ exports.getCCHOwnCenters = (id) => {
 
 exports.getCenterManagerDao = (companyId, centerId) => {
     return new Promise((resolve, reject) => {
-        console.log(companyId,centerId);
-        
+        console.log(companyId, centerId);
+
         const sql = `
             SELECT id, firstNameEnglish, lastNameEnglish
             FROM collectionofficer
@@ -1014,11 +1040,11 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-            if(officerData.jobRole === 'Collection Center Manager' || officerData.jobRole === 'Driver'){
+            if (officerData.jobRole === 'Collection Center Manager' || officerData.jobRole === 'Driver') {
                 officerData.irmId = null;
             }
 
-            
+
 
             // Generate QR Code
             const qrData = JSON.stringify({ empId: officerData.empId });
@@ -1099,7 +1125,7 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
 exports.CCHupdateOfficerDetails = (id, officerData, image) => {
     return new Promise(async (resolve, reject) => {
 
-        if(officerData.jobRole === 'officerData.jobRole'){
+        if (officerData.jobRole === 'officerData.jobRole') {
             officerData.irmId = null;
         }
 
@@ -1217,7 +1243,7 @@ exports.CCHupdateOfficerDetails = (id, officerData, image) => {
 exports.vehicleRegisterDao = (id, driverData, licFrontImg, licBackImg, insFrontImg, insBackImg, vehFrontImg, vehBackImg, vehSideImgA, vehSideImgB) => {
     return new Promise((resolve, reject) => {
         // console.log(companyId,centerId);
-        
+
         const sql = `
             INSERT INTO vehicleregistration (coId, licNo, insNo, insExpDate, vType, vCapacity, vRegNo, licFrontImg, licBackImg, insFrontImg, insBackImg, vehFrontImg, vehBackImg, vehSideImgA, vehSideImgB)
             VaLUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1250,7 +1276,7 @@ exports.vehicleRegisterDao = (id, driverData, licFrontImg, licBackImg, insFrontI
 
 
 exports.checkExistOfficersDao = (nic) => {
-    return new Promise((resolve, reject) => {        
+    return new Promise((resolve, reject) => {
         const sql = `
             SELECT *
             FROM collectionofficer
@@ -1262,7 +1288,7 @@ exports.checkExistOfficersDao = (nic) => {
                 return reject(err);
             }
             let validationResult = false;
-            if(results.length > 0) {
+            if (results.length > 0) {
                 validationResult = true; // NIC already exists
             }
             resolve(validationResult);
