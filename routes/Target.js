@@ -122,6 +122,19 @@ router.get(
     TargetEP.getCenterTarget
 )
 
+//-----------------new parts-------------------//
+router.get(
+    "/get-center-crops/:id",
+    authMiddleware,
+    TargetEP.getCenterCenterCrops
+)
+
+router.post(
+    "/add-center-crops",
+    authMiddleware,
+    TargetEP.addOrRemoveCenterCrops
+)
+
 
 
 

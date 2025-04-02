@@ -1465,20 +1465,20 @@ exports.getExsistVerityTargetDao = (targetId, cropId, userId) => {
         //    FROM officerdailytarget
         //    WHERE dailyTargetId = ? AND varietyId = ?
         // `;
-        collectionofficer.query(sql, [targetId, cropId,userId, userId], (err, results) => {
+        collectionofficer.query(sql, [targetId, cropId, userId, userId], (err, results) => {
             if (err) {
                 return reject(err);
             }
 
             const transformedData = results.reduce((acc, item) => {
-                const { id, empId, jobRole, firstNameEnglish, lastNameEnglish, grade, target, officerTargetId} = item;
+                const { id, empId, jobRole, firstNameEnglish, lastNameEnglish, grade, target, officerTargetId } = item;
 
                 if (!acc[id]) {
                     acc[id] = {
                         id,
                         empId,
-                        jobRole, 
-                        firstNameEnglish, 
+                        jobRole,
+                        firstNameEnglish,
                         lastNameEnglish,
                         targetAId: null,
                         targetA: 0,
@@ -1556,5 +1556,173 @@ exports.getCenterTargetDAO = (centerId, page, limit, searchText) => {
     });
 };
 
+
+// ---------------------- New part ---------------------
+
+
+exports.getCenterCenterCropsDao = (companyCenterId, page, limit) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        const countParams = [companyCenterId];
+        const dataParams = [companyCenterId, companyCenterId, limit, offset]; // Ensures correct parameter order
+
+        // ✅ Fixed COUNT query (Removed GROUP BY)
+        let countSql = `
+            SELECT COUNT(DISTINCT CV.id) AS total
+            FROM marketprice MP
+            JOIN marketpriceserve MPS ON MPS.marketPriceId = MP.id
+            JOIN plant_care.cropvariety CV ON MP.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE MPS.companyCenterId = ?
+        `;
+
+        // ✅ Fixed `isAssign` condition and ensured correct parameter order
+        let dataSql = `
+            SELECT 
+                CG.cropNameEnglish, 
+                CV.varietyNameEnglish, 
+                CV.id AS cropId, 
+                CASE 
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM centercrops
+                        WHERE companyCenterId = ? AND varietyId = CV.id
+                    ) THEN 1 
+                    ELSE 0 
+                END AS isAssign
+            FROM 
+                marketprice MP
+                JOIN marketpriceserve MPS ON MPS.marketPriceId = MP.id
+                JOIN plant_care.cropvariety CV ON MP.varietyId = CV.id
+                JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE 
+                MPS.companyCenterId = ?
+            GROUP BY 
+                CG.cropNameEnglish, 
+                CV.varietyNameEnglish,
+                CV.id
+            ORDER BY 
+                CG.cropNameEnglish ASC, 
+                CV.varietyNameEnglish ASC 
+            LIMIT ? OFFSET ?
+        `;
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults.length > 0 ? countResults[0].total : 0;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
+
+
+exports.getCompanyCenterIDDao = (companyId, centerId) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+            SELECT id FROM companycenter WHERE companyId = ? AND centerId = ?
+        `;
+        const dataParams = [companyId, centerId];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            if (results.length === 0) {
+                return resolve(null);
+            }
+            resolve(results[0].id);
+        });
+    });
+};
+
+// exports.getCenterCenterCropsDao = (companyCenterId) => {
+//     return new Promise((resolve, reject) => {
+//         let dataSql = `
+//             SELECT 
+//                 CG.cropNameEnglish, 
+//                 CV.varietyNameEnglish, 
+//                 CV.id AS cropId, 
+//                 CASE 
+//                     WHEN EXISTS (
+//                         SELECT *
+//                         FROM  centercrops
+//                         WHERE companyCenterId = ? AND varietyId = CV.id
+//                     ) THEN 1 
+//                     ELSE 0 
+//                 END AS isAssign
+//             FROM 
+//                 marketprice MP
+//                 JOIN marketpriceserve MPS ON MPS.marketPriceId = MP.id
+//                 JOIN plant_care.cropvariety CV ON MP.varietyId = CV.id
+//                 JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+//             WHERE 
+//                 MPS.companyCenterId = ?
+//             GROUP BY 
+//                 CG.cropNameEnglish, 
+//                 CV.varietyNameEnglish,
+//                 CV.id
+//             ORDER BY 
+//                 CG.cropNameEnglish ASC, 
+//                 CV.varietyNameEnglish ASC
+//         `;
+
+//         // Both parameters are companyCenterId
+//         const dataParams = [companyCenterId, companyCenterId];
+
+//         collectionofficer.query(dataSql, dataParams, (err, results) => {
+//             if (err) {
+//                 return reject(err);
+//             }
+//             resolve(results);
+//         });
+//     });
+// };
+
+exports.addCenterCropsDao = (companyCenterId, cropId) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+            INSERT INTO centercrops (companyCenterId, varietyId)
+            VALUES (?, ?)
+        `;
+        const dataParams = [companyCenterId, cropId];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            resolve(results);
+        });
+    });
+};
+
+exports.removeCenterCropsDao = (companyCenterId, cropId) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+           DELETE FROM centercrops
+           WHERE companyCenterId = ? AND varietyId = ?
+        `;
+        const dataParams = [companyCenterId, cropId];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            resolve(results);
+        });
+    });
+};
 
 

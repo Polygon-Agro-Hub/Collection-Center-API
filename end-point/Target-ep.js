@@ -711,4 +711,80 @@ exports.getCenterTarget = async (req, res) => {
 };
 
 
+// --------------- new part ------------------
+
+
+exports.getCenterCenterCrops = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const companyId = req.user.companyId;
+    const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
+    const { page, limit } = await TargetValidate.getCenterCropsSchema.validateAsync(req.query);
+
+    const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, id);
+    if (companyCenterId === null) {
+      res.json({ items: [], message: "No center found" })
+    }
+
+    const { items, total } = await TargetDAO.getCenterCenterCropsDao(companyCenterId, page, limit);
+    console.log(items, total);
+
+    return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching collection officers:", error);
+
+
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+exports.addOrRemoveCenterCrops = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const companyId = req.user.companyId;
+
+    // const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
+    const validateData = await TargetValidate.addOrRemoveCenterCropSchema.validateAsync(req.body);
+    console.log(validateData);
+
+    const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, validateData.centerId);
+    if (companyCenterId === null) {
+      res.json({ items: [], message: "No center found" })
+    }
+
+    let result;
+    if (validateData.isAssign === 1) {
+      result = await TargetDAO.addCenterCropsDao(companyCenterId, validateData.cropId);
+      if (result.affectedRows === 0) {
+        return res.json({ status: false, message: "Failed to add crop" });
+      }
+    } else if (validateData.isAssign === 0) {
+      result = await TargetDAO.removeCenterCropsDao(companyCenterId, validateData.cropId);
+      if (result.affectedRows === 0) {
+        return res.json({ status: false, message: "Failed to remove crop" });
+      }
+    } else {
+      return res.json({ status: false, message: "Invalid request" });
+    }
+
+    // const results = await TargetDAO.getCenterCenterCropsDao(companyId, id);
+    return res.status(200).json({ status: true, message: "Successfully change crop" });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching collection officers:", error);
+
+
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
 
