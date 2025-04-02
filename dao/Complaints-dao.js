@@ -10,14 +10,14 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCM" AND COF.irmId = ?
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCM" AND COF.irmId = ?
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, OC.complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCM" AND COF.irmId = ?
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCM" AND COF.irmId = ?
         `;
 
         if (searchText) {
@@ -69,9 +69,9 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
 exports.GetReciveReplyByIdDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            SELECT OC.id, OC.refNo, OC.complainCategory, OC.complain, OC.createdAt, OC.reply, OC.language, COF.empId, COF.firstNameEnglish, COF.lastNameEnglish, COF.phoneCode01, COF.phoneNumber01, COF.phoneCode02, COF.phoneNumber02
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND OC.id = ?
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.createdAt, OC.reply, OC.language, COF.empId, COF.firstNameEnglish, COF.lastNameEnglish, COF.phoneCode01, COF.phoneNumber01, COF.phoneCode02, COF.phoneNumber02
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND OC.id = ?
         `;
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
@@ -126,14 +126,14 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCH" 
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" 
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, OC.complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCH" 
+            SELECT OC.id, OC.refNo,  CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" 
         `;
 
         if (searchText) {
@@ -252,14 +252,14 @@ exports.getAllRecivedCCHComplainDao = (companyId, page, limit, status, searchTex
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, OC.complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
         `;
 
         if (searchText) {
@@ -318,14 +318,14 @@ exports.getAllSendCCHComplainDao = (userId, companyId, page, limit, status, empt
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "Admin" AND COF.companyId = ?
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, OC.complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
-            FROM officercomplains OC, collectionofficer COF
-            WHERE OC.officerId = COF.id AND complainAssign LIKE "Admin" AND COF.companyId = ?
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
         `;
 
         if (searchText) {
