@@ -459,7 +459,7 @@ exports.getAllCollectiOfficerCategoryDao = () => {
 
         const sql = `
             SELECT CC.id, CC.categoryEnglish
-            FROM systemapplications SA, complaincategory CC
+            FROM agro_world_admin.systemapplications SA, agro_world_admin.complaincategory CC
             WHERE CC.appId = SA.id AND SA.appName = 'CollectionOfficer'
         `;
 
