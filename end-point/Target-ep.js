@@ -721,14 +721,14 @@ exports.getCenterCenterCrops = async (req, res) => {
   try {
     const companyId = req.user.companyId;
     const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
-    const { page, limit } = await TargetValidate.getCenterCropsSchema.validateAsync(req.query);
+    const { page, limit, searchText } = await TargetValidate.getCenterCropsSchema.validateAsync(req.query);
 
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, id);
     if (companyCenterId === null) {
       res.json({ items: [], message: "No center found" })
     }
 
-    const { items, total } = await TargetDAO.getCenterCenterCropsDao(companyCenterId, page, limit);
+    const { items, total } = await TargetDAO.getCenterCenterCropsDao(companyCenterId, page, limit, searchText);
     console.log(items, total);
 
     return res.status(200).json({ items, total });

@@ -1557,17 +1557,16 @@ exports.getCenterTargetDAO = (centerId, page, limit, searchText) => {
 };
 
 
-// ---------------------- New part ---------------------
+//----------------------- New part ---------------------
 
 
-exports.getCenterCenterCropsDao = (companyCenterId, page, limit) => {
+exports.getCenterCenterCropsDao = (companyCenterId, page, limit, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
         const countParams = [companyCenterId];
-        const dataParams = [companyCenterId, companyCenterId, limit, offset]; // Ensures correct parameter order
+        const dataParams = [companyCenterId, companyCenterId]; // Ensures correct parameter order
 
-        // ✅ Fixed COUNT query (Removed GROUP BY)
         let countSql = `
             SELECT COUNT(DISTINCT CV.id) AS total
             FROM marketprice MP
@@ -1577,7 +1576,6 @@ exports.getCenterCenterCropsDao = (companyCenterId, page, limit) => {
             WHERE MPS.companyCenterId = ?
         `;
 
-        // ✅ Fixed `isAssign` condition and ensured correct parameter order
         let dataSql = `
             SELECT 
                 CG.cropNameEnglish, 
@@ -1598,15 +1596,27 @@ exports.getCenterCenterCropsDao = (companyCenterId, page, limit) => {
                 JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE 
                 MPS.companyCenterId = ?
-            GROUP BY 
-                CG.cropNameEnglish, 
-                CV.varietyNameEnglish,
-                CV.id
-            ORDER BY 
-                CG.cropNameEnglish ASC, 
-                CV.varietyNameEnglish ASC 
-            LIMIT ? OFFSET ?
+            
         `;
+
+        if (searchText) {
+            dataSql +=` AND (CG.cropNameEnglish LIKE ? OR CV.varietyNameEnglish LIKE ?) `
+            countSql +=` AND (CG.cropNameEnglish LIKE ? OR CV.varietyNameEnglish LIKE ?) `
+            dataParams.push(`%${searchText}%`, `%${searchText}%`);
+            countParams.push(`%${searchText}%`, `%${searchText}%`);
+        }
+
+        dataSql += ` 
+            GROUP BY 
+                    CG.cropNameEnglish, 
+                    CV.varietyNameEnglish,
+                    CV.id
+                ORDER BY 
+                    CG.cropNameEnglish ASC, 
+                    CV.varietyNameEnglish ASC 
+                LIMIT ? OFFSET ?
+        `
+        dataParams.push(limit, offset);
 
         collectionofficer.query(countSql, countParams, (countErr, countResults) => {
             if (countErr) {
@@ -1648,48 +1658,6 @@ exports.getCompanyCenterIDDao = (companyId, centerId) => {
     });
 };
 
-// exports.getCenterCenterCropsDao = (companyCenterId) => {
-//     return new Promise((resolve, reject) => {
-//         let dataSql = `
-//             SELECT 
-//                 CG.cropNameEnglish, 
-//                 CV.varietyNameEnglish, 
-//                 CV.id AS cropId, 
-//                 CASE 
-//                     WHEN EXISTS (
-//                         SELECT *
-//                         FROM  centercrops
-//                         WHERE companyCenterId = ? AND varietyId = CV.id
-//                     ) THEN 1 
-//                     ELSE 0 
-//                 END AS isAssign
-//             FROM 
-//                 marketprice MP
-//                 JOIN marketpriceserve MPS ON MPS.marketPriceId = MP.id
-//                 JOIN plant_care.cropvariety CV ON MP.varietyId = CV.id
-//                 JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-//             WHERE 
-//                 MPS.companyCenterId = ?
-//             GROUP BY 
-//                 CG.cropNameEnglish, 
-//                 CV.varietyNameEnglish,
-//                 CV.id
-//             ORDER BY 
-//                 CG.cropNameEnglish ASC, 
-//                 CV.varietyNameEnglish ASC
-//         `;
-
-//         // Both parameters are companyCenterId
-//         const dataParams = [companyCenterId, companyCenterId];
-
-//         collectionofficer.query(dataSql, dataParams, (err, results) => {
-//             if (err) {
-//                 return reject(err);
-//             }
-//             resolve(results);
-//         });
-//     });
-// };
 
 exports.addCenterCropsDao = (companyCenterId, cropId) => {
     return new Promise((resolve, reject) => {
