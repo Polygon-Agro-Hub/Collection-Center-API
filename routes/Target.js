@@ -135,6 +135,12 @@ router.post(
     TargetEP.addOrRemoveCenterCrops
 )
 
+router.get(
+    "/get-saved-center-crops/:id",
+    authMiddleware,
+    TargetEP.getSavedCenterCrops
+)
+
 
 
 

@@ -1694,3 +1694,78 @@ exports.removeCenterCropsDao = (companyCenterId, cropId) => {
 };
 
 
+exports.getSavedCenterCropsDao = (id) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+            SELECT 
+                CG.cropNameEnglish, 
+                CV.varietyNameEnglish,
+                DT.grade,
+                DT.target,
+                DT.id,
+                CC.varietyId 
+            FROM 
+                centercrops CC
+            JOIN 
+                plant_care.cropvariety CV ON CC.varietyId = CV.id
+            JOIN 
+                plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            LEFT JOIN 
+                dailytarget DT ON CC.companyCenterId = DT.companyCenterId AND CC.varietyId = DT.varietyId
+            WHERE 
+                CC.companyCenterId = ?
+            ORDER BY
+                CG.cropNameEnglish ASC, CV.varietyNameEnglish ASC
+            `;
+            
+        const dataParams = [id];
+        
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            
+            const aggregatedResults = {};
+            
+            results.forEach(row => {
+                const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
+                
+                if (!aggregatedResults[key]) {
+                    aggregatedResults[key] = {
+                        cropNameEnglish: row.cropNameEnglish,
+                        varietyNameEnglish: row.varietyNameEnglish,
+                        varietyId: row.varietyId,
+                        targetA: 0,
+                        targetB: 0,
+                        targetC: 0,
+                        idA: null,
+                        idB: null,
+                        idC: null
+                    };
+                }
+                
+                if (row.grade === 'A') {
+                    aggregatedResults[key].targetA = parseFloat(row.target);
+                    aggregatedResults[key].idA = row.id;
+                } else if (row.grade === 'B') {
+                    aggregatedResults[key].targetB = parseFloat(row.target);
+                    aggregatedResults[key].idB = row.id;
+                } else if (row.grade === 'C') {
+                    aggregatedResults[key].targetC = parseFloat(row.target);
+                    aggregatedResults[key].idC = row.id;
+                }
+            });
+            
+            const finalResults = Object.values(aggregatedResults);
+            
+            // Check if ALL crops have ALL null IDs (completely new)
+            const isNew = finalResults.every(item => 
+                item.idA === null && 
+                item.idB === null && 
+                item.idC === null
+            );
+            
+            resolve({ data: finalResults, isNew });
+        });
+    });
+};

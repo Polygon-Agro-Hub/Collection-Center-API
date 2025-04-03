@@ -788,3 +788,32 @@ exports.addOrRemoveCenterCrops = async (req, res) => {
   }
 };
 
+
+exports.getSavedCenterCrops = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const companyId = req.user.companyId;
+    const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
+    // const { page, limit, searchText } = await TargetValidate.getCenterCropsSchema.validateAsync(req.query);
+
+    const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, id);
+    if (companyCenterId === null) {
+      res.json({ items: [], message: "No center found" })
+    }
+
+    const result = await TargetDAO.getSavedCenterCropsDao(companyCenterId);
+    // console.log(items, total);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching collection officers:", error);
+
+
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
