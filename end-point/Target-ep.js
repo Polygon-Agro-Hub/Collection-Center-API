@@ -788,3 +788,107 @@ exports.addOrRemoveCenterCrops = async (req, res) => {
   }
 };
 
+
+exports.getSavedCenterCrops = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const companyId = req.user.companyId;
+    const { id, date } = await TargetValidate.getSavedCenterCropsSchema.validateAsync(req.params);
+    const { searchText } = await TargetValidate.getSavedCenterCropsQuaryParam.validateAsync(req.query);
+    // const { page, limit, searchText } = await TargetValidate.getCenterCropsSchema.validateAsync(req.query);
+    console.log(id, date);
+
+
+    const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, id);
+    if (companyCenterId === null) {
+      res.json({ items: [], message: "No center found" })
+    }
+
+    const status = true;
+    const result = await TargetDAO.getSavedCenterCropsDao(companyCenterId, date, status, searchText);
+    // console.log(items, total);
+
+    return res.status(200).json({ result, companyCenterId });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching collection officers:", error);
+
+
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+exports.updateTargetQty = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+    const { id, qty, date, companyCenterId, grade, varietyId } = await TargetValidate.updateTargetQtySchema.validateAsync(req.body);
+    console.log(req.body);
+
+
+    if (id !== null) {
+      const resultUpdate = await TargetDAO.updateCenterTargeQtyDao(id, qty, date);
+      if (resultUpdate.affectedRows === 0) {
+        return res.json({ status: false, message: "Failed to update target quantity" });
+      }
+    } else {
+      const resultInsert = await TargetDAO.addNewCenterTargetDao(companyCenterId, varietyId, grade, qty, date)
+      if (resultInsert.affectedRows === 0) {
+        return res.json({ status: false, message: "Failed to update target quantity" });
+      }
+    }
+
+    console.log("Successfully retrieved target crop verity");
+    res.status(200).json({ status: true, message: "Successfully updated target quantity" });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving target crop verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+  }
+};
+
+
+exports.addNewCenterTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+    // const { id, qty, date, companyCenterId, grade, varietyId } = await TargetValidate.updateTargetQtySchema.validateAsync(req.body);
+    // console.log(req.body);
+    const companyCenterId = req.body.companyCenterId
+    const date = req.body.date
+    const cropsData = req.body.crop
+
+    let result
+    for (let i = 0; i < cropsData.length; i++) {
+      if (cropsData[i].targetA !== 0) {
+        result = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date);
+      }
+
+      if (cropsData[i].targetB !== 0) {
+        result = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date);
+      }
+
+      if (cropsData[i].targetC !== 0) {
+        result = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date);
+      }
+    }
+
+    console.log("Successfully retrieved target crop verity");
+    res.status(200).json({ status: true, message: "Successfully Added New target quantity" });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving target crop verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+  }
+};

@@ -99,4 +99,23 @@ exports.getCenterCropsSchema = Joi.object({
 
 });
 
+exports.getSavedCenterCropsSchema = Joi.object({
+    id: Joi.number().integer().required(),
+    date: Joi.date().required()
+});
+
+exports.getSavedCenterCropsQuaryParam = Joi.object({
+    searchText: Joi.string().optional()
+});
+
+exports.updateTargetQtySchema = Joi.object({
+    id: Joi.number().integer().allow(null).required(), 
+    qty: Joi.number().required(),
+    date: Joi.date().required(),
+    companyCenterId: Joi.number().integer().required(),
+    grade: Joi.string().required(),
+    varietyId: Joi.number().integer().required(),
+});
+
+
 

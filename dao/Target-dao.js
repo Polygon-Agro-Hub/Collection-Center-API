@@ -915,7 +915,7 @@ exports.getAssignCenterTargetDAO = (centerId) => {
 };
 
 
-
+//prev dao
 exports.getTargetVerityDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
@@ -1600,8 +1600,8 @@ exports.getCenterCenterCropsDao = (companyCenterId, page, limit, searchText) => 
         `;
 
         if (searchText) {
-            dataSql +=` AND (CG.cropNameEnglish LIKE ? OR CV.varietyNameEnglish LIKE ?) `
-            countSql +=` AND (CG.cropNameEnglish LIKE ? OR CV.varietyNameEnglish LIKE ?) `
+            dataSql += ` AND (CG.cropNameEnglish LIKE ? OR CV.varietyNameEnglish LIKE ?) `
+            countSql += ` AND (CG.cropNameEnglish LIKE ? OR CV.varietyNameEnglish LIKE ?) `
             dataParams.push(`%${searchText}%`, `%${searchText}%`);
             countParams.push(`%${searchText}%`, `%${searchText}%`);
         }
@@ -1693,4 +1693,150 @@ exports.removeCenterCropsDao = (companyCenterId, cropId) => {
     });
 };
 
+
+exports.getSavedCenterCropsDao = (id, date, state, searchText) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+            SELECT 
+                CG.cropNameEnglish, 
+                CV.varietyNameEnglish,
+                DT.grade,
+                DT.target,
+                DT.id,
+                CC.varietyId 
+            FROM 
+                centercrops CC
+            LEFT JOIN 
+                dailytarget DT ON CC.companyCenterId = DT.companyCenterId AND CC.varietyId = DT.varietyId
+            
+        `;
+
+        const dataParams = [];
+
+
+        if (state) {
+            const dateParam = new Date(date).toISOString().split('T')[0];
+            dataSql += ` AND DT.date = ? `;
+            dataParams.push(dateParam);
+        } else {
+            const dateParam = new Date(date).toISOString().split('T')[0];
+            dataSql += `AND DT.date != ? `;
+            dataParams.push(dateParam);
+        }
+
+        dataSql += `
+            JOIN 
+                plant_care.cropvariety CV ON CC.varietyId = CV.id
+            JOIN 
+                plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE 
+                CC.companyCenterId = ? 
+        `;
+        dataParams.push(id);
+
+        if (searchText) {
+            dataSql += ` AND (CG.cropNameEnglish LIKE ? OR CV.varietyNameEnglish LIKE ?) `
+            dataParams.push(`%${searchText}%`, `%${searchText}%`);
+        }
+
+
+        dataSql += `
+            ORDER BY
+                CG.cropNameEnglish ASC, CV.varietyNameEnglish ASC
+
+        `;
+
+
+
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length === 0 && state) {
+                this.getSavedCenterCropsDao(id, date, false, searchText)
+                    .then(resolve)  // Resolve with the result from the recursive call
+                    .catch(reject); // Reject with any error from the recursive call
+            } else {
+                const aggregatedResults = {};
+
+                results.forEach(row => {
+                    const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
+
+                    if (!aggregatedResults[key]) {
+                        aggregatedResults[key] = {
+                            cropNameEnglish: row.cropNameEnglish,
+                            varietyNameEnglish: row.varietyNameEnglish,
+                            varietyId: row.varietyId,
+                            targetA: 0,
+                            targetB: 0,
+                            targetC: 0,
+                            idA: null,
+                            idB: null,
+                            idC: null
+                        };
+                    }
+
+                    if (row.grade === 'A') {
+                        aggregatedResults[key].targetA = parseFloat(row.target);
+                        aggregatedResults[key].idA = row.id;
+                    } else if (row.grade === 'B') {
+                        aggregatedResults[key].targetB = parseFloat(row.target);
+                        aggregatedResults[key].idB = row.id;
+                    } else if (row.grade === 'C') {
+                        aggregatedResults[key].targetC = parseFloat(row.target);
+                        aggregatedResults[key].idC = row.id;
+                    }
+                });
+
+                const finalResults = Object.values(aggregatedResults);
+
+                // Check if ALL crops have ALL null IDs (completely new)
+                const isNew = finalResults.every(item =>
+                    item.idA === null &&
+                    item.idB === null &&
+                    item.idC === null
+                );
+
+                resolve({ data: finalResults, isNew });
+            }
+        });
+    });
+};
+
+exports.updateCenterTargeQtyDao = (id, qty) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+           UPDATE dailytarget 
+           SET target = ?
+           WHERE id = ?
+        `;
+        const dataParams = [qty, id];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+           INSERT INTO dailytarget (companyCenterId, varietyId, grade, target, date)
+           VALUES (?, ?, ?, ?, ?)
+        `;
+
+        const dateParam = new Date(date).toISOString().split('T')[0];
+
+        const dataParams = [companyCenterId, varietyId, grade, target, dateParam];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
 
