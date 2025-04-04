@@ -136,9 +136,21 @@ router.post(
 )
 
 router.get(
-    "/get-saved-center-crops/:id",
+    "/get-saved-center-crops/:id/:date",
     authMiddleware,
     TargetEP.getSavedCenterCrops
+)
+
+router.patch(
+    "/update-target-crop-qty",
+    authMiddleware,
+    TargetEP.updateTargetQty
+)
+
+router.post(
+    "/add-new-center-target",
+    authMiddleware,
+    TargetEP.addNewCenterTarget
 )
 
 
