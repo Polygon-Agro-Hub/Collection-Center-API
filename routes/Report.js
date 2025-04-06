@@ -40,6 +40,12 @@ router.get(
     ReporttEP.getFarmerReport
 )
 
+router.get(
+    "/get-all-payments",
+    authMiddleware,
+    ReporttEP.getAllPayments
+)
+
 
 
 module.exports = router;

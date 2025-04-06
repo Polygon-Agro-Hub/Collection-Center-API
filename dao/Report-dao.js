@@ -68,7 +68,7 @@ exports.getAllOfficersDAO = (centerId, companyId, userId, role, page, limit, sea
 
             // Execute data query
             // console.log(dataSql, dataParams);
-            
+
             collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
                 if (dataErr) {
                     console.error('Error in data query:', dataErr);
@@ -343,6 +343,136 @@ exports.getFarmerCropsDetailsDao = (id) => {
                 return reject(err);
             }
             resolve(results);
+        });
+    });
+};
+
+exports.getAllPaymentsDAO = (companyId, page, limit, searchText, center, date, month) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        let countSql = `
+            SELECT COUNT(*) AS total
+            FROM collection_officer.registeredfarmerpayments rfp
+            JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+            JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
+            JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
+            JOIN plant_care.users u ON u.id = rfp.userId
+            WHERE co.companyId = ?
+        `;
+
+        let dataSql = `
+        SELECT 
+                rfp.createdAt, 
+                rfp.invNo, 
+                cc.RegCode AS centerCode, 
+                cc.centerName, 
+                co.firstNameEnglish,
+                u.NICnumber AS nic, 
+                co.companyId,
+                fpc.gradeAprice, 
+                fpc.gradeAquan,
+                fpc.gradeBprice, 
+                fpc.gradeBquan,
+                fpc.gradeCprice, 
+                fpc.gradeCquan,
+                (IFNULL(fpc.gradeAprice, 0) * IFNULL(fpc.gradeAquan, 0) +
+                IFNULL(fpc.gradeBprice, 0) * IFNULL(fpc.gradeBquan, 0) +
+                IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
+                ) AS totalAmount
+            FROM collection_officer.registeredfarmerpayments rfp
+            JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+            JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
+            JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
+            JOIN plant_care.users u ON u.id = rfp.userId
+            WHERE co.companyId = ?
+    
+
+                 `;
+
+        const countParams = [companyId];
+        const dataParams = [companyId];
+
+        // // Apply filters for company ID
+        // if (status) {
+        //     countSql += " AND Coff.status LIKE ?";
+        //     dataSql += " AND Coff.status LIKE ?";
+        //     countParams.push(status);
+        //     dataParams.push(status);
+        // }
+
+        // if (role) {
+        //     countSql += " AND Coff.jobRole LIKE ?";
+        //     dataSql += " AND Coff.jobRole LIKE ?";
+        //     countParams.push(role);
+        //     dataParams.push(role);
+        // }
+
+        // Apply search filters for NIC or related fields
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    rfp.invNo LIKE ?
+                    OR rfp.createdAt LIKE ?
+                    OR cc.centerName LIKE ?
+                    OR cc.regCode LIKE ?
+                    OR u.NICnumber LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
+            dataParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
+        }
+
+        if (center) {
+            countSql += " AND co.centerId = ? ";
+            dataSql += " AND co.centerId = ? ";
+            countParams.push(center);
+            dataParams.push(center);
+        }
+
+        if (date) {
+            countSql += " AND DATE(rfp.createdAt) = ?";
+            dataSql += " AND DATE(rfp.createdAt) = ?";
+            countParams.push(date);
+            dataParams.push(date);
+        }
+
+        if (month) {
+            // Filter by month (YYYY-MM format)
+            countSql += " AND DATE_FORMAT(rfp.createdAt, '%Y-%m') = ?";
+            dataSql += " AND DATE_FORMAT(rfp.createdAt, '%Y-%m') = ?";
+            countParams.push(month);
+            dataParams.push(month);
+        }
+
+        // dataSql += " ORDER BY CASE WHEN Coff.empId LIKE 'CCM%' THEN 0 ELSE 1 END";
+
+
+        // Add pagination to the data query
+        dataSql += " LIMIT ? OFFSET ?";
+        dataParams.push(limit, offset);
+
+        // Execute count query
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
         });
     });
 };
