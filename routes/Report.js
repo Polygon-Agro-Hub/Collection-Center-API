@@ -122,7 +122,73 @@ router.get('/download-payment-report', async (req, res) => {
     }
   });
 
+router.get(
+    "/get-all-collection",
+    authMiddleware,
+    ReporttEP.getAllCollection
+)
 
+router.get('/download-collection-report', async (req, res) => {
+    try {
+
+      console.log(req.query);
+
+      const {centerId, monthNumber, createdDate, search} = req.query;
+      console.log({centerId, monthNumber, createdDate, search});
+      // Fetch data from the database
+      const data = await reportDao.downloadCollectionReport( 
+        centerId,
+        monthNumber,
+        createdDate, 
+        search);
+  
+      // Format data for Excel
+      const formattedData = data.flatMap(item => [
+        {
+            'Center Reg Code': item.regCode || '',
+            'Center Name': item.centerName || '',
+            'Crop Name': item.cropNameEnglish || '',
+            'VarietyName': item.varietyNameEnglish || '',
+            'Quantity A (kg)': item.gradeAquan ?? 0.00,
+            'Quantity B (kg)': item.gradeBquan ?? 0.00,
+            'Quantity C (kg)': item.gradeCquan ?? 0.00,
+            'Total (kg)': item.totalQuan ?? 0.00
+          },
+        
+      ]);      
+  
+      // Create a worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+
+      worksheet['!cols'] = [
+        { wch: 25 }, // regCode
+        { wch: 15}, // centerName
+        { wch: 20 }, // cropNameEnglish
+        { wch: 25 }, // varietyNameEnglish
+        { wch: 18 }, // gradeAquan
+        { wch: 25 }, // gradeBquan
+        { wch: 15 }, // gradeCquan
+        { wch: 25 }, // totalQuan
+      ];
+
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Collection Template');
+  
+      // Write the workbook to a buffer
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  
+      // Set headers for file download
+      res.setHeader('Content-Disposition', 'attachment; filename="Collection Template.xlsx"');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      
+      // Send the file to the client
+      res.send(excelBuffer);
+    } catch (err) {
+      console.error('Error generating Excel file:', err);
+      res.status(500).send('An error occurred while generating the file.');
+    }
+  });
 
 module.exports = router;
 
