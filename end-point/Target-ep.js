@@ -282,17 +282,19 @@ exports.getTargetVerity = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
-    const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
+    const { varietyId, companyCenterId } = await TargetValidate.getTargetVeritySchema.validateAsync(req.params);
     const userId = req.user.userId;
+    console.log(varietyId, companyCenterId, userId);
+    
 
-    const resultCrop = await TargetDAO.getTargetVerityDao(id);
-    const resultOfficer = await TargetDAO.getAssingTargetForOfficersDao(userId);
+    const resultCrop = await TargetDAO.getTargetVerityDao( companyCenterId, varietyId);
+    const resultOfficer = await TargetDAO.getAssingTargetForOfficersDao(userId);    
 
     if (resultCrop.length === 0) {
       return res.status(400).json({ error: "No data found" });
     }
     console.log("Successfully retrieved target crop verity");
-    res.status(200).json({ crop: resultCrop, officer: resultOfficer });
+    res.status(200).json({ crop: resultCrop[0], officer: resultOfficer });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });

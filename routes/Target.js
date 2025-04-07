@@ -62,7 +62,7 @@ router.get(
 )
 
 router.get(
-    '/get-target-verity/:id',
+    '/get-target-verity/:varietyId/:companyCenterId',
     authMiddleware,
     TargetEP.getTargetVerity
 )

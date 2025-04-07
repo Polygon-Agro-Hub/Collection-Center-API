@@ -866,18 +866,72 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
 
 
 //prev dao
-exports.getTargetVerityDao = (id) => {
+exports.getTargetVerityDao = (companyCenterId, varietyId) => {
     return new Promise((resolve, reject) => {
         const sql = `
-        SELECT DT.id, CV.id AS varietyId, CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DT.toDate, DT.toTime
-        FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-        WHERE DTI.id = ? AND DTI.targetId = DT.id AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id
+            SELECT 
+                DT.id, 
+                CG.cropNameEnglish, 
+                CV.varietyNameEnglish, 
+                DT.grade, 
+                DT.target, 
+                DT.complete, 
+                DT.assignStatus,
+                DT.date,
+                DT.varietyId,
+                DT.companyCenterId
+            FROM dailytarget DT
+            JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE DT.date = CURDATE() AND DT.companyCenterId = ? AND DT.varietyId = ?
+
         `
-        collectionofficer.query(sql, [id], (err, results) => {
+        collectionofficer.query(sql, [companyCenterId, varietyId], (err, results) => {
             if (err) {
                 return reject(err);
-            }
-            resolve(results[0]);
+            }            
+
+            const grouped = {};
+
+            results.forEach(row => {
+                const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        idA:null,
+                        idB:null,
+                        idC:null,
+                        varietyId:row.varietyId,
+                        companyCenterId:row.companyCenterId,
+                        cropNameEnglish: row.cropNameEnglish,
+                        varietyNameEnglish: row.varietyNameEnglish,
+                        qtyA: 0,
+                        qtyB: 0,
+                        qtyC: 0,
+                        assignStatusA: 0,
+                        assignStatusB: 0,
+                        assignStatusC: 0,
+                        toDate: row.date,
+                    };
+                }
+
+                if (row.grade === 'A') {
+                    grouped[key].qtyA = parseFloat(row.target) || 0;
+                    grouped[key].idA = row.id
+                    grouped[key].assignStatusA = row.assignStatus;
+                } else if (row.grade === 'B') {
+                    grouped[key].qtyB = parseFloat(row.target) || 0;
+                    grouped[key].idB = row.id
+                    grouped[key].assignStatusB = row.assignStatus;
+                } else if (row.grade === 'C') {
+                    grouped[key].qtyC = parseFloat(row.target) || 0;
+                    grouped[key].idC = row.id
+                    grouped[key].assignStatusC = row.assignStatus;
+                }
+            });
+
+            console.log(Object.values(grouped));
+            
+            resolve(Object.values(grouped));
         });
     });
 };

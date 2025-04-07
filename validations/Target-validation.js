@@ -117,5 +117,10 @@ exports.updateTargetQtySchema = Joi.object({
     varietyId: Joi.number().integer().required(),
 });
 
+exports.getTargetVeritySchema = Joi.object({
+    varietyId: Joi.number().integer().required(),
+    companyCenterId: Joi.number().integer().required(),
+});
+
 
 
