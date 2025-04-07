@@ -90,7 +90,7 @@ exports.createDailyTargetItemsDao = (data, targetId) => {
 };
 
 
-exports.getAllDailyTargetDAO = (centerId, page, limit, searchText, currentDate, currentTime) => {
+exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
     return new Promise((resolve, reject) => {
 
         // const offset = (page - 1) * limit;
@@ -104,22 +104,24 @@ exports.getAllDailyTargetDAO = (centerId, page, limit, searchText, currentDate, 
 
 
         let targetSql = `
-        SELECT CG.cropNameEnglish, CV.varietyNameEnglish, 
-        DTI.qtyA, DTI.qtyB, DTI.qtyC, 
-        DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, 
-        DATE_FORMAT(DT.toDate, '%d/%m/%Y') AS toDate, 
-        DT.toTime, DT.fromTime
- FROM dailytarget DT
- JOIN dailytargetitems DTI ON DT.id = DTI.targetId
- JOIN plant_care.cropvariety CV ON DTI.varietyId = CV.id
- JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
- WHERE DT.centerId = ? 
- AND (
-    DT.toDate > ? 
-    OR (DT.toDate = ? AND DT.toTime > ?)
-)
+            SELECT 
+                DT.id, 
+                CG.cropNameEnglish, 
+                CV.varietyNameEnglish, 
+                DT.grade, 
+                DT.target, 
+                DT.complete, 
+                DT.assignStatus,
+                DT.date,
+                CASE 
+                    WHEN DT.target > DT.complete THEN 'Pending'
+                    ELSE 'Completed'
+                END AS status
+
+            FROM dailytarget DT, plant_care.cropvariety CV, plant_care.cropgroup CG
+            WHERE DT.date = CURDATE() and DT.companyCenterId = ? AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id
         `
-        const sqlParams = [centerId, currentDate, currentDate, currentTime];
+        const sqlParams = [companyCenterId];
         // const countParams = [centerId]
 
 
@@ -152,15 +154,8 @@ exports.getAllDailyTargetDAO = (centerId, page, limit, searchText, currentDate, 
                 return reject(dataErr);
             }
 
-            const transformedTargetData = dataResults.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
-            ]);
 
-            console.log(transformedTargetData);
-
-            resolve({ resultTarget: transformedTargetData, total });
+            resolve({ resultTarget: dataResults, total });
         });
     });
     // });
@@ -864,51 +859,6 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
 
                 const totalItems = countResults[0].totalCount;
                 resolve({ totalItems, items: finalResults });
-            });
-        });
-    });
-};
-
-
-exports.getAssignCenterTargetDAO = (centerId) => {
-    return new Promise((resolve, reject) => {
-        // const offset = (page - 1) * limit;
-
-
-        let countSql = `
-            SELECT COUNT(*) AS total
-            FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-            WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ?
-        `
-
-
-        let targetSql = `
-           SELECT DTI.id, CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC,DATE_FORMAT(DT.toDate, '%d/%m/%Y') AS toDate, DT.toTime, DT.fromTime, DTI.isAssign
-           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ? 
-        `
-        const sqlParams = [centerId];
-        const countParams = [centerId]
-
-        // targetSql += " LIMIT ? OFFSET ? ";
-        // sqlParams.push(limit, offset);
-
-
-        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
-            if (countErr) {
-                console.error('Error in count query:', countErr);
-                return reject(countErr);
-            }
-
-            const total = countResults[0].total;
-
-            collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
-                if (dataErr) {
-                    console.error('Error in data query:', dataErr);
-                    return reject(dataErr);
-                }
-
-                resolve({ resultTarget: dataResults, total });
             });
         });
     });
@@ -1808,7 +1758,7 @@ exports.updateCenterTargeQtyDao = (id, qty) => {
     return new Promise((resolve, reject) => {
         let dataSql = `
            UPDATE dailytarget 
-           SET target = ?
+           SET target = ?, assignStatus = 0
            WHERE id = ?
         `;
         const dataParams = [qty, id];
@@ -1824,8 +1774,8 @@ exports.updateCenterTargeQtyDao = (id, qty) => {
 exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date) => {
     return new Promise((resolve, reject) => {
         let dataSql = `
-           INSERT INTO dailytarget (companyCenterId, varietyId, grade, target, date)
-           VALUES (?, ?, ?, ?, ?)
+           INSERT INTO dailytarget (companyCenterId, varietyId, grade, target, date, assignStatus)
+           VALUES (?, ?, ?, ?, ?, 0)
         `;
 
         const dateParam = new Date(date).toISOString().split('T')[0];
@@ -1839,4 +1789,71 @@ exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date
         });
     });
 };
+
+exports.getAssignCenterTargetDAO = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                DT.id, 
+                CG.cropNameEnglish, 
+                CV.varietyNameEnglish, 
+                DT.grade, 
+                DT.target, 
+                DT.complete, 
+                DT.assignStatus,
+                DT.date,
+                DT.varietyId,
+                DT.companyCenterId,
+                CASE 
+                    WHEN DT.target > DT.complete THEN 'Pending'
+                    ELSE 'Completed'
+                END AS status
+            FROM dailytarget DT
+            JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE DT.date = CURDATE() AND DT.companyCenterId = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            const grouped = {};
+
+            results.forEach(row => {
+                const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        varietyId:row.varietyId,
+                        companyCenterId:row.companyCenterId,
+                        cropNameEnglish: row.cropNameEnglish,
+                        varietyNameEnglish: row.varietyNameEnglish,
+                        qtyA: '0',
+                        qtyB: '0',
+                        qtyC: '0',
+                        assignStatusA: 0,
+                        assignStatusB: 0,
+                        assignStatusC: 0,
+                        toDate: row.date,
+                    };
+                }
+
+                if (row.grade === 'A') {
+                    grouped[key].qtyA = row.target
+                    grouped[key].assignStatusA = row.assignStatus;
+                } else if (row.grade === 'B') {
+                    grouped[key].qtyB = row.target
+                    grouped[key].assignStatusB = row.assignStatus;
+                } else if (row.grade === 'C') {
+                    grouped[key].qtyC = row.target
+                    grouped[key].assignStatusC = row.assignStatus;
+                }
+            });
+
+            resolve(Object.values(grouped));
+        });
+    });
+};
+
 

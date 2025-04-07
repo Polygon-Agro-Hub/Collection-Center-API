@@ -56,64 +56,20 @@ exports.getAllDailyTarget = async (req, res) => {
   try {
     const { searchText, page, limit } = await TargetValidate.getAllDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
-    console.log(centerId);
+    const companyId = req.user.companyId
 
-    const now = new Date();
-    const currentDate = now.toISOString().split('T')[0]; // Get the current date in YYYY-MM-DD format
-    const currentTime = now.toTimeString().slice(0, 5); // Get the current time in HH:MM format
-
-    console.log("Current Date:", currentDate);  // Output: 2025-03-31
-    console.log("Current Time:", currentTime);  // Output: 14:25
-
-    const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(centerId, page, limit, searchText, currentDate, currentTime);
-    console.log('these are results', resultTarget);
-    const combinedData = [];
-
-    for (const target of resultTarget) {
-      if (target.qtyA !== undefined) {
-        combinedData.push({
-          cropNameEnglish: target.cropNameEnglish,
-          varietyNameEnglish: target.varietyNameEnglish,
-          toDate: target.toDate,
-          toTime: target.toTime,
-          grade: "A",
-          status: parseFloat(target.complteQtyA) >= parseFloat(target.qtyA) ? 'Completed' : 'Pending',
-          TargetQty: target.qtyA,
-          CompleteQty: target.complteQtyA || "0.00",
-        });
-      }
-
-      if (target.qtyB !== undefined) {
-        combinedData.push({
-          cropNameEnglish: target.cropNameEnglish,
-          varietyNameEnglish: target.varietyNameEnglish,
-          toDate: target.toDate,
-          toTime: target.toTime,
-          grade: "B",
-          status: parseFloat(target.complteQtyB) >= parseFloat(target.qtyB) ? 'Completed' : 'Pending',
-          TargetQty: target.qtyB,
-          CompleteQty: target.complteQtyB || "0.00",
-        });
-      }
-
-      if (target.qtyC !== undefined) {
-        combinedData.push({
-          cropNameEnglish: target.cropNameEnglish,
-          varietyNameEnglish: target.varietyNameEnglish,
-          toDate: target.toDate,
-          toTime: target.toTime,
-          grade: "C",
-          status: parseFloat(target.complteQtyC) >= parseFloat(target.qtyC) ? 'Completed' : 'Pending',
-          TargetQty: target.qtyC,
-          CompleteQty: target.complteQtyC || "0.00",
-        });
-      }
+    const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
+    if (companyCenterId === null) {
+      res.json({ items: [], message: "No center found" })
     }
+
+    const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(companyCenterId, searchText);
+    console.log('these are results', resultTarget);
 
 
     console.log("Successfully transformed data");
     return res.status(200).json({
-      items: combinedData,
+      items: resultTarget,
       totalPages: total
     });
   } catch (error) {
@@ -298,14 +254,20 @@ exports.getAssignCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
-    const { page, limit } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
+    // const { page, limit } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
+    const companyId = req.user.companyId
 
-    const { resultTarget, total } = await TargetDAO.getAssignCenterTargetDAO(centerId);
+    const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
+    if (companyCenterId === null) {
+      res.json({ items: [], message: "No center found" })
+    }
+
+    const resultTarget = await TargetDAO.getAssignCenterTargetDAO(companyCenterId);
     console.log(resultTarget);
 
     console.log("Successfully transformed data");
-    return res.status(200).json({ items: resultTarget, total: total });
+    return res.status(200).json(resultTarget);
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });

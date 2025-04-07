@@ -17,6 +17,7 @@ router.post(
     TargetEP.addDailyTarget
 )
 
+//used
 router.get(
     "/get-daily-target",
     authMiddleware,
