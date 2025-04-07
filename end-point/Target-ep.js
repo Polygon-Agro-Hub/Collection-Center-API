@@ -312,30 +312,32 @@ exports.AssignOfficerTarget = async (req, res) => {
     const id = parseInt(req.body.id);
     const verityId = parseInt(req.body.varietyId);
     const targetData = req.body.OfficerData;
+    const {idA, idB, idC} = req.body.dailyTargetsIds
     console.log(req.body);
 
 
 
     for (let i = 0; i < targetData.length; i++) {
       if (targetData[i].targetA !== 0) {
-        let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'A', targetData[i].targetA);
+        let result = await TargetDAO.AssignOfficerTargetDao(idA, targetData[i].id, targetData[i].targetA);
       }
       if (targetData[i].targetB !== 0) {
-        let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'B', targetData[i].targetB);
+        let result = await TargetDAO.AssignOfficerTargetDao(idB, targetData[i].id, targetData[i].targetB);
       }
       if (targetData[i].targetC !== 0) {
-        let result = await TargetDAO.AssignOfficerTargetDao(id, verityId, targetData[i].id, 'C', targetData[i].targetC);
+        let result = await TargetDAO.AssignOfficerTargetDao(idC, targetData[i].id, targetData[i].targetC);
       }
     }
 
-    const updateStatus = await TargetDAO.updateTargetAssignStatus(id, verityId)
-    console.log(updateStatus);
-    if (updateStatus.affectedRows === 0) {
-      return res.json({ status: false, messsage: "Target Assigned Faild" });
+    const updateStatusA = await TargetDAO.updateTargetAssignStatus(idA)
+    const updateStatusC = await TargetDAO.updateTargetAssignStatus(idB)
+    const updateStatusB = await TargetDAO.updateTargetAssignStatus(idC)
+    if (updateStatusA.affectedRows === 0 && updateStatusB.affectedRows === 0 && updateStatusC.affectedRows === 0) {
+      return res.json({ status: true, messsage: "Target Assigned Faild" });
 
     }
 
-    console.log("Successfully retrieved target crop verity");
+    console.log("Successfully Add Target to Officer");
     res.status(200).json({ status: true, messsage: "Target Assigned Successfully" });
   } catch (error) {
     if (error.isJoi) {

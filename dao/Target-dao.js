@@ -954,18 +954,17 @@ exports.getAssingTargetForOfficersDao = (id) => {
 };
 
 
-exports.AssignOfficerTargetDao = (targetId, verityId, offficerId, grade, target) => {
+exports.AssignOfficerTargetDao = (targetId,officerId, target) => {
     return new Promise((resolve, reject) => {
         const sql = `
-        INSERT INTO officerdailytarget (dailyTargetId, varietyId, officerId, grade, target) VALUES (?, ?, ?, ?, ?)
+        INSERT INTO officertarget (dailyTargetId, officerId, target, complete) VALUES (?, ?, ?, ?)
         `
 
         collectionofficer.query(sql, [
             targetId,
-            verityId,
-            offficerId,
-            grade,
-            target
+            officerId,
+            target,
+            0
         ], (err, results) => {
             if (err) {
                 return reject(err);
@@ -1423,15 +1422,15 @@ exports.createCenter = (centerData, companyId) => {
 
 
 
-exports.updateTargetAssignStatus = (id, verietyId) => {
+exports.updateTargetAssignStatus = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-        UPDATE dailytargetitems
-        SET isAssign = 1
-        WHERE targetId = ? AND varietyId = ?
+        UPDATE dailytarget
+        SET assignStatus = 1
+        WHERE id = ?
         `
 
-        collectionofficer.query(sql, [id, verietyId], (err, results) => {
+        collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
                 return reject(err);
             }
