@@ -354,10 +354,10 @@ exports.getAllPaymentsDAO = (companyId, page, limit, searchText, center, date, m
         let countSql = `
             SELECT COUNT(*) AS total
             FROM collection_officer.registeredfarmerpayments rfp
-            JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
-            JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
-            JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
-            JOIN plant_care.users u ON u.id = rfp.userId
+            LEFT JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+            LEFT JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
+            LEFT JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
+            LEFT JOIN plant_care.users u ON u.id = rfp.userId
             WHERE co.companyId = ?
         `;
 
@@ -381,10 +381,10 @@ exports.getAllPaymentsDAO = (companyId, page, limit, searchText, center, date, m
                 IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
                 ) AS totalAmount
             FROM collection_officer.registeredfarmerpayments rfp
-            JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
-            JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
-            JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
-            JOIN plant_care.users u ON u.id = rfp.userId
+            LEFT JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+            LEFT JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
+            LEFT JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
+            LEFT JOIN plant_care.users u ON u.id = rfp.userId
             WHERE co.companyId = ?
     
 
@@ -476,4 +476,100 @@ exports.getAllPaymentsDAO = (companyId, page, limit, searchText, center, date, m
         });
     });
 };
+
+exports.downloadPaymentReport = (centerId, monthNumber, createdDate, search) => {
+    return new Promise((resolve, reject) => {
+    
+  
+      const params = [];
+      const countParams = [];
+      const totalParams = [];
+  
+      
+      let whereClause = "WHERE c.id = 1";
+  
+      if (centerId) {
+        whereClause += " AND co.centerId = ?";
+        params.push(centerId);
+        countParams.push(centerId);
+        totalParams.push(centerId);
+      }
+  
+      if (monthNumber) {
+        whereClause += " AND MONTH(rfp.createdAt) = ?";
+        params.push(monthNumber);
+        countParams.push(monthNumber);
+        totalParams.push(monthNumber);
+      }
+  
+      if (createdDate) {
+        whereClause += " AND DATE(rfp.createdAt) = ?";
+        params.push(createdDate);
+        countParams.push(createdDate);
+        totalParams.push(createdDate);
+      }
+  
+      if (search) {
+        whereClause += `
+          AND (
+            cc.regCode LIKE ? OR 
+            cc.centerName LIKE ? OR 
+            us.NICnumber LIKE ? OR 
+            invNo LIKE ?
+          )
+        `;
+        const searchPattern = `%${search}%`;
+        params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+        countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+        totalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      }
+  
+      console.log('this is', countParams);
+  
+     
+      let dataSql = `
+        SELECT 
+          invNo AS grnNumber,
+          cc.regCode AS regCode,
+          cc.centerName AS centerName,
+          ROUND(SUM(IFNULL(fpc.gradeAprice * fpc.gradeAquan, 0) + IFNULL(fpc.gradeBprice * fpc.gradeBquan, 0) + IFNULL(fpc.gradeCprice * fpc.gradeCquan, 0)), 2) AS amount,
+          us.firstName AS firstName,
+          us.lastName AS lastName,
+          us.NICnumber AS nic,
+          us.phoneNumber AS phoneNumber,
+          us.phoneNumber AS phoneNumber,
+          ub.accHolderName AS accHolderName,
+          ub.accNumber AS accNumber,
+          ub.bankName AS bankName,
+          ub.branchName AS branchName,
+          co.empId AS empId,
+          TIME(rfp.createdAt) AS createdAt
+        FROM 
+          registeredfarmerpayments rfp
+        LEFT JOIN 
+          farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+        JOIN 
+          collectionofficer co ON rfp.collectionOfficerId = co.id
+        JOIN 
+          plant_care.users us ON rfp.userId = us.id
+        JOIN 
+          collectioncenter cc ON co.centerId = cc.id
+        JOIN 
+          company c ON co.companyId = c.id
+        LEFT JOIN 
+          plant_care.userbankdetails ub ON us.id = ub.userId
+        ${whereClause}
+        GROUP BY rfp.id
+      `;
+  
+      console.log('Executing Count Query...');
+  
+      collectionofficer.query(dataSql, params, (err, results) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(results);
+      });
+    });
+  };
 
