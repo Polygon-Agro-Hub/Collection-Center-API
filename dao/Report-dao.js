@@ -412,10 +412,16 @@ exports.getAllPaymentsDAO = (companyId, page, limit, searchText, center, date, m
         }
 
         if (center) {
-            countSql += " AND cc.id = ? ";
-            dataSql += " AND cc.id = ? ";
-            countParams.push(center);
-            dataParams.push(center);
+            console.log('we have center');
+
+            countSql += " AND co.centerId = 1 ";
+            dataSql += " AND co.centerId = 1 ";
+
+
+            // countSql += " AND cc.id = ? ";
+            // dataSql += " AND cc.id = ? ";
+            // countParams.push(center);
+            // dataParams.push(center);
         }
 
         if (date) {
