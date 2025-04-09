@@ -99,8 +99,7 @@ router.get(
 )
 
 router.get(
-    // '/get-exist-veriety-target/:targetid/:cropid',
-    '/get-exist-veriety-target/:id',
+    '/get-exist-veriety-target/:varietyId/:companyCenterId',
     authMiddleware,
     TargetEP.getExsistVerityTarget
 )

@@ -285,10 +285,10 @@ exports.getTargetVerity = async (req, res) => {
     const { varietyId, companyCenterId } = await TargetValidate.getTargetVeritySchema.validateAsync(req.params);
     const userId = req.user.userId;
     console.log(varietyId, companyCenterId, userId);
-    
 
-    const resultCrop = await TargetDAO.getTargetVerityDao( companyCenterId, varietyId);
-    const resultOfficer = await TargetDAO.getAssingTargetForOfficersDao(userId);    
+
+    const resultCrop = await TargetDAO.getTargetVerityDao(companyCenterId, varietyId);
+    const resultOfficer = await TargetDAO.getAssingTargetForOfficersDao(userId);
 
     if (resultCrop.length === 0) {
       return res.status(400).json({ error: "No data found" });
@@ -312,7 +312,7 @@ exports.AssignOfficerTarget = async (req, res) => {
     const id = parseInt(req.body.id);
     const verityId = parseInt(req.body.varietyId);
     const targetData = req.body.OfficerData;
-    const {idA, idB, idC} = req.body.dailyTargetsIds
+    const { idA, idB, idC } = req.body.dailyTargetsIds
     console.log(req.body);
 
 
@@ -528,14 +528,21 @@ exports.getExsistVerityTarget = async (req, res) => {
   try {
     // /:
     // const { targetid, cropid } = await TargetValidate.getExsistVerityTargetSchema.validateAsync(req.params);
-    const targetid = req.params.id
-    const userId = req.user.userId;
+    // const targetid = req.params.id
+    const { varietyId, companyCenterId } = await TargetValidate.getTargetVeritySchema.validateAsync(req.params);
 
-    const resultCrop = await TargetDAO.getTargetVerityDao(targetid);
-    const resultOfficer = await TargetDAO.getExsistVerityTargetDao(resultCrop.id, resultCrop.varietyId, userId);
+    const userId = req.user.userId;
+    console.log(varietyId, companyCenterId, userId);
+
+
+    const resultCrop = await TargetDAO.getTargetVerityDao(companyCenterId, varietyId);
+    const targetId = await TargetDAO.getAssignTargetIdsDao(companyCenterId, varietyId);
+    console.log("target id--------",targetId[0]);
+    
+    const resultOfficer = await TargetDAO.getExsistVerityTargetDao(targetId[0], userId);
 
     console.log("Successfully retrieved target crop verity");
-    res.status(200).json({ crop: resultCrop, officer: resultOfficer });
+    res.status(200).json({ crop: resultCrop[0], officer: resultOfficer });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -837,15 +844,15 @@ exports.addNewCenterTarget = async (req, res) => {
     let resultC
     for (let i = 0; i < cropsData.length; i++) {
       // if (cropsData[i].targetA !== 0) {
-        resultA = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date);
+      resultA = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date);
       // }
 
       // if (cropsData[i].targetB !== 0) {
-        resultB = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date);
+      resultB = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date);
       // }
 
       // if (cropsData[i].targetC !== 0) {
-        resultC = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date);
+      resultC = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date);
       // }
     }
 

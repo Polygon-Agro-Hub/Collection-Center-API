@@ -929,7 +929,7 @@ exports.getTargetVerityDao = (companyCenterId, varietyId) => {
                 }
             });
 
-            console.log(Object.values(grouped));
+            // console.log(Object.values(grouped));
 
             resolve(Object.values(grouped));
         });
@@ -1440,7 +1440,7 @@ exports.updateTargetAssignStatus = (id) => {
 };
 
 
-exports.getExsistVerityTargetDao = (targetId, cropId, userId) => {
+exports.getExsistVerityTargetDao = (target, userId) => {
     return new Promise((resolve, reject) => {
         const sql = `
             SELECT 
@@ -1449,29 +1449,25 @@ exports.getExsistVerityTargetDao = (targetId, cropId, userId) => {
                 CO.jobRole, 
                 CO.firstNameEnglish, 
                 CO.lastNameEnglish, 
-                ODT.grade, 
-                ODT.target, 
-                ODT.id AS officerTargetId
+                DT.grade, 
+                OFT.target,
+                OFT.id AS officerTargetId
             FROM 
                 collectionofficer CO
             LEFT JOIN 
-                officerdailytarget ODT 
-                ON ODT.officerId = CO.id 
-                AND ODT.dailyTargetId = ? 
-                AND ODT.varietyId = ?
+               officertarget OFT ON CO.id = OFT.officerId AND (OFT.dailyTargetId = ? OR OFT.dailyTargetId = ? OR OFT.dailyTargetId = ?)
+            LEFT JOIN
+                dailytarget DT ON OFT.dailyTargetId = DT.id
             WHERE 
                 CO.irmId = ? 
                 OR CO.id = ?
         `
-        // const sql = `
-        //    SELECT id, officerId, grade, target
-        //    FROM officerdailytarget
-        //    WHERE dailyTargetId = ? AND varietyId = ?
-        // `;
-        collectionofficer.query(sql, [targetId, cropId, userId, userId], (err, results) => {
+        collectionofficer.query(sql, [target.idA, target.idB, target.idC, userId, userId], (err, results) => {
             if (err) {
                 return reject(err);
             }
+            console.log(results);
+            
 
             const transformedData = results.reduce((acc, item) => {
                 const { id, empId, jobRole, firstNameEnglish, lastNameEnglish, grade, target, officerTargetId } = item;
@@ -1511,6 +1507,9 @@ exports.getExsistVerityTargetDao = (targetId, cropId, userId) => {
 
                 return acc;
             }, {});
+
+            console.log(transformedData);
+            
 
             const result = Object.values(transformedData);
             resolve(result);
@@ -1921,6 +1920,61 @@ exports.getAssignCenterTargetDAO = (id) => {
                     if(row.isAssign === 1){
                         grouped[key].isAssign = 1;
                     }
+                }
+            });
+
+            resolve(Object.values(grouped));
+        });
+    });
+};
+
+
+
+exports.getAssignTargetIdsDao = (id, cropId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                DT.id, 
+                CG.cropNameEnglish, 
+                CV.varietyNameEnglish, 
+                DT.grade
+            FROM dailytarget DT
+            JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE DT.date = CURDATE() AND DT.companyCenterId = ? AND DT.varietyId = ?
+        `;
+
+        collectionofficer.query(sql, [id, cropId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            const grouped = {};
+
+            // console.log("results", results);
+            
+
+            results.forEach(row => {
+                const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        // varietyId: row.varietyId,
+                        // companyCenterId: row.companyCenterId,
+                        // cropNameEnglish: row.cropNameEnglish,
+                        // varietyNameEnglish: row.varietyNameEnglish,
+                        idA: null,
+                        idB: null,
+                        idC: null,
+                    };
+                }
+
+                if (row.grade === 'A') {
+                    grouped[key].idA = row.id
+                } else if (row.grade === 'B') {
+                    grouped[key].idB = row.id
+                    
+                } else if (row.grade === 'C') {
+                    grouped[key].idC = row.id
                 }
             });
 
