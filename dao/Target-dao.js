@@ -119,7 +119,7 @@ exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
                 END AS status
 
             FROM dailytarget DT, plant_care.cropvariety CV, plant_care.cropgroup CG
-            WHERE DT.date = CURDATE() and DT.companyCenterId = ? AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id
+            WHERE DT.date = CURDATE() and DT.companyCenterId = ? AND DT.target != 0 AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id
         `
         const sqlParams = [companyCenterId];
         // const countParams = [centerId]
@@ -889,7 +889,7 @@ exports.getTargetVerityDao = (companyCenterId, varietyId) => {
         collectionofficer.query(sql, [companyCenterId, varietyId], (err, results) => {
             if (err) {
                 return reject(err);
-            }            
+            }
 
             const grouped = {};
 
@@ -897,11 +897,11 @@ exports.getTargetVerityDao = (companyCenterId, varietyId) => {
                 const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
                 if (!grouped[key]) {
                     grouped[key] = {
-                        idA:null,
-                        idB:null,
-                        idC:null,
-                        varietyId:row.varietyId,
-                        companyCenterId:row.companyCenterId,
+                        idA: null,
+                        idB: null,
+                        idC: null,
+                        varietyId: row.varietyId,
+                        companyCenterId: row.companyCenterId,
                         cropNameEnglish: row.cropNameEnglish,
                         varietyNameEnglish: row.varietyNameEnglish,
                         qtyA: 0,
@@ -930,7 +930,7 @@ exports.getTargetVerityDao = (companyCenterId, varietyId) => {
             });
 
             console.log(Object.values(grouped));
-            
+
             resolve(Object.values(grouped));
         });
     });
@@ -954,7 +954,7 @@ exports.getAssingTargetForOfficersDao = (id) => {
 };
 
 
-exports.AssignOfficerTargetDao = (targetId,officerId, target) => {
+exports.AssignOfficerTargetDao = (targetId, officerId, target) => {
     return new Promise((resolve, reject) => {
         const sql = `
         INSERT INTO officertarget (dailyTargetId, officerId, target, complete) VALUES (?, ?, ?, ?)
@@ -1827,13 +1827,13 @@ exports.updateCenterTargeQtyDao = (id, qty) => {
 exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date) => {
     return new Promise((resolve, reject) => {
         let dataSql = `
-           INSERT INTO dailytarget (companyCenterId, varietyId, grade, target, date, assignStatus)
-           VALUES (?, ?, ?, ?, ?, 0)
+           INSERT INTO dailytarget (companyCenterId, varietyId, grade, target,complete, date, assignStatus)
+           VALUES (?, ?, ?, ?, r?, ?, 0)
         `;
 
         const dateParam = new Date(date).toISOString().split('T')[0];
 
-        const dataParams = [companyCenterId, varietyId, grade, target, dateParam];
+        const dataParams = [companyCenterId, varietyId, grade, target, 0, dateParam];
         collectionofficer.query(dataSql, dataParams, (err, results) => {
             if (err) {
                 return reject(err);
@@ -1860,7 +1860,14 @@ exports.getAssignCenterTargetDAO = (id) => {
                 CASE 
                     WHEN DT.target > DT.complete THEN 'Pending'
                     ELSE 'Completed'
-                END AS status
+                END AS status,
+                (SELECT 
+                    CASE 
+                      WHEN COUNT(*) > 0 THEN 1 
+                      ELSE 0 
+                    END  
+                    FROM officertarget 
+                    WHERE dailyTargetId = DT.id) AS isAssign
             FROM dailytarget DT
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
@@ -1874,33 +1881,46 @@ exports.getAssignCenterTargetDAO = (id) => {
 
             const grouped = {};
 
+            console.log("results", results);
+            
+
             results.forEach(row => {
                 const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
                 if (!grouped[key]) {
                     grouped[key] = {
-                        varietyId:row.varietyId,
-                        companyCenterId:row.companyCenterId,
+                        varietyId: row.varietyId,
+                        companyCenterId: row.companyCenterId,
                         cropNameEnglish: row.cropNameEnglish,
                         varietyNameEnglish: row.varietyNameEnglish,
-                        qtyA: '0',
-                        qtyB: '0',
-                        qtyC: '0',
+                        qtyA: 0,
+                        qtyB: 0,
+                        qtyC: 0,
                         assignStatusA: 0,
                         assignStatusB: 0,
                         assignStatusC: 0,
                         toDate: row.date,
+                        isAssign: 0,
                     };
                 }
 
                 if (row.grade === 'A') {
                     grouped[key].qtyA = row.target
                     grouped[key].assignStatusA = row.assignStatus;
+                    if(row.isAssign === 1){
+                        grouped[key].isAssign = 1;
+                    }
                 } else if (row.grade === 'B') {
                     grouped[key].qtyB = row.target
                     grouped[key].assignStatusB = row.assignStatus;
+                    if(row.isAssign === 1){
+                        grouped[key].isAssign = 1;
+                    }
                 } else if (row.grade === 'C') {
                     grouped[key].qtyC = row.target
                     grouped[key].assignStatusC = row.assignStatus;
+                    if(row.isAssign === 1){
+                        grouped[key].isAssign = 1;
+                    }
                 }
             });
 

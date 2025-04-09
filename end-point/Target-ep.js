@@ -832,19 +832,21 @@ exports.addNewCenterTarget = async (req, res) => {
     const date = req.body.date
     const cropsData = req.body.crop
 
-    let result
+    let resultA
+    let resultB
+    let resultC
     for (let i = 0; i < cropsData.length; i++) {
-      if (cropsData[i].targetA !== 0) {
-        result = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date);
-      }
+      // if (cropsData[i].targetA !== 0) {
+        resultA = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date);
+      // }
 
-      if (cropsData[i].targetB !== 0) {
-        result = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date);
-      }
+      // if (cropsData[i].targetB !== 0) {
+        resultB = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date);
+      // }
 
-      if (cropsData[i].targetC !== 0) {
-        result = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date);
-      }
+      // if (cropsData[i].targetC !== 0) {
+        resultC = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date);
+      // }
     }
 
     console.log("Successfully retrieved target crop verity");
