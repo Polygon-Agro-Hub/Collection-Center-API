@@ -1178,10 +1178,10 @@ exports.getPassingOfficerDao = (data, officerId) => {
 };
 
 
-exports.updateTargetDao = (id, amount) => {
+exports.updateOfficerTargetDao = (id, amount) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            UPDATE officerdailytarget
+            UPDATE officertarget
             SET target = ?
             WHERE id = ?
         `;
@@ -1451,7 +1451,8 @@ exports.getExsistVerityTargetDao = (target, userId) => {
                 CO.lastNameEnglish, 
                 DT.grade, 
                 OFT.target,
-                OFT.id AS officerTargetId
+                OFT.id AS officerTargetId,
+                DT.id AS dailyId
             FROM 
                 collectionofficer CO
             LEFT JOIN 
@@ -1467,10 +1468,10 @@ exports.getExsistVerityTargetDao = (target, userId) => {
                 return reject(err);
             }
             console.log(results);
-            
+
 
             const transformedData = results.reduce((acc, item) => {
-                const { id, empId, jobRole, firstNameEnglish, lastNameEnglish, grade, target, officerTargetId } = item;
+                const { id, empId, jobRole, firstNameEnglish, lastNameEnglish, grade, target, officerTargetId, dailyId } = item;
 
                 if (!acc[id]) {
                     acc[id] = {
@@ -1495,10 +1496,12 @@ exports.getExsistVerityTargetDao = (target, userId) => {
                     acc[id].targetAId = officerTargetId;
                     acc[id].targetA = parseFloat(target);
                     acc[id].prevousTargetA = parseFloat(target);
+
                 } else if (grade === "B") {
                     acc[id].targetBId = officerTargetId;
                     acc[id].targetB = parseFloat(target);
                     acc[id].prevousTargetB = parseFloat(target);
+
                 } else if (grade === "C") {
                     acc[id].targetCId = officerTargetId;
                     acc[id].targetC = parseFloat(target);
@@ -1509,7 +1512,7 @@ exports.getExsistVerityTargetDao = (target, userId) => {
             }, {});
 
             console.log(transformedData);
-            
+
 
             const result = Object.values(transformedData);
             resolve(result);
@@ -1827,7 +1830,7 @@ exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date
     return new Promise((resolve, reject) => {
         let dataSql = `
            INSERT INTO dailytarget (companyCenterId, varietyId, grade, target,complete, date, assignStatus)
-           VALUES (?, ?, ?, ?, r?, ?, 0)
+           VALUES (?, ?, ?, ?, ?, ?, 0)
         `;
 
         const dateParam = new Date(date).toISOString().split('T')[0];
@@ -1881,7 +1884,7 @@ exports.getAssignCenterTargetDAO = (id) => {
             const grouped = {};
 
             console.log("results", results);
-            
+
 
             results.forEach(row => {
                 const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
@@ -1905,19 +1908,19 @@ exports.getAssignCenterTargetDAO = (id) => {
                 if (row.grade === 'A') {
                     grouped[key].qtyA = row.target
                     grouped[key].assignStatusA = row.assignStatus;
-                    if(row.isAssign === 1){
+                    if (row.isAssign === 1) {
                         grouped[key].isAssign = 1;
                     }
                 } else if (row.grade === 'B') {
                     grouped[key].qtyB = row.target
                     grouped[key].assignStatusB = row.assignStatus;
-                    if(row.isAssign === 1){
+                    if (row.isAssign === 1) {
                         grouped[key].isAssign = 1;
                     }
                 } else if (row.grade === 'C') {
                     grouped[key].qtyC = row.target
                     grouped[key].assignStatusC = row.assignStatus;
-                    if(row.isAssign === 1){
+                    if (row.isAssign === 1) {
                         grouped[key].isAssign = 1;
                     }
                 }
@@ -1952,7 +1955,7 @@ exports.getAssignTargetIdsDao = (id, cropId) => {
             const grouped = {};
 
             // console.log("results", results);
-            
+
 
             results.forEach(row => {
                 const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
@@ -1972,7 +1975,7 @@ exports.getAssignTargetIdsDao = (id, cropId) => {
                     grouped[key].idA = row.id
                 } else if (row.grade === 'B') {
                     grouped[key].idB = row.id
-                    
+
                 } else if (row.grade === 'C') {
                     grouped[key].idC = row.id
                 }
@@ -1983,4 +1986,21 @@ exports.getAssignTargetIdsDao = (id, cropId) => {
     });
 };
 
+
+exports.updateAssigStatusAsTrueDao = (id) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+           UPDATE dailytarget 
+           SET assignStatus = 1
+           WHERE id = ?
+        `;
+        const dataParams = [id];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
 

@@ -537,12 +537,12 @@ exports.getExsistVerityTarget = async (req, res) => {
 
     const resultCrop = await TargetDAO.getTargetVerityDao(companyCenterId, varietyId);
     const targetId = await TargetDAO.getAssignTargetIdsDao(companyCenterId, varietyId);
-    console.log("target id--------",targetId[0]);
-    
+    // console.log("target id--------",targetId[0]);
+
     const resultOfficer = await TargetDAO.getExsistVerityTargetDao(targetId[0], userId);
 
     console.log("Successfully retrieved target crop verity");
-    res.status(200).json({ crop: resultCrop[0], officer: resultOfficer });
+    res.status(200).json({ crop: resultCrop[0], officer: resultOfficer, targetId: targetId[0] });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -560,10 +560,11 @@ exports.editAssignedOfficerTarget = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    const id = parseInt(req.body.id);
-    const verityId = parseInt(req.body.varietyId);
+    // const id = parseInt(req.body.id);
+    const targetId = req.body.targetIds;
     const targetData = req.body.OfficerData;
     console.log(req.body);
+
 
     for (let i = 0; i < targetData.length; i++) {
       const officerData = targetData[i];
@@ -571,35 +572,38 @@ exports.editAssignedOfficerTarget = async (req, res) => {
       // Update existing targets if they changed
       if (officerData.targetAId !== null && officerData.targetA !== officerData.prevousTargetA) {
         console.log("hti01", officerData.targetAId, officerData.targetA, officerData);
-        await TargetDAO.updateTargetDao(officerData.targetAId, officerData.targetA);
+        await TargetDAO.updateOfficerTargetDao(officerData.targetAId, officerData.targetA);
       }
 
       if (officerData.targetBId !== null && officerData.targetB !== officerData.prevousTargetB) {
         console.log("hti02", officerData.targetBId, officerData.targetB);
-        await TargetDAO.updateTargetDao(officerData.targetBId, officerData.targetB);
+        await TargetDAO.updateOfficerTargetDao(officerData.targetBId, officerData.targetB);
       }
 
       if (officerData.targetCId !== null && officerData.targetC !== officerData.prevousTargetC) {
         console.log("hti03", officerData.targetCId, officerData.targetC);
-        await TargetDAO.updateTargetDao(officerData.targetCId, officerData.targetC);
+        await TargetDAO.updateOfficerTargetDao(officerData.targetCId, officerData.targetC);
       }
 
       // Create new targets if they don't exist
       if (officerData.targetAId === null && officerData.targetA !== 0) {
-        console.log("hti04", id, verityId, officerData.id, 'A', officerData.targetA);
-        await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'A', officerData.targetA);
+        console.log("hti04", officerData.id, 'A', officerData.targetA);
+        await TargetDAO.AssignOfficerTargetDao(targetId.idA, officerData.id, officerData.targetA);
       }
 
       if (officerData.targetBId === null && officerData.targetB !== 0) {
-        console.log("hti05", id, verityId, officerData.id, 'B', officerData.targetB);
-        await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'B', officerData.targetB);
+        console.log("hti05", officerData.id, 'B', officerData.targetB);
+        await TargetDAO.AssignOfficerTargetDao(targetId.idB, officerData.id, officerData.targetB);
       }
 
       if (officerData.targetCId === null && officerData.targetC !== 0) {
-        console.log("hti06", id, verityId, officerData.id, 'C', officerData.targetC);
-        await TargetDAO.AssignOfficerTargetDao(id, verityId, officerData.id, 'C', officerData.targetC);
+        console.log("hti06", officerData.id, 'C', officerData.targetC);
+        await TargetDAO.AssignOfficerTargetDao(targetId.idC, officerData.id, officerData.targetC);
       }
     }
+    await TargetDAO.updateAssigStatusAsTrueDao(targetId.idA);
+    await TargetDAO.updateAssigStatusAsTrueDao(targetId.idB);
+    await TargetDAO.updateAssigStatusAsTrueDao(targetId.idC);
 
     console.log("Successfully updated officer targets");
     res.status(200).json({ status: true, message: "Target Assigned Successfully" });
