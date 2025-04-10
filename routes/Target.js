@@ -154,6 +154,12 @@ router.post(
     TargetEP.addNewCenterTarget
 )
 
+router.post(
+    "/officer-target-check-available",
+    authMiddleware,
+    TargetEP.officerTargetCheckAvailable
+)
+
 
 
 

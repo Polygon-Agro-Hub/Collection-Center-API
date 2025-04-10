@@ -2004,3 +2004,139 @@ exports.updateAssigStatusAsTrueDao = (id) => {
     });
 };
 
+
+exports.officerTargetCheckAvailableDao = (data) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+           SELECT id, irmId, centerId, companyId
+           FROM collectionofficer
+           WHERE empId = ?
+        `;
+        const dataParams = [data.empId];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            if (results.length === 0) {
+                return resolve(null); // No matching officer found
+            }
+            resolve(results[0]);
+        });
+    });
+};
+
+
+// exports.getAvailableOfficerDao = (officerId, data) => {
+//     return new Promise((resolve, reject) => {
+//         let dataSql = `
+//            SELECT 
+//                CV.varietyNameEnglish, 
+//                CG.cropNameEnglish, 
+//                DT.grade, 
+//                OFT.target, 
+//                OFT.complete, 
+//                DT.date
+//            FROM officertarget OFT
+//            JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
+//            JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
+//            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+//            WHERE 
+//                OFT.officerId = ? AND DT.date BETWEEN ? AND ?
+
+//         `;
+
+
+//         const dataParams = [officerId, data.fromDate, data.toDate];
+
+//         collectionofficer.query(dataSql, dataParams, (err, results) => {
+//             if (err) return reject(err);
+
+//             const today = new Date().toISOString().split('T')[0];
+
+//             const formattedResults = results.map(row => {
+//                 const formattedDate = new Date(row.date).toISOString().split('T')[0];
+//                 const validity = formattedDate >= today ? 'Valid' : 'Expired';
+
+//                 return {
+//                     ...row,
+//                     target: parseFloat(parseFloat(row.target).toFixed(2)),
+//                     complete: parseFloat(parseFloat(row.complete).toFixed(2)),
+//                     date: formattedDate,
+//                     validity
+//                 };
+//             });
+
+//             resolve(formattedResults);
+//         });
+//     });
+// };
+
+
+
+exports.getAvailableOfficerDao = (officerId, data, page, limit) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        let countSql = `
+            SELECT 
+                COUNT(*) AS total
+            FROM officertarget OFT
+            JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
+            JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?       
+         `;
+
+        let dataSql = `
+            SELECT 
+                CV.varietyNameEnglish, 
+                CG.cropNameEnglish, 
+                DT.grade, 
+                OFT.target, 
+                OFT.complete, 
+                DT.date
+            FROM officertarget OFT
+            JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
+            JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?
+            LIMIT ? OFFSET ?
+        `;
+
+        const dataParams = [officerId, data.fromDate, data.toDate, parseInt(limit), parseInt(offset)];
+        const countParams = [officerId, data.fromDate, data.toDate];
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                const today = new Date().toISOString().split('T')[0];
+
+                const formattedResults = dataResults.map(row => {
+                    const formattedDate = new Date(row.date).toISOString().split('T')[0];
+                    const validity = formattedDate >= today ? 'Valid' : 'Expired';
+
+                    return {
+                        ...row,
+                        target: parseFloat(parseFloat(row.target).toFixed(2)),
+                        complete: parseFloat(parseFloat(row.complete).toFixed(2)),
+                        date: formattedDate,
+                        validity
+                    };
+                });
+
+                resolve({ items: formattedResults, total });
+            });
+        });
+    });
+};

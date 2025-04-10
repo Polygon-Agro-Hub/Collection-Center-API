@@ -871,3 +871,41 @@ exports.addNewCenterTarget = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
   }
 };
+
+
+exports.officerTargetCheckAvailable = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+    const officer = req.body
+    console.log(officer);
+    const user = req.user
+    const { page, limit } = req.query;
+    console.log(page,limit);
+    
+
+    const result = await TargetDAO.officerTargetCheckAvailableDao(officer);
+    console.log(result);
+    if (result === null) {
+      return res.json({ message: "--No Data Available--", result: result, status: false });
+    }
+
+    const { items, total } = await TargetDAO.getAvailableOfficerDao(result.id, officer, page, limit);
+
+    // console.log(target);
+
+    if (result.companyId === user.companyId && result.centerId === user.centerId && (result.irmId === user.userId || result.id === user.userId)) {
+      return res.json({ message: "--Officer Target Available--", result: items, status: true, total: total });
+    }
+
+    console.log("Successfully retrieved target crop verity");
+    res.json({ status: false, message: "--You did't have permission to access this data--" });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error retrieving target crop verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching the target crop verity" });
+  }
+};
