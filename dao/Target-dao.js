@@ -164,28 +164,44 @@ exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
 
 
 
-exports.downloadAllDailyTargetDao = (companyId, fromDate, toDate) => {
+exports.downloadAllDailyTargetDao = (companyCenterId, fromDate, toDate) => {
     return new Promise((resolve, reject) => {
         let targetSql = `
-           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, DT.toDate, DT.toTime, DT.fromTime
-           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-           WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.companyId = ? AND DATE(DT.fromDate) >= ? AND DATE(DT.toDate) <= ?
-        `
-        const sqlParams = [companyId, fromDate, toDate]
+        SELECT 
+            DT.id, 
+            CG.cropNameEnglish, 
+            CV.varietyNameEnglish, 
+            DT.grade, 
+            DT.target, 
+            DT.complete, 
+            DT.assignStatus,
+            DT.date,
+            CASE 
+            WHEN DT.target = DT.complete THEN 'Completed'
+            WHEN DT.target < DT.complete THEN 'Exceeded'
+                ELSE 'Pending'
+            END AS status,
+            CASE
+                WHEN DATE(DT.date) < CURDATE() THEN 'Expired'
+                WHEN DATE(DT.date) >= CURDATE() THEN 'Active'
+            END AS validity
+        FROM dailytarget DT, plant_care.cropvariety CV, plant_care.cropgroup CG
+        WHERE DT.companyCenterId = ? 
+          AND DATE(DT.date) >= ? 
+          AND DATE(DT.date) <= ? 
+          AND DT.varietyId = CV.id 
+          AND CV.cropGroupId = CG.id   
+        `;
 
+        const sqlParams = [companyCenterId, fromDate, toDate];
 
         collectionofficer.query(targetSql, sqlParams, (err, results) => {
             if (err) {
+                console.error('Error in data query:', err);
                 return reject(err);
             }
-            const transformedTargetData = results.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, toTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
-            ]);
 
-
-            resolve(transformedTargetData);
+            resolve({ resultTarget: results });
         });
     });
 };
