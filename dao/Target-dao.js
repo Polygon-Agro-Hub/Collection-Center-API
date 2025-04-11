@@ -999,7 +999,7 @@ exports.getOfficerTargetDao = (userId, status, search) => {
                 ELSE OFT.target - OFT.complete
             END AS remaining
         FROM dailytarget DT, officertarget OFT, plant_care.cropgroup CG, plant_care.cropvariety CV, collectionofficer CO
-        WHERE OFT.officerId = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id AND OFT.officerId = CO.id
+        WHERE OFT.officerId = ? AND DT.date = CURDATE() AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id AND OFT.officerId = CO.id
     `;
 
         const params = [userId];
@@ -1047,6 +1047,7 @@ exports.getTargetDetailsToPassDao = (id) => {
                         OFT.complete,
                         COF.empId,
                         DT.grade,
+                        OFT.officerId,
                         (OFT.target - OFT.complete) AS todo
                     FROM officertarget OFT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
                     WHERE OFT.id = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND OFT.officerId = COF.id
@@ -1054,9 +1055,7 @@ exports.getTargetDetailsToPassDao = (id) => {
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
                 return reject(err);
-            }
-            console.log(results);
-            
+            }            
             resolve(results[0]);
         });
     });
@@ -1081,27 +1080,25 @@ exports.getOfficersToPassTargetDao = (id) => {
 };
 
 
-exports.getPassingOfficerDao = (data, officerId) => {
+exports.getPassingOfficerDao = (data, officerId, date) => {
     return new Promise((resolve, reject) => {
         const sql = `
                 SELECT 
-                    ODT.id,
+                    OFT.id,
                     DT.id AS targetId,
                     CV.id AS cropId,
+                    OFT.officerId,
                     CV.varietyNameEnglish, 
-                    ODT.target, 
-                    ODT.complete,
-                    DT.toDate,
-                    DT.toTime,
-                    ODT.grade,
-                    (ODT.target - ODT.complete) AS todo
-                FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT
-                WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
-
-                `;
+                    OFT.target, 
+                    OFT.complete,
+                    DT.grade,
+                    (OFT.target - OFT.complete) AS todo
+                FROM officertarget OFT, plant_care.cropvariety CV, dailytarget DT
+                WHERE OFT.dailyTargetId = ? AND OFT.officerId = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND DT.date = ?
+            `;
 
 
-        collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
+        collectionofficer.query(sql, [data.targetId, officerId, date], (err, results) => {
             if (err) {
                 return reject(err);
             }

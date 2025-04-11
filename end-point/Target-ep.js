@@ -378,8 +378,24 @@ exports.passTargetToOfficer = async (req, res) => {
   console.log(fullUrl);
   try {
     const target = await TargetValidate.PassTargetValidationSchema.validateAsync(req.body);
+    console.log("body", target);
+    console.log("end body");
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+    const dd = String(today.getDate()).padStart(2, '0');
+
+    const formattedDate = `${yyyy}-${mm}-${dd}`;
+    console.log(formattedDate); 
+
+
+    //passer details
     const targetResult = await TargetDAO.getTargetDetailsToPassDao(target.target);
-    const passingOfficer = await TargetDAO.getPassingOfficerDao(targetResult, target.officerId);
+    console.log("targetResult", targetResult);
+
+    const passingOfficer = await TargetDAO.getPassingOfficerDao(targetResult, target.officerId, formattedDate);
+    console.log("Pass officer:",passingOfficer);
+    
 
     let resultUpdate
     let result
@@ -387,19 +403,17 @@ exports.passTargetToOfficer = async (req, res) => {
     const amount = targetResult.target - target.amount;
 
     if (passingOfficer.length === 0) {
-      resultUpdate = await TargetDAO.updateTargetDao(targetResult.id, amount);
+      resultUpdate = await TargetDAO.updateOfficerTargetDao(targetResult.id, amount);
       if (resultUpdate.affectedRows > 0) {
-        result = await TargetDAO.AssignOfficerTargetDao(targetResult.targetId, targetResult.cropId, target.officerId, targetResult.grade, parseFloat(target.amount));
+        result = await TargetDAO.AssignOfficerTargetDao(targetResult.targetId, target.officerId, parseFloat(target.amount));
       } else {
         return res.json({ status: false, message: "Target Passing Unsccessfull!" });
       }
     } else {
-      resultUpdate = await TargetDAO.updateTargetDao(targetResult.id, amount);
+      resultUpdate = await TargetDAO.updateOfficerTargetDao(targetResult.id, amount);
       if (resultUpdate.affectedRows > 0) {
-
-
         const newAmount = parseFloat(passingOfficer[0].target) + target.amount;
-        result = await TargetDAO.updateTargetDao(passingOfficer[0].id, newAmount);
+        result = await TargetDAO.updateOfficerTargetDao(passingOfficer[0].id, newAmount);
       } else {
         return res.json({ status: false, message: "Target Passing Unsccessfull!" });
       }
@@ -881,8 +895,8 @@ exports.officerTargetCheckAvailable = async (req, res) => {
     console.log(officer);
     const user = req.user
     const { page, limit } = req.query;
-    console.log(page,limit);
-    
+    console.log(page, limit);
+
 
     const result = await TargetDAO.officerTargetCheckAvailableDao(officer);
     console.log(result);
