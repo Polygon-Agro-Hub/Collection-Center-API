@@ -81,71 +81,123 @@ exports.getAllDailyTarget = async (req, res) => {
   }
 };
 
-
 exports.downloadDailyTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
+
   try {
     const { fromDate, toDate } = await TargetValidate.downloadDailyTargetSchema.validateAsync(req.query);
-    const companyId = req.user.companyId
+    const centerId = req.user.centerId;
+    const companyId = req.user.companyId;
 
-    const resultTarget = await TargetDAO.downloadAllDailyTargetDao(companyId, fromDate, toDate);
-    // const resultComplete = await TargetDAO.downloadAllDailyTargetCompleteDAO(companyId, fromDate, toDate);
-    const combinedData = [];
-
-    for (const target of resultTarget) {
-      if (target.qtyA !== undefined) {
-        combinedData.push({
-          cropNameEnglish: target.cropNameEnglish,
-          varietyNameEnglish: target.varietyNameEnglish,
-          toDate: target.toDate,
-          toTime: target.toTime,
-          grade: "A",
-          status: parseFloat(target.complteQtyA) >= parseFloat(target.qtyA) ? 'Completed' : 'Pending',
-          TargetQty: target.qtyA,
-          CompleteQty: target.complteQtyA || "0.00",
-        });
-      }
-
-      if (target.qtyB !== undefined) {
-        combinedData.push({
-          cropNameEnglish: target.cropNameEnglish,
-          varietyNameEnglish: target.varietyNameEnglish,
-          toDate: target.toDate,
-          toTime: target.toTime,
-          grade: "B",
-          status: parseFloat(target.complteQtyB) >= parseFloat(target.qtyB) ? 'Completed' : 'Pending',
-          TargetQty: target.qtyB,
-          CompleteQty: target.complteQtyB || "0.00",
-        });
-      }
-
-      if (target.qtyC !== undefined) {
-        combinedData.push({
-          cropNameEnglish: target.cropNameEnglish,
-          varietyNameEnglish: target.varietyNameEnglish,
-          toDate: target.toDate,
-          toTime: target.toTime,
-          grade: "C",
-          status: parseFloat(target.complteQtyC) >= parseFloat(target.qtyC) ? 'Completed' : 'Pending',
-          TargetQty: target.qtyC,
-          CompleteQty: target.complteQtyC || "0.00",
-        });
-      }
+    const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
+    console.log(companyCenterId);
+    
+    if (companyCenterId === null) {
+      return res.status(404).json({ 
+        success: false,
+        message: "No center found" 
+      });
     }
 
+    const { resultTarget } = await TargetDAO.downloadAllDailyTargetDao(companyCenterId, fromDate, toDate);
+    console.log('these are results end point', resultTarget);
 
+    console.log(res.status);
 
-    console.log("Successfully transformed data");
-    return res.status(200).json({ message: 'Daily tartget find', status: true, data: combinedData });
+    if (!resultTarget || resultTarget.length === 0) {
+      return res.status(200).json({
+        success: true,
+        items: [],
+        message: "No targets found for the given criteria"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      items: resultTarget
+    });
+
   } catch (error) {
     if (error.isJoi) {
-      return res.status(400).json({ error: error.details[0].message });
+      return res.status(400).json({ 
+        success: false,
+        error: error.details[0].message 
+      });
     }
-    console.error("Error fetching crop names and verity:", error);
-    return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
+    console.error("Error fetching Target:", error);
+    return res.status(500).json({ 
+      success: false,
+      error: "An error occurred while fetching Target" 
+    });
   }
 };
+
+
+// exports.downloadDailyTarget = async (req, res) => {
+//   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+//   console.log(fullUrl);
+//   try {
+//     const { fromDate, toDate } = await TargetValidate.downloadDailyTargetSchema.validateAsync(req.query);
+//     const companyId = req.user.companyId
+
+//     const resultTarget = await TargetDAO.downloadAllDailyTargetDao(companyId, fromDate, toDate);
+//     // const resultComplete = await TargetDAO.downloadAllDailyTargetCompleteDAO(companyId, fromDate, toDate);
+//     const combinedData = [];
+
+//     for (const target of resultTarget) {
+//       if (target.qtyA !== undefined) {
+//         combinedData.push({
+//           cropNameEnglish: target.cropNameEnglish,
+//           varietyNameEnglish: target.varietyNameEnglish,
+//           toDate: target.toDate,
+//           toTime: target.toTime,
+//           grade: "A",
+//           status: parseFloat(target.complteQtyA) >= parseFloat(target.qtyA) ? 'Completed' : 'Pending',
+//           TargetQty: target.qtyA,
+//           CompleteQty: target.complteQtyA || "0.00",
+//         });
+//       }
+
+//       if (target.qtyB !== undefined) {
+//         combinedData.push({
+//           cropNameEnglish: target.cropNameEnglish,
+//           varietyNameEnglish: target.varietyNameEnglish,
+//           toDate: target.toDate,
+//           toTime: target.toTime,
+//           grade: "B",
+//           status: parseFloat(target.complteQtyB) >= parseFloat(target.qtyB) ? 'Completed' : 'Pending',
+//           TargetQty: target.qtyB,
+//           CompleteQty: target.complteQtyB || "0.00",
+//         });
+//       }
+
+//       if (target.qtyC !== undefined) {
+//         combinedData.push({
+//           cropNameEnglish: target.cropNameEnglish,
+//           varietyNameEnglish: target.varietyNameEnglish,
+//           toDate: target.toDate,
+//           toTime: target.toTime,
+//           grade: "C",
+//           status: parseFloat(target.complteQtyC) >= parseFloat(target.qtyC) ? 'Completed' : 'Pending',
+//           TargetQty: target.qtyC,
+//           CompleteQty: target.complteQtyC || "0.00",
+//         });
+//       }
+//     }
+
+
+
+//     console.log("Successfully transformed data");
+//     return res.status(200).json({ message: 'Daily tartget find', status: true, data: combinedData });
+//   } catch (error) {
+//     if (error.isJoi) {
+//       return res.status(400).json({ error: error.details[0].message });
+//     }
+//     console.error("Error fetching crop names and verity:", error);
+//     return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
+//   }
+// };
 
 exports.getCenterDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
