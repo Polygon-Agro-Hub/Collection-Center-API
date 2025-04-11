@@ -82,9 +82,3 @@ exports.downloadAllCenterPaymentsSchema = Joi.object({
     centerId: Joi.number().integer().required(),
     searchText: Joi.string().allow('').optional(),
 });
-
-// status: Joi.string().optional(),
-    // role: Joi.string().optional(),
-    // center: Joi.number().integer().optional()
-
-

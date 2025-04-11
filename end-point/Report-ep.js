@@ -160,30 +160,6 @@ exports.getFarmerReport = async (req, res) => {
   }
 };
 
-// exports.getAllPayments = async (req, res) => {
-//   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-//   console.log(fullUrl);
-
-//   try {
-//     const validatedQuery = await ReportValidate.getAllPaymentsSchema.validateAsync(req.query);
-
-//     const companyId = req.user.companyId;
-//     const { page, limit, searchText, center, fromDate, toDate } = validatedQuery;
-
-//     const { items, total } = await ReportDAO.getAllPaymentsDAO(
-//       companyId, page, limit, searchText, center, fromDate, toDate
-//     );
-
-//     return res.status(200).json({ items, total });
-//   } catch (error) {
-//     if (error.isJoi) {
-//       return res.status(400).json({ error: error.details[0].message });
-//     }
-
-//     console.error("Error fetching collection officers:", error);
-//     return res.status(500).json({ error: "An error occurred while fetching collection officers" });
-//   }
-// };
 
 exports.getAllPayments = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
