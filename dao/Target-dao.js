@@ -1039,24 +1039,24 @@ exports.getTargetDetailsToPassDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
                     SELECT 
-                        ODT.id,
+                        OFT.id,
                         DT.id AS targetId,
                         CV.id AS cropId,
                         CV.varietyNameEnglish, 
-                        ODT.target, 
-                        ODT.complete,
-                        DT.toDate,
-                        DT.toTime,
+                        OFT.target, 
+                        OFT.complete,
                         COF.empId,
-                        ODT.grade,
-                        (ODT.target - ODT.complete) AS todo
-                    FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
-                    WHERE ODT.id = ? AND ODT.dailyTargetId = DT.id AND ODT.officerId = COF.id AND ODT.varietyId = CV.id
+                        DT.grade,
+                        (OFT.target - OFT.complete) AS todo
+                    FROM officertarget OFT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
+                    WHERE OFT.id = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND OFT.officerId = COF.id
                 `;
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
                 return reject(err);
             }
+            console.log(results);
+            
             resolve(results[0]);
         });
     });
