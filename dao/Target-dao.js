@@ -2019,6 +2019,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit) => {
 
         let dataSql = `
             SELECT 
+                OFT.id,
                 CV.varietyNameEnglish, 
                 CG.cropNameEnglish, 
                 DT.grade, 
