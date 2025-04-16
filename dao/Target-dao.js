@@ -995,32 +995,28 @@ exports.getOfficerTargetDao = (userId, status, search) => {
     return new Promise((resolve, reject) => {
         let sql =
             `SELECT 
-            ODT.id, 
-            ODT.dailyTargetId, 
-            ODT.varietyId, 
+            OFT.id, 
+            OFT.dailyTargetId, 
+            DT.varietyId, 
             CV.varietyNameEnglish, 
             CG.cropNameEnglish, 
-            ODT.target, 
-            ODT.grade, 
-            ODT.complete, 
-            DT.toDate, 
-            DT.toTime, 
+            OFT.target, 
+            DT.grade, 
+            OFT.complete, 
             CO.empId,
+            DT.date AS toDate,
             CASE 
-                WHEN ODT.target > ODT.complete THEN 'Pending'
-                WHEN ODT.target < ODT.complete THEN 'Exceeded'
-                WHEN ODT.target = ODT.complete THEN 'Completed'
+                WHEN OFT.target > OFT.complete THEN 'Pending'
+                WHEN OFT.target < OFT.complete THEN 'Exceeded'
+                WHEN OFT.target = OFT.complete THEN 'Completed'
             END AS status,
             CASE 
-                WHEN ODT.complete > ODT.target THEN 0.00
-                ELSE ODT.target - ODT.complete
+                WHEN OFT.complete > OFT.target THEN 0.00
+                ELSE OFT.target - OFT.complete
             END AS remaining
-        FROM dailytarget DT 
-        JOIN officerdailytarget ODT ON ODT.dailyTargetId = DT.id 
-        JOIN plant_care.cropvariety CV ON ODT.varietyId = CV.id 
-        JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-        JOIN collectionofficer CO ON ODT.officerId = CO.id
-        WHERE CO.id = ?`;
+        FROM dailytarget DT, officertarget OFT, plant_care.cropgroup CG, plant_care.cropvariety CV, collectionofficer CO
+        WHERE OFT.officerId = ? AND DT.date = CURDATE() AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id AND OFT.officerId = CO.id
+    `;
 
         const params = [userId];
 
@@ -1028,9 +1024,9 @@ exports.getOfficerTargetDao = (userId, status, search) => {
         if (status) {
             sql += ` AND (
                 CASE 
-                    WHEN ODT.target > ODT.complete THEN 'Pending'
-                    WHEN ODT.target < ODT.complete THEN 'Exceeded'
-                    WHEN ODT.target = ODT.complete THEN 'Completed'
+                    WHEN OFT.target > OFT.complete THEN 'Pending'
+                    WHEN OFT.target < OFT.complete THEN 'Exceeded'
+                    WHEN OFT.target = OFT.complete THEN 'Completed'
                 END
             ) = ?`;
             params.push(status);
@@ -1044,70 +1040,7 @@ exports.getOfficerTargetDao = (userId, status, search) => {
         collectionofficer.query(sql, params, (err, results) => {
             if (err) {
                 return reject(err);
-            }
-            resolve(results);
-        });
-    });
-};
-
-
-
-
-
-exports.getOfficerTargetDao = (userId, status, search) => {
-    return new Promise((resolve, reject) => {
-        let sql =
-            `SELECT 
-            ODT.id, 
-            ODT.dailyTargetId, 
-            ODT.varietyId, 
-            CV.varietyNameEnglish, 
-            CG.cropNameEnglish, 
-            ODT.target, 
-            ODT.grade, 
-            ODT.complete, 
-            DT.toDate, 
-            DT.toTime, 
-            CO.empId,
-            CASE 
-                WHEN ODT.target > ODT.complete THEN 'Pending'
-                WHEN ODT.target < ODT.complete THEN 'Exceeded'
-                WHEN ODT.target = ODT.complete THEN 'Completed'
-            END AS status,
-            CASE 
-                WHEN ODT.complete > ODT.target THEN 0.00
-                ELSE ODT.target - ODT.complete
-            END AS remaining
-        FROM dailytarget DT 
-        JOIN officerdailytarget ODT ON ODT.dailyTargetId = DT.id 
-        JOIN plant_care.cropvariety CV ON ODT.varietyId = CV.id 
-        JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-        JOIN collectionofficer CO ON ODT.officerId = CO.id
-        WHERE CO.id = ?`;
-
-        const params = [userId];
-
-        // Add the status condition if it is provided
-        if (status) {
-            sql += ` AND (
-                CASE 
-                    WHEN ODT.target > ODT.complete THEN 'Pending'
-                    WHEN ODT.target < ODT.complete THEN 'Exceeded'
-                    WHEN ODT.target = ODT.complete THEN 'Completed'
-                END
-            ) = ?`;
-            params.push(status);
-        }
-
-        if (search) {
-            sql += ` AND (CV.varietyNameEnglish LIKE ? OR CG.cropNameEnglish LIKE ?)`;
-            params.push(`%${search}%`, `%${search}%`);
-        }
-
-        collectionofficer.query(sql, params, (err, results) => {
-            if (err) {
-                return reject(err);
-            }
+            }            
             resolve(results);
         });
     });
@@ -1122,24 +1055,24 @@ exports.getTargetDetailsToPassDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
                     SELECT 
-                        ODT.id,
+                        OFT.id,
                         DT.id AS targetId,
                         CV.id AS cropId,
                         CV.varietyNameEnglish, 
-                        ODT.target, 
-                        ODT.complete,
-                        DT.toDate,
-                        DT.toTime,
+                        OFT.target, 
+                        OFT.complete,
                         COF.empId,
-                        ODT.grade,
-                        (ODT.target - ODT.complete) AS todo
-                    FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
-                    WHERE ODT.id = ? AND ODT.dailyTargetId = DT.id AND ODT.officerId = COF.id AND ODT.varietyId = CV.id
+                        DT.grade,
+                        OFT.officerId,
+                        DT.date,
+                        (OFT.target - OFT.complete) AS todo
+                    FROM officertarget OFT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
+                    WHERE OFT.id = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND OFT.officerId = COF.id
                 `;
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
                 return reject(err);
-            }
+            }            
             resolve(results[0]);
         });
     });
@@ -1164,27 +1097,25 @@ exports.getOfficersToPassTargetDao = (id) => {
 };
 
 
-exports.getPassingOfficerDao = (data, officerId) => {
+exports.getPassingOfficerDao = (data, officerId, date) => {
     return new Promise((resolve, reject) => {
         const sql = `
                 SELECT 
-                    ODT.id,
+                    OFT.id,
                     DT.id AS targetId,
                     CV.id AS cropId,
+                    OFT.officerId,
                     CV.varietyNameEnglish, 
-                    ODT.target, 
-                    ODT.complete,
-                    DT.toDate,
-                    DT.toTime,
-                    ODT.grade,
-                    (ODT.target - ODT.complete) AS todo
-                FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT
-                WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
-
-                `;
+                    OFT.target, 
+                    OFT.complete,
+                    DT.grade,
+                    (OFT.target - OFT.complete) AS todo
+                FROM officertarget OFT, plant_care.cropvariety CV, dailytarget DT
+                WHERE OFT.dailyTargetId = ? AND OFT.officerId = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND DT.date = ?
+            `;
 
 
-        collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
+        collectionofficer.query(sql, [data.targetId, officerId, date], (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -2105,6 +2036,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit) => {
 
         let dataSql = `
             SELECT 
+                OFT.id,
                 CV.varietyNameEnglish, 
                 CG.cropNameEnglish, 
                 DT.grade, 
