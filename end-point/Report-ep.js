@@ -166,19 +166,39 @@ exports.getAllPayments = async (req, res) => {
   console.log(fullUrl);
 
   try {
+
+    const user = req.user
+    console.log(user);
+
     const validatedQuery = await ReportValidate.getAllPaymentsSchema.validateAsync(req.query);
 
     const companyId = req.user.companyId;
+    const centerId = req.user.centerId;
     const { page, limit, fromDate, toDate, searchText, center } = validatedQuery;
 
     console.log(fromDate);
     console.log(limit);
+    
 
-    const { items, total } = await ReportDAO.getAllPaymentsDAO(
-      companyId, page, limit, fromDate, toDate, searchText, center
-    );
+    if (user.role === "Collection Center Manager") {
+      // const officers = await ReportDAO.checkOfficersForSameIrmIdDao(user.userId);
+      // console.log(officers);
+      const { items, total } = await ReportDAO.getAllPaymentsForCCMDAO(
+        companyId, page, limit, fromDate, toDate, searchText, centerId, user.userId
+      );
+      console.log('from ccm', items);
+      return res.status(200).json({ items, total });
+      
+    } else {
+      const { items, total } = await ReportDAO.getAllPaymentsDAO(
+        companyId, page, limit, fromDate, toDate, searchText, center
+      );
+      console.log(items);
+      return res.status(200).json({ items, total });
+    }
 
-    return res.status(200).json({ items, total });
+    
+  
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -225,19 +245,39 @@ exports.downloadAllPayments = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    const validatedQuery = await ReportValidate.downloadAllPaymentsSchema.validateAsync(req.query);
+
+    const user = req.user
+    console.log(user);
 
     const companyId = req.user.companyId;
+    const centerId = req.user.centerId;
+    const validatedQuery = await ReportValidate.downloadAllPaymentsSchema.validateAsync(req.query);
+
     const {fromDate, toDate, center, searchText} = validatedQuery;
+    let data;
 
-    const data = await ReportDAO.downloadPaymentReport(
-      fromDate,
-      toDate,
-      center,
-      searchText,
-      companyId
-    );
+    if (user.role === "Collection Center Manager") {
+      data = await ReportDAO.downloadPaymentReportForCCM(
+        fromDate,
+        toDate,
+        centerId,
+        searchText,
+        companyId,
+        user.userId
+      );
+      console.log('ccm data', data);
+      
+    }else {
+      data = await ReportDAO.downloadPaymentReport(
+        fromDate,
+        toDate,
+        center,
+        searchText,
+        companyId
+      );
+    }
 
+    
     // Format data for Excel
     const formattedData = data.flatMap(item => [
       {

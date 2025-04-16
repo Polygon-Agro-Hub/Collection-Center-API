@@ -972,3 +972,209 @@ exports.getFarmerCropsInvoiceDetailsDao = (invNo) => {
         });
     });
 };
+
+exports.checkOfficersForSameIrmIdDao = (userId) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+           SELECT id
+           FROM collectionofficer
+           WHERE irmId = ?
+        `;
+        const dataParams = [userId];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            if (results.length === 0) {
+                return resolve(null); // No matching officer found
+            }
+            resolve(results[0]);
+        });
+    });
+};
+
+exports.getAllPaymentsForCCMDAO = (companyId, page, limit, fromDate, toDate, searchText, centerId, userId) => {
+
+    console.log(toDate, fromDate, userId)
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        let countSql = `
+        SELECT COUNT(DISTINCT rfp.invNo) AS total
+        FROM collection_officer.registeredfarmerpayments rfp
+        LEFT JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+        LEFT JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
+        LEFT JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
+        LEFT JOIN plant_care.users u ON u.id = rfp.userId
+        WHERE co.companyId = ?
+          AND rfp.createdAt BETWEEN ? AND ?
+          AND co.centerId = ?
+          AND (co.irmId = ? OR co.id = ?)
+        `;
+
+        let dataSql = `
+        SELECT 
+            rfp.invNo,
+            rfp.createdAt AS createdAt, 
+            cc.RegCode AS centerCode, 
+            cc.centerName AS centerName, 
+            co.firstNameEnglish AS firstNameEnglish,
+            u.id AS userId,
+            u.NICnumber AS nic, 
+            co.companyId AS companyId,
+            co.irmId,
+            co.centerId,
+            co.id,
+            
+            SUM(IFNULL(fpc.gradeAprice, 0)) AS gradeAprice, 
+            SUM(IFNULL(fpc.gradeAquan, 0)) AS gradeAquan,
+            SUM(IFNULL(fpc.gradeBprice, 0)) AS gradeBprice, 
+            SUM(IFNULL(fpc.gradeBquan, 0)) AS gradeBquan,
+            SUM(IFNULL(fpc.gradeCprice, 0)) AS gradeCprice, 
+            SUM(IFNULL(fpc.gradeCquan, 0)) AS gradeCquan,
+        
+            SUM(
+                IFNULL(fpc.gradeAprice, 0) * IFNULL(fpc.gradeAquan, 0) +
+                IFNULL(fpc.gradeBprice, 0) * IFNULL(fpc.gradeBquan, 0) +
+                IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
+            ) AS totalAmount
+            
+            FROM collection_officer.registeredfarmerpayments rfp
+            LEFT JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+            LEFT JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
+            LEFT JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
+            LEFT JOIN plant_care.users u ON u.id = rfp.userId
+            WHERE co.companyId = ? AND DATE(rfp.createdAt) BETWEEN ? AND ? AND co.centerId = ?
+            AND (co.irmId = ? OR co.id = ?)
+
+        `;
+
+        const countParams = [companyId, fromDate, toDate, centerId, userId, userId];
+        const dataParams = [companyId, fromDate, toDate, centerId, userId, userId];
+
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    rfp.invNo LIKE ?
+                    OR rfp.createdAt LIKE ?
+                    OR cc.centerName LIKE ?
+                    OR cc.RegCode LIKE ?
+                    OR u.NICnumber LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
+            dataParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
+        }
+
+        dataSql += " GROUP BY rfp.invNo"
+
+        // Add pagination to the data query
+        dataSql += " LIMIT ? OFFSET ?";
+        dataParams.push(limit, offset);
+
+        // Execute count query
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
+
+exports.downloadPaymentReportForCCM = (fromDate, toDate, centerId, searchText, companyId, userId) => {
+
+    return new Promise((resolve, reject) => {
+
+
+        const params = [companyId, centerId, userId, userId];
+        const countParams = [companyId, centerId, userId, userId];
+        const totalParams = [companyId, centerId, userId, userId];
+
+        let whereClause = "WHERE c.id = ? AND co.centerId = ? AND (co.irmId = ? OR co.id = ?)";
+
+        if (fromDate && toDate) {
+            whereClause += " AND DATE(rfp.createdAt) BETWEEN ? AND ?";
+            params.push(fromDate, toDate);
+            countParams.push(fromDate, toDate);
+            totalParams.push(fromDate, toDate);
+        }
+
+        if (searchText) {
+            whereClause += `
+          AND (
+            cc.regCode LIKE ? OR 
+            cc.centerName LIKE ? OR 
+            us.NICnumber LIKE ? OR 
+            invNo LIKE ?
+          )
+        `;
+            const searchPattern = `%${searchText}%`;
+            params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+            countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+            totalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+        }
+
+        console.log('this is', countParams);
+
+
+        let dataSql = `
+        SELECT 
+          invNo AS grnNumber,
+          cc.regCode AS regCode,
+          cc.centerName AS centerName,
+          ROUND(SUM(IFNULL(fpc.gradeAprice * fpc.gradeAquan, 0) + IFNULL(fpc.gradeBprice * fpc.gradeBquan, 0) + IFNULL(fpc.gradeCprice * fpc.gradeCquan, 0)), 2) AS amount,
+          us.firstName AS firstName,
+          us.lastName AS lastName,
+          us.NICnumber AS nic,
+          us.phoneNumber AS phoneNumber,
+          us.phoneNumber AS phoneNumber,
+          ub.accHolderName AS accHolderName,
+          ub.accNumber AS accNumber,
+          ub.bankName AS bankName,
+          ub.branchName AS branchName,
+          co.empId AS empId,
+          TIME(rfp.createdAt) AS createdAt
+        FROM 
+          registeredfarmerpayments rfp
+        LEFT JOIN 
+          farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+        JOIN 
+          collectionofficer co ON rfp.collectionOfficerId = co.id
+        JOIN 
+          plant_care.users us ON rfp.userId = us.id
+        JOIN 
+          collectioncenter cc ON co.centerId = cc.id
+        JOIN 
+          company c ON co.companyId = c.id
+        LEFT JOIN 
+          plant_care.userbankdetails ub ON us.id = ub.userId
+        ${whereClause}
+        GROUP BY rfp.id
+      `;
+
+        console.log('Executing Count Query...');
+
+        collectionofficer.query(dataSql, params, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
