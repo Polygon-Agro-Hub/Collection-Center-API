@@ -470,7 +470,8 @@ exports.getOfficerByIdDAO = (id) => {
                 COF.*,
                 COM.companyNameEnglish,
                 CEN.centerName,
-                VR.*
+                VR.*,
+                VR.id AS vehicleRegId
             FROM 
                 collectionofficer COF
             LEFT JOIN 
@@ -478,7 +479,7 @@ exports.getOfficerByIdDAO = (id) => {
             LEFT JOIN 
                 collectioncenter CEN ON COF.centerId = CEN.id
             LEFT JOIN
-                vehicleregistration VR ON COF.id = VR.coId 
+                vehicleregistration VR ON COF.id = VR.coId
             WHERE 
                 COF.id = ?
         `;
@@ -550,12 +551,24 @@ exports.getOfficerByIdDAO = (id) => {
                     vehBackImg:officer.vehBackImg, 
                     vehSideImgA:officer.vehSideImgA,
                     vehSideImgB:officer.vehSideImgB 
-
-
-
-
-
                 },
+                driver:{
+                    vehicleRegId:officer.vehicleRegId,
+                    licNo:officer.licNo,
+                    insNo:officer.insNo,
+                    insExpDate:officer.insExpDate,
+                    vType:officer.vType,
+                    vCapacity:officer.vCapacity,
+                    vRegNo:officer.vRegNo,
+                    licFrontImg:officer.licFrontImg, 
+                    licBackImg:officer.licBackImg, 
+                    insFrontImg:officer.insFrontImg,
+                    insBackImg:officer.insBackImg, 
+                    vehFrontImg:officer.vehFrontImg,
+                    vehBackImg:officer.vehBackImg, 
+                    vehSideImgA:officer.vehSideImgA,
+                    vehSideImgB:officer.vehSideImgB
+                }
             });
         });
     });
@@ -1292,6 +1305,57 @@ exports.checkExistOfficersDao = (nic) => {
                 validationResult = true; // NIC already exists
             }
             resolve(validationResult);
+        });
+    });
+};
+
+
+exports.updateVehicleRegistratinDao = (data) => {
+    return new Promise((resolve, reject) => {
+        // console.log(companyId,centerId);
+
+        const sql = `
+            UPDATE vehicleregistration
+            SET
+                licNo = ?, 
+                insNo = ?, 
+                insExpDate = ?, 
+                vType = ?, 
+                vCapacity = ?, 
+                vRegNo = ?, 
+                licFrontImg = ?, 
+                licBackImg = ?, 
+                insFrontImg = ?, 
+                insBackImg = ?, 
+                vehFrontImg = ?, 
+                vehBackImg = ?, 
+                vehSideImgA = ?, 
+                vehSideImgB = ?
+            WHERE 
+                id = ?
+        `;
+
+        collectionofficer.query(sql, [
+            data.licNo,
+            data.insNo,
+            data.insExpDate,
+            data.vType,
+            data.vCapacity,
+            data.vRegNo,
+            data.licFrontImg,
+            data.licBackImg,
+            data.insFrontImg,
+            data.insBackImg,
+            data.vehFrontImg,
+            data.vehBackImg,
+            data.vehSideImgA,
+            data.vehSideImgB,
+            data.vehicleRegId
+        ], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
         });
     });
 };
