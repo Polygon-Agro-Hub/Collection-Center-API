@@ -122,5 +122,13 @@ exports.getTargetVeritySchema = Joi.object({
     companyCenterId: Joi.number().integer().required(),
 });
 
-
+exports.downloadOfficerTargetSchema = Joi.object({
+    fromDate: Joi.string().allow('').optional(),
+    toDate: Joi.string().allow('').optional(),
+    jobRole: Joi.string().allow().optional(),
+    empId: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    validity: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional()
+});
 
