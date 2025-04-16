@@ -1048,6 +1048,7 @@ exports.getTargetDetailsToPassDao = (id) => {
                         COF.empId,
                         DT.grade,
                         OFT.officerId,
+                        DT.date,
                         (OFT.target - OFT.complete) AS todo
                     FROM officertarget OFT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
                     WHERE OFT.id = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND OFT.officerId = COF.id

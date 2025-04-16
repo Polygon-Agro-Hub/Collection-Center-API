@@ -160,6 +160,12 @@ router.post(
     TargetEP.officerTargetCheckAvailable
 )
 
+router.patch(
+    '/transfer-officer-target-to-officer',
+    authMiddleware,
+    TargetEP.transferOfficerTargetToOfficer
+)
+
 
 
 
