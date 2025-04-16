@@ -166,6 +166,12 @@ router.patch(
     TargetEP.transferOfficerTargetToOfficer
 )
 
+router.get(
+    "/download-officer-target-report",
+    authMiddleware,
+    TargetEP.downloadOfficerTarget
+  )
+
 
 
 

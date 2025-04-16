@@ -2020,22 +2020,22 @@ exports.officerTargetCheckAvailableDao = (data) => {
 
 
 
-exports.getAvailableOfficerDao = (officerId, data, page, limit) => {
+exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
+        const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
-        let countSql = `
-            SELECT 
+        let countSql = 
+            `SELECT 
                 COUNT(*) AS total
             FROM officertarget OFT
             JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?       
-         `;
+            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?`;
 
-        let dataSql = `
-            SELECT 
+        let dataSql = 
+            `SELECT 
                 OFT.id,
                 CV.varietyNameEnglish, 
                 CG.cropNameEnglish, 
@@ -2047,12 +2047,64 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit) => {
             JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?
-            LIMIT ? OFFSET ?
-        `;
+            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?`;
 
-        const dataParams = [officerId, data.fromDate, data.toDate, parseInt(limit), parseInt(offset)];
+        const dataParams = [officerId, data.fromDate, data.toDate];
         const countParams = [officerId, data.fromDate, data.toDate];
+
+        // Modify status filter to consider target vs complete values
+        if (status) {
+            let statusCondition = "";
+            switch (status.toLowerCase()) {
+                case 'completed':
+                    statusCondition = " AND OFT.complete = OFT.target";
+                    break;
+                case 'pending':
+                    statusCondition = " AND OFT.complete < OFT.target";
+                    break;
+                case 'exceeded':
+                    statusCondition = " AND OFT.complete > OFT.target";
+                    break;
+                default:
+                    // If status is provided but doesn't match any case, use the original behavior
+                    statusCondition = " AND OFT.status = ?";
+                    countParams.push(status);
+                    dataParams.push(status);
+                    break;
+            }
+            
+            countSql += statusCondition;
+            dataSql += statusCondition;
+        }
+
+        // Add validity filter if provided
+        if (validity) {
+            const validityCondition = validity.toLowerCase() === 'expired' 
+                ? ` AND DT.date < '${today}'` 
+                : ` AND DT.date >= '${today}'`;
+            
+            countSql += validityCondition;
+            dataSql += validityCondition;
+        }
+
+        // Apply search filters for NIC or related fields
+        if (searchText) {
+            const searchCondition = 
+                ` AND (
+                    CV.varietyNameEnglish LIKE ?
+                    OR CG.cropNameEnglish LIKE ?
+                    OR DT.grade LIKE ?
+                    OR OFT.target LIKE ?
+                )`;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue, searchValue, searchValue, searchValue);
+            dataParams.push(searchValue, searchValue, searchValue, searchValue);
+        }
+
+        dataSql += " LIMIT ? OFFSET ?";
+        dataParams.push(parseInt(limit), parseInt(offset));
 
         collectionofficer.query(countSql, countParams, (countErr, countResults) => {
             if (countErr) {
@@ -2068,23 +2120,160 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit) => {
                     return reject(dataErr);
                 }
 
-                const today = new Date().toISOString().split('T')[0];
-
                 const formattedResults = dataResults.map(row => {
                     const formattedDate = new Date(row.date).toISOString().split('T')[0];
-                    const validity = formattedDate >= today ? 'Valid' : 'Expired';
+                    const validityStatus = formattedDate >= today ? 'Valid' : 'Expired';
+                    
+                    // Calculate completion status for each row
+                    const completionStatus = 
+                        row.complete == row.target ? 'Completed' :
+                        row.complete < row.target ? 'Pending' : 'Exceeded';
 
                     return {
                         ...row,
                         target: parseFloat(parseFloat(row.target).toFixed(2)),
                         complete: parseFloat(parseFloat(row.complete).toFixed(2)),
                         date: formattedDate,
-                        validity
+                        validity: validityStatus,
+                        status: completionStatus // Add calculated status to each row
                     };
                 });
 
                 resolve({ items: formattedResults, total });
             });
+        });
+    });
+};
+
+
+exports.officerTargetCheckAvailableForDownloadDao = (empId) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+           SELECT id, irmId, centerId, companyId
+           FROM collectionofficer
+           WHERE empId = ?
+        `;
+        const dataParams = [empId];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            if (results.length === 0) {
+                return resolve(null); // No matching officer found
+            }
+            resolve(results[0]);
+        });
+    });
+};
+
+exports.downloadOfficerTargetReportDao = (officerId, fromDate, toDate, status, validity, searchText) => {
+    console.log(officerId, fromDate, toDate, status, validity, searchText);
+    return new Promise((resolve, reject) => {
+        const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+
+        
+        let dataSql = `
+            SELECT 
+                OFT.id,
+                CV.varietyNameEnglish, 
+                CG.cropNameEnglish, 
+                DT.grade, 
+                OFT.target, 
+                OFT.complete, 
+                DT.date
+            FROM officertarget OFT
+            JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
+            JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
+            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?
+
+        `;
+
+        const dataParams = [officerId, fromDate, toDate];
+
+        if (status) {
+            let statusCondition = "";
+            switch (status.toLowerCase()) {
+                case 'completed':
+                    statusCondition = " AND OFT.complete = OFT.target";
+                    break;
+                case 'pending':
+                    statusCondition = " AND OFT.complete < OFT.target";
+                    break;
+                case 'exceeded':
+                    statusCondition = " AND OFT.complete > OFT.target";
+                    break;
+                default:
+                    // If status is provided but doesn't match any case, use the original behavior
+                    statusCondition = " AND OFT.status = ?";
+                    
+                    dataParams.push(status);
+                    break;
+            }
+            
+            
+            dataSql += statusCondition;
+        }
+
+        // Add validity filter if provided
+        if (validity) {
+            const validityCondition = validity.toLowerCase() === 'expired' 
+                ? ` AND DT.date < '${today}'` 
+                : ` AND DT.date >= '${today}'`;
+            
+            
+            dataSql += validityCondition;
+        }
+
+        // Apply search filters for NIC or related fields
+        if (searchText) {
+            const searchCondition = 
+                ` AND (
+                    CV.varietyNameEnglish LIKE ?
+                    OR CG.cropNameEnglish LIKE ?
+                    OR DT.grade LIKE ?
+                    OR OFT.target LIKE ?
+                )`;
+           
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            
+            dataParams.push(searchValue, searchValue, searchValue, searchValue);
+        }
+
+        collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+            if (dataErr) {
+                console.error('Error in data query:', dataErr);
+                return reject(dataErr);
+            }
+
+            const formattedResults = dataResults.map(row => {
+                const formattedDate = new Date(row.date).toISOString().split('T')[0];
+                const validityStatus = formattedDate >= today ? 'Valid' : 'Expired';
+                
+                // Calculate completion status
+                const completionStatus = 
+                    row.complete == row.target ? 'Completed' :
+                    row.complete < row.target ? 'Pending' : 'Exceeded';
+
+                // Calculate toDo amount
+                const target = parseFloat(row.target);
+                const complete = parseFloat(row.complete);
+                const toDo = complete < target ?  parseFloat(target - complete) : 0.00;
+
+                return {
+                    ...row,
+                    target: target.toFixed(2),
+                    complete: complete.toFixed(2),
+                    toDo: toDo.toFixed(2), // Add the new toDo field
+                    date: formattedDate,
+                    validity: validityStatus,
+                    status: completionStatus
+                };
+            });
+
+            console.log('this is formatted results', formattedResults);
+            resolve({ items: formattedResults });
         });
     });
 };

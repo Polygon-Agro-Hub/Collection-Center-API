@@ -1,6 +1,6 @@
 const TargetDAO = require('../dao/Target-dao')
 const TargetValidate = require('../validations/Target-validation')
-
+const XLSX = require('xlsx');
 
 
 exports.getAllCropCatogory = async (req, res) => {
@@ -946,9 +946,8 @@ exports.officerTargetCheckAvailable = async (req, res) => {
     const officer = req.body
     console.log(officer);
     const user = req.user
-    const { page, limit } = req.query;
+    const { page, limit, status, validity, searchText } = req.query;
     console.log(page, limit);
-
 
     const result = await TargetDAO.officerTargetCheckAvailableDao(officer);
     console.log(result);
@@ -956,7 +955,7 @@ exports.officerTargetCheckAvailable = async (req, res) => {
       return res.json({ message: "--No Data Available--", result: result, status: false });
     }
 
-    const { items, total } = await TargetDAO.getAvailableOfficerDao(result.id, officer, page, limit);
+    const { items, total } = await TargetDAO.getAvailableOfficerDao(result.id, officer, page, limit, status, validity, searchText);
 
     // console.log(target);
 
@@ -1026,4 +1025,102 @@ exports.transferOfficerTargetToOfficer = async (req, res) => {
   }
 
 
+};
+
+exports.downloadOfficerTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+
+  try {
+    const user = req.user
+    console.log('this is user', user);
+   
+    const validatedQuery = await TargetValidate.downloadOfficerTargetSchema.validateAsync(req.query);
+
+    const {fromDate, toDate, empId, status, validity, searchText} = validatedQuery;
+    console.log(fromDate, toDate, empId, status, validity, searchText);
+
+    const result = await TargetDAO.officerTargetCheckAvailableForDownloadDao(empId);
+    console.log('this is results', result);
+    if (result === null) {
+      return res.json({ message: "--No Data Available--", result: result, status: false });
+    }
+
+    const officerId = result.id
+
+    // if (result.companyId === user.companyId && result.centerId === user.centerId && (result.irmId === user.userId || result.id === user.userId)) {
+    //   return res.json({ message: "--Officer Target Available--", result: items, status: true, total: total });
+    // }
+
+    const data = await TargetDAO.downloadOfficerTargetReportDao(
+      officerId,
+      fromDate,
+      toDate,
+      status,
+      validity,
+      searchText
+    );
+
+    console.log(data);
+
+    // Format data for Excel
+    const formattedData = data.items.flatMap(item => [
+      {
+        'Crop Name': item.cropNameEnglish,
+        'Variety Name': item.varietyNameEnglish,
+        'Grade': item.grade,
+        'Target (kg)': item.target,
+        'To Do (kg)': item.toDo,
+        'Completed (kg)': item.complete,
+        'Date': item.date,
+        'Status': item.status,
+        'Validity': item.validity,
+        
+      },
+
+    ]);
+
+
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+
+    worksheet['!cols'] = [
+      { wch: 25 }, // GRN
+      { wch: 15 }, // Amount
+      { wch: 20 }, // Center Reg Code
+      { wch: 25 }, // Center Name
+      { wch: 18 }, // Farmer NIC
+      { wch: 25 }, // Farmer Name
+      { wch: 15 }, // Farmer Contact
+      { wch: 25 }, // Account Holder Name
+      { wch: 20 }, // Account Number
+      // { wch: 20 }, // Bank Name
+      // { wch: 20 }, // Branch Name
+      // { wch: 15 }, // Officer EMP ID
+      // { wch: 15 }  // Collected Time
+    ];
+
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Officer Target Template');
+
+    // Write the workbook to a buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', 'attachment; filename="Officer Target Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    // Send the file to the client
+    res.send(excelBuffer);
+
+    // return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
 };
