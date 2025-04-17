@@ -82,3 +82,7 @@ exports.downloadAllCenterPaymentsSchema = Joi.object({
     centerId: Joi.number().integer().required(),
     searchText: Joi.string().allow('').optional(),
 });
+
+exports.IdParmsSchema = Joi.object({
+    id: Joi.number().integer().required()
+});
