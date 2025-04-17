@@ -172,7 +172,11 @@ router.get(
     TargetEP.downloadOfficerTarget
   )
 
-
+  router.get(
+    "/download-current-target-report",
+    authMiddleware,
+    TargetEP.downloadCurrentTarget
+  )
 
 
 module.exports = router;
