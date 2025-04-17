@@ -215,20 +215,34 @@ exports.getAllCollection = async (req, res) => {
   console.log(fullUrl);
 
   try {
+
+    const user = req.user
+    console.log(user);
     // Validate query parameters      
     const validatedQuery = await ReportValidate.getAllCollectionSchema.validateAsync(req.query);
 
     const companyId = req.user.companyId;
+    const centerId = req.user.centerId;
 
     const { page, limit, fromDate, toDate, center, searchText} = validatedQuery;
 
-    // Call the DAO to get all collection officers
-    const { items, total } = await ReportDAO.getAllCollectionDAO(page, limit, fromDate, toDate, center, searchText, companyId);
+    if (user.role === "Collection Center Manager") {
+      // const officers = await ReportDAO.checkOfficersForSameIrmIdDao(user.userId);
+      // console.log(officers);
+      const { items, total } = await ReportDAO.getAllCollectionsForCCMDAO(
+        companyId, page, limit, fromDate, toDate, searchText, centerId, user.userId
+      );
+      console.log('from ccm', items);
+      return res.status(200).json({ items, total });
+      
+    } else {
+      const { items, total } = await ReportDAO.getAllCollectionDAO(
+        companyId, page, limit, fromDate, toDate, searchText, center
+      );
+      console.log(items);
+      return res.status(200).json({ items, total });
+    }
 
-    console.log('logging items', items);
-
-    console.log("Successfully fetched collection officers");
-    return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
       // Handle validation error
@@ -350,18 +364,39 @@ exports.downloadAllCollections = async (req, res) => {
   console.log(fullUrl);
 
   try {
-    const validatedQuery = await ReportValidate.downloadAllCollectionsSchema.validateAsync(req.query);
+
+    const user = req.user
+    console.log(user);
 
     const companyId = req.user.companyId;
+    const centerId = req.user.centerId;
+
+    const validatedQuery = await ReportValidate.downloadAllCollectionsSchema.validateAsync(req.query);
+
     const {fromDate, toDate, center, searchText} = validatedQuery;
 
-    const data = await ReportDAO.downloadCollectionReport(
-      fromDate,
-      toDate,
-      center,
-      searchText,
-      companyId
-    );
+    let data;
+
+    if (user.role === "Collection Center Manager") {
+      data = await ReportDAO.downloadCollectionReportForCCM(
+        fromDate,
+        toDate,
+        centerId,
+        searchText,
+        companyId,
+        user.userId
+      );
+      console.log('ccm data', data);
+      
+    }else {
+      data = await ReportDAO.downloadCollectionReport(
+        fromDate,
+        toDate,
+        center,
+        searchText,
+        companyId
+      );
+    }
 
     // Format data for Excel
     const formattedData = data.flatMap(item => [
