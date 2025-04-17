@@ -104,6 +104,8 @@ exports.getUserDAO = (userId) => {
           //     const base64QRcode = Buffer.from(officer.QRcode).toString("base64");
           //     officer.QRcode = `data:image/png;base64,${base64QRcode}`;
           // }
+          console.log(results);
+          
 
           resolve({
               collectionOfficer: {
