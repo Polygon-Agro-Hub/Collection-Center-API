@@ -206,8 +206,8 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM collectionofficer Coff, company Com 
-            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
+            FROM collectionofficer Coff
+            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
         `;
 
         let dataSql = `
@@ -269,7 +269,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
 
 
         // Add pagination to the data query
-        dataSql += " LIMIT ? OFFSET ?";
+        dataSql += " LIMIT ? OFFSET ? ";
         dataParams.push(limit, offset);
 
         // Execute count query
@@ -911,8 +911,8 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM collectionofficer Coff, collectioncenter Cen 
-            WHERE Coff.companyId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+            FROM collectionofficer Coff
+            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
         `;
 
         let dataSql = `
@@ -978,10 +978,12 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += " ORDER BY Coff.createdAt DESC ";
+        // dataSql += " ORDER BY Coff.createdAt DESC ";
+        dataSql += " ORDER BY CASE WHEN Coff.empId LIKE 'CCM%' THEN 0 ELSE 1 END";
+
 
         // Add pagination to the data query
-        dataSql += " LIMIT ? OFFSET ?";
+        dataSql += " LIMIT ? OFFSET ? ";
         dataParams.push(limit, offset);
 
         // Execute count query
@@ -999,6 +1001,9 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
                     console.error('Error in data query:', dataErr);
                     return reject(dataErr);
                 }
+
+                console.log(total,dataResults);
+                
 
                 resolve({ items: dataResults, total });
             });
