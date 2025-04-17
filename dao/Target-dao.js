@@ -1040,7 +1040,7 @@ exports.getOfficerTargetDao = (userId, status, search) => {
         collectionofficer.query(sql, params, (err, results) => {
             if (err) {
                 return reject(err);
-            }            
+            }
             resolve(results);
         });
     });
@@ -1072,7 +1072,7 @@ exports.getTargetDetailsToPassDao = (id) => {
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
                 return reject(err);
-            }            
+            }
             resolve(results[0]);
         });
     });
@@ -1469,41 +1469,83 @@ exports.getExsistVerityTargetDao = (target, userId) => {
 
 
 
-exports.getCenterTargetDAO = (centerId, page, limit, searchText) => {
+exports.getCenterTargetDAO = (companyCenterId, status, searchText) => {
     return new Promise((resolve, reject) => {
         let targetSql = `
-           SELECT CG.cropNameEnglish, CV.varietyNameEnglish, DTI.qtyA, DTI.qtyB, DTI.qtyC, 
-                  DTI.complteQtyA, DTI.complteQtyB, DTI.complteQtyC, 
-                  DATE_FORMAT(DT.toDate, '%d/%m/%Y') AS toDate, DT.toTime, DT.fromTime
-           FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-           WHERE DT.id = DTI.targetId 
-             AND DTI.varietyId = CV.id 
-             AND CV.cropGroupId = CG.id 
-             AND DT.centerId = ? 
-             AND (
-                 (DT.toDate > CURDATE()) OR 
-                 (DT.toDate = CURDATE() AND DT.toTime >= CURTIME())
-             )
+        SELECT 
+            dt.id, 
+            dt.companyCenterId, 
+            cv.varietyNameEnglish, 
+            cg.cropNameEnglish, 
+            dt.grade, 
+            dt.target, 
+            dt.complete,
+            dt.date 
+        FROM collection_officer.dailytarget dt
+        LEFT JOIN plant_care.cropvariety cv ON dt.varietyId = cv.id
+        LEFT JOIN plant_care.cropgroup cg ON cv.cropGroupId = cg.id
+        WHERE dt.companyCenterId = ? AND DATE(dt.date) = CURDATE()
         `;
-        const sqlParams = [centerId];
+
+        const sqlParams = [companyCenterId];
+
+        // Add status filter if provided
+        if (status) {
+            const statusLower = status.toLowerCase();
+            if (statusLower === 'completed') {
+                targetSql += " AND dt.complete = dt.target";
+            } else if (statusLower === 'exceeded') {
+                targetSql += " AND dt.complete > dt.target";
+            } else if (statusLower === 'pending') {
+                targetSql += " AND COALESCE(dt.complete, 0.00) < dt.target";
+            }
+        }
+
+        // Add search filter if provided
         if (searchText) {
-            const searchCondition = ` AND CV.varietyNameEnglish LIKE ? `;
+            const searchCondition = ` AND (
+                cv.varietyNameEnglish LIKE ?
+                OR cg.cropNameEnglish LIKE ?
+                OR dt.target LIKE ?
+                OR dt.complete LIKE ?
+            )`;
             targetSql += searchCondition;
             const searchValue = `%${searchText}%`;
-            sqlParams.push(searchValue);
+            sqlParams.push(searchValue, searchValue, searchValue, searchValue);
         }
+
         // Execute data query
         collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
             if (dataErr) {
                 console.error('Error in data query:', dataErr);
                 return reject(dataErr);
             }
-            const transformedTargetData = dataResults.flatMap(item => [
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, fromTime: item.fromTime, qtyA: item.qtyA, grade: "A", complteQtyA: item.complteQtyA },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, fromTime: item.fromTime, qtyB: item.qtyB, grade: "B", complteQtyB: item.complteQtyB },
-                { cropNameEnglish: item.cropNameEnglish, varietyNameEnglish: item.varietyNameEnglish, toDate: item.toDate, toTime: item.toTime, fromTime: item.fromTime, qtyC: item.qtyC, grade: "C", complteQtyC: item.complteQtyC }
-            ]);
-            resolve({ resultTarget: transformedTargetData, total: dataResults.length });
+
+            // Process results to add status field
+            const resultTarget = dataResults.map(row => {
+                const target = parseFloat(row.target ?? 0.00);
+                const complete = parseFloat(row.complete ?? 0.00);
+
+                let status;
+                if (complete > target) {
+                    status = 'Exceeded';
+                } else if (complete == target) {
+                    status = 'Completed';
+                }  else if (complete < target) {
+                    status = 'Pending';
+                } 
+
+
+                return {
+                    ...row,
+                    target: target.toFixed(2),
+                    complete: complete.toFixed(2),
+                    status: status
+                };
+            });
+            console.log(resultTarget)
+
+            resolve({ resultTarget });
         });
     });
 };
@@ -2025,7 +2067,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
         const offset = (page - 1) * limit;
         const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
-        let countSql = 
+        let countSql =
             `SELECT 
                 COUNT(*) AS total
             FROM officertarget OFT
@@ -2034,7 +2076,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?`;
 
-        let dataSql = 
+        let dataSql =
             `SELECT 
                 OFT.id,
                 CV.varietyNameEnglish, 
@@ -2072,24 +2114,24 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
                     dataParams.push(status);
                     break;
             }
-            
+
             countSql += statusCondition;
             dataSql += statusCondition;
         }
 
         // Add validity filter if provided
         if (validity) {
-            const validityCondition = validity.toLowerCase() === 'expired' 
-                ? ` AND DT.date < '${today}'` 
+            const validityCondition = validity.toLowerCase() === 'expired'
+                ? ` AND DT.date < '${today}'`
                 : ` AND DT.date >= '${today}'`;
-            
+
             countSql += validityCondition;
             dataSql += validityCondition;
         }
 
         // Apply search filters for NIC or related fields
         if (searchText) {
-            const searchCondition = 
+            const searchCondition =
                 ` AND (
                     CV.varietyNameEnglish LIKE ?
                     OR CG.cropNameEnglish LIKE ?
@@ -2123,11 +2165,11 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
                 const formattedResults = dataResults.map(row => {
                     const formattedDate = new Date(row.date).toISOString().split('T')[0];
                     const validityStatus = formattedDate >= today ? 'Valid' : 'Expired';
-                    
+
                     // Calculate completion status for each row
-                    const completionStatus = 
+                    const completionStatus =
                         row.complete == row.target ? 'Completed' :
-                        row.complete < row.target ? 'Pending' : 'Exceeded';
+                            row.complete < row.target ? 'Pending' : 'Exceeded';
 
                     return {
                         ...row,
@@ -2171,7 +2213,7 @@ exports.downloadOfficerTargetReportDao = (officerId, fromDate, toDate, status, v
     return new Promise((resolve, reject) => {
         const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
-        
+
         let dataSql = `
             SELECT 
                 OFT.id,
@@ -2206,38 +2248,38 @@ exports.downloadOfficerTargetReportDao = (officerId, fromDate, toDate, status, v
                 default:
                     // If status is provided but doesn't match any case, use the original behavior
                     statusCondition = " AND OFT.status = ?";
-                    
+
                     dataParams.push(status);
                     break;
             }
-            
-            
+
+
             dataSql += statusCondition;
         }
 
         // Add validity filter if provided
         if (validity) {
-            const validityCondition = validity.toLowerCase() === 'expired' 
-                ? ` AND DT.date < '${today}'` 
+            const validityCondition = validity.toLowerCase() === 'expired'
+                ? ` AND DT.date < '${today}'`
                 : ` AND DT.date >= '${today}'`;
-            
-            
+
+
             dataSql += validityCondition;
         }
 
         // Apply search filters for NIC or related fields
         if (searchText) {
-            const searchCondition = 
+            const searchCondition =
                 ` AND (
                     CV.varietyNameEnglish LIKE ?
                     OR CG.cropNameEnglish LIKE ?
                     OR DT.grade LIKE ?
                     OR OFT.target LIKE ?
                 )`;
-           
+
             dataSql += searchCondition;
             const searchValue = `%${searchText}%`;
-            
+
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
@@ -2250,16 +2292,16 @@ exports.downloadOfficerTargetReportDao = (officerId, fromDate, toDate, status, v
             const formattedResults = dataResults.map(row => {
                 const formattedDate = new Date(row.date).toISOString().split('T')[0];
                 const validityStatus = formattedDate >= today ? 'Valid' : 'Expired';
-                
+
                 // Calculate completion status
-                const completionStatus = 
+                const completionStatus =
                     row.complete == row.target ? 'Completed' :
-                    row.complete < row.target ? 'Pending' : 'Exceeded';
+                        row.complete < row.target ? 'Pending' : 'Exceeded';
 
                 // Calculate toDo amount
                 const target = parseFloat(row.target);
                 const complete = parseFloat(row.complete);
-                const toDo = complete < target ?  parseFloat(target - complete) : 0.00;
+                const toDo = complete < target ? parseFloat(target - complete) : 0.00;
 
                 return {
                     ...row,
@@ -2274,6 +2316,88 @@ exports.downloadOfficerTargetReportDao = (officerId, fromDate, toDate, status, v
 
             console.log('this is formatted results', formattedResults);
             resolve({ items: formattedResults });
+        });
+    });
+};
+
+
+
+exports.downloadCurrentTargetDAO = (companyCenterId, status, searchText) => {
+    return new Promise((resolve, reject) => {
+        let targetSql = `
+        SELECT 
+            dt.id, 
+            dt.companyCenterId, 
+            cv.varietyNameEnglish, 
+            cg.cropNameEnglish, 
+            dt.grade, 
+            dt.target, 
+            dt.complete,
+            dt.date 
+        FROM collection_officer.dailytarget dt
+        LEFT JOIN plant_care.cropvariety cv ON dt.varietyId = cv.id
+        LEFT JOIN plant_care.cropgroup cg ON cv.cropGroupId = cg.id
+        WHERE dt.companyCenterId = ? AND DATE(dt.date) = CURDATE()
+        `;
+
+        const sqlParams = [companyCenterId];
+
+        // Add status filter if provided
+        if (status) {
+            const statusLower = status.toLowerCase();
+            if (statusLower === 'completed') {
+                targetSql += " AND dt.complete = dt.target";
+            } else if (statusLower === 'pending') {
+                targetSql += " AND COALESCE(dt.complete, 0.00) < dt.target";
+            } else if (statusLower === 'exceeded') {
+                targetSql += " AND dt.complete > dt.target";
+            }
+        }
+
+        // Add search filter if provided
+        if (searchText) {
+            const searchCondition = ` AND (
+                cv.varietyNameEnglish LIKE ?
+                OR cg.cropNameEnglish LIKE ?
+                OR dt.target LIKE ?
+                OR dt.complete LIKE ?
+            )`;
+            targetSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            sqlParams.push(searchValue, searchValue, searchValue, searchValue);
+        }
+
+        // Execute data query
+        collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
+            if (dataErr) {
+                console.error('Error in data query:', dataErr);
+                return reject(dataErr);
+            }
+
+            // Process results to add status field
+            const resultTarget = dataResults.map(row => {
+                const target = parseFloat(row.target ?? 0.00);
+                const complete = parseFloat(row.complete ?? 0.00);
+
+                let status;
+                if (complete > target) {
+                    status = 'Exceeded';
+                } else if (complete < target) {
+                    status = 'Pending';
+                } else if (complete == target) {
+                    status = 'Completed';
+                }
+
+                return {
+                    ...row,
+                    target: target.toFixed(2),
+                    complete: complete.toFixed(2),
+                    status: status
+                };
+            });
+            console.log(resultTarget)
+
+            resolve({ resultTarget });
         });
     });
 };

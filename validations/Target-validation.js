@@ -81,6 +81,7 @@ exports.getCenterTargetSchema = Joi.object({
     centerId: Joi.number().integer().min(1).default(1).optional(),
     page: Joi.number().integer().min(1).default(1).optional(),
     limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    status: Joi.string().allow('').optional(),
     searchText: Joi.string().allow('').optional(),
 
 });
@@ -130,5 +131,12 @@ exports.downloadOfficerTargetSchema = Joi.object({
     status: Joi.string().allow('').optional(),
     validity: Joi.string().allow('').optional(),
     searchText: Joi.string().allow('').optional()
+});
+
+exports.downloadCurrentTargetSchema = Joi.object({
+    centerId: Joi.number().integer().min(1).default(1).optional(),
+    status: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional(),
+
 });
 
