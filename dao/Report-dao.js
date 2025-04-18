@@ -558,7 +558,7 @@ exports.getAllCollectionDAO = (companyId, page, limit, fromDate, toDate, searchT
             LEFT JOIN plant_care.users u ON u.id = rfp.userId
             LEFT JOIN plant_care.cropvariety cv ON fpc.cropId = cv.id
             LEFT JOIN plant_care.cropgroup cg ON cv.cropGroupId = cg.id
-            WHERE co.companyId = ? AND DATE(rfp.createdAt) BETWEEN ? AND ?
+            WHERE co.companyId = ? AND fpc.cropId IS NOT NULL AND DATE(rfp.createdAt) BETWEEN ? AND ? 
         `;
 
         let countSql = `
@@ -1113,7 +1113,7 @@ exports.getAllCollectionsForCCMDAO = (companyId, page, limit, fromDate, toDate, 
                 WHERE co.companyId = ?
                 AND rfp.createdAt BETWEEN ? AND ?
                 AND co.centerId = ?
-                AND (co.irmId = ? OR co.id = ?)
+                AND (co.irmId = ? OR co.id = ?) AND AND fpc.cropId IS NOT NULL
         `;
 
         let countSql = `
