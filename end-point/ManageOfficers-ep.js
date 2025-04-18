@@ -541,17 +541,20 @@ exports.CCHcreateOfficer = async (req, res) => {
     console.log("checkUserExist", checkUserExist);
 
     if (checkUserExist) {
-      return res.json({ message: "This NiC Allready exist.", status: false });
+      return res.json({ message: "This NIC Number already exist", status: false });
     }
 
+    let profileImageUrl = null;
 
+    if (req.body.file !== 'null') {
+      const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
+      const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
+      const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
+      const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
+      const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+      profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
+    }
 
-    const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
-    const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
-    const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
-    const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
-    const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
-    const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
 
     const result = await ManageOfficerDAO.createCollectionOfficerPersonalCCH(officerData, companyId, profileImageUrl);
 

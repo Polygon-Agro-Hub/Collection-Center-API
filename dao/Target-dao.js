@@ -535,7 +535,7 @@ exports.getOfficerDetailsDAO = (centerId, page, limit, role, status, searchText)
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += " ORDER BY Coff.createdAt DESC ";
+        dataSql += " ORDER BY CASE WHEN Coff.empId LIKE 'CCM%' THEN 0 ELSE 1 END";
 
         // Add pagination to the data query
         dataSql += " LIMIT ? OFFSET ? ";

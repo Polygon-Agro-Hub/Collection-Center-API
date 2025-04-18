@@ -768,22 +768,25 @@ exports.addOrRemoveCenterCrops = async (req, res) => {
     }
 
     let result;
+    let message;
     if (validateData.isAssign === 1) {
       result = await TargetDAO.addCenterCropsDao(companyCenterId, validateData.cropId);
       if (result.affectedRows === 0) {
         return res.json({ status: false, message: "Failed to add crop" });
       }
+      message = 'Crop Variety was successfully <b>Activated</b> on Center Target'
     } else if (validateData.isAssign === 0) {
       result = await TargetDAO.removeCenterCropsDao(companyCenterId, validateData.cropId);
       if (result.affectedRows === 0) {
         return res.json({ status: false, message: "Failed to remove crop" });
       }
+      message = 'Crop Variety was successfully <b>Deactivated</b> on Center Target' 
     } else {
       return res.json({ status: false, message: "Invalid request" });
     }
 
     // const results = await TargetDAO.getCenterCenterCropsDao(companyId, id);
-    return res.status(200).json({ status: true, message: "Successfully change crop" });
+    return res.status(200).json({ status: true, message: message });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
