@@ -21,32 +21,6 @@ exports.getAllCropCatogory = async (req, res) => {
   }
 }
 
-exports.addDailyTarget = async (req, res) => {
-  try {
-    const target = req.body;
-    const companyId = req.user.companyId;
-    const userId = req.user.userId;
-
-    const targetId = await TargetDAO.createDailyTargetDao(target, companyId, userId);
-    if (!targetId) {
-      return res.json({ message: "Faild create target try again!", status: false })
-    }
-
-    for (let i = 0; i < target.TargetItems.length; i++) {
-      await TargetDAO.createDailyTargetItemsDao(target.TargetItems[i], targetId);
-    }
-    console.log("Daily Target Created Successfully");
-    res.json({ message: "Daily Target Created Successfully!", status: true })
-  } catch (err) {
-    if (err.isJoi) {
-      // Validation error
-      console.error("Validation error:", err.details[0].message);
-      return res.status(400).json({ error: err.details[0].message });
-    }
-    console.error("Error fetching news:", err);
-    res.status(500).json({ error: "An error occurred while fetching news" });
-  }
-};
 
 
 exports.getAllDailyTarget = async (req, res) => {
