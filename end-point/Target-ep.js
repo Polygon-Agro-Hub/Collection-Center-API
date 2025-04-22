@@ -38,7 +38,7 @@ exports.getAllDailyTarget = async (req, res) => {
     }
 
     const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(companyCenterId, searchText);
-    console.log('these are results', resultTarget);
+    // console.log('these are results', resultTarget);
 
 
     console.log("Successfully transformed data");
@@ -280,17 +280,20 @@ exports.getAssignCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
-    // const { page, limit } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
+    const { searchText } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
     const companyId = req.user.companyId
+
+    console.log("-------SEarch---------",searchText);
+    
 
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
     if (companyCenterId === null) {
       res.json({ items: [], message: "No center found" })
     }
 
-    const resultTarget = await TargetDAO.getAssignCenterTargetDAO(companyCenterId);
-    console.log(resultTarget);
+    const resultTarget = await TargetDAO.getAssignCenterTargetDAO(companyCenterId, searchText);
+    // console.log(resultTarget);
 
     console.log("Successfully transformed data");
     return res.status(200).json(resultTarget);

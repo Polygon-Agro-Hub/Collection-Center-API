@@ -48,6 +48,7 @@ exports.getAllCropNameDAO = () => {
 
 exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
     return new Promise((resolve, reject) => {
+console.log(searchText);
 
         // const offset = (page - 1) * limit;
 
@@ -1790,9 +1791,9 @@ exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date
     });
 };
 
-exports.getAssignCenterTargetDAO = (id) => {
+exports.getAssignCenterTargetDAO = (id, searchText) => {
     return new Promise((resolve, reject) => {
-        const sql = `
+        let sql = `
             SELECT 
                 DT.id, 
                 CG.cropNameEnglish, 
@@ -1820,15 +1821,22 @@ exports.getAssignCenterTargetDAO = (id) => {
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE DT.date = CURDATE() AND DT.companyCenterId = ?
         `;
+        const sqlParams = [id];
 
-        collectionofficer.query(sql, [id], (err, results) => {
+        if(searchText){
+            sql += ` AND CV.varietyNameEnglish LIKE ? `;
+            sqlParams.push(`%${searchText}%`);
+            
+        }
+
+        collectionofficer.query(sql, sqlParams, (err, results) => {
             if (err) {
                 return reject(err);
             }
 
             const grouped = {};
 
-            console.log("results", results);
+            // console.log("results", results);
 
 
             results.forEach(row => {
