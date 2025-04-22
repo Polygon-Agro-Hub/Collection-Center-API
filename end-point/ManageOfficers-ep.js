@@ -60,7 +60,7 @@ exports.createOfficer = async (req, res) => {
     console.log("checkUserExist", checkUserExist);
 
     if (checkUserExist) {
-      return res.json({ message: "This NiC Allready exist.", status: false });
+      return res.json({ message: "This NIC Number already exist.", status: false });
     }
     const centerId = req.user.centerId;
     const companyId = req.user.companyId;
@@ -541,7 +541,7 @@ exports.CCHcreateOfficer = async (req, res) => {
     console.log("checkUserExist", checkUserExist);
 
     if (checkUserExist) {
-      return res.json({ message: "This NIC Number already exist", status: false });
+      return res.json({ message: "This NIC Number already exist.", status: false });
     }
 
     let profileImageUrl = null;
