@@ -20,6 +20,8 @@ exports.GetAllCenterDAO = () => {
 
 exports.getForCreateIdDao = (role) => {
     return new Promise((resolve, reject) => {
+        console.log(role);
+
         const sql = "SELECT empId FROM collectionofficer WHERE empId LIKE ? ORDER BY empId DESC LIMIT 1";
         collectionofficer.query(sql, [`${role}%`], (err, results) => {
             if (err) {
@@ -50,7 +52,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-            
+
 
             // Generate QR Code
             const qrData = JSON.stringify({ empId: officerData.empId });
@@ -204,8 +206,8 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM collectionofficer Coff, company Com 
-            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
+            FROM collectionofficer Coff
+            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
         `;
 
         let dataSql = `
@@ -267,7 +269,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
 
 
         // Add pagination to the data query
-        dataSql += " LIMIT ? OFFSET ?";
+        dataSql += " LIMIT ? OFFSET ? ";
         dataParams.push(limit, offset);
 
         // Execute count query
@@ -362,7 +364,7 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
         `;
         collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
             if (err) {
-                
+
                 return reject(err); // Reject promise if an error occurs
             }
             resolve(results); // Resolve with the query results
@@ -373,99 +375,70 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
 
 exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEnglish) => {
     try {
-
         const doc = new PDFDocument();
 
-        const pdfPath = `./uploads/register_details_${empId}.pdf`;
+        const chunks = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
 
-        doc.pipe(fs.createWriteStream(pdfPath));
-
+        // Add watermark (if needed)
         const watermarkPath = './assets/bg.png';
         doc.opacity(0.2)
             .image(watermarkPath, 100, 300, { width: 400 })
             .opacity(1);
 
+        // Add content to PDF
         doc.fontSize(20)
             .fillColor('#071a51')
-            .text('Welcome to AgroWorld (Pvt) Ltd - Registration Confirmation', {
-                align: 'center',
-            });
+            .text('Welcome to AgroWorld (Pvt) Ltd - Registration Confirmation', { align: 'center' })
+            .moveDown();
 
-        doc.moveDown();
-
-        const lineY = doc.y;
-
-        doc.moveTo(50, lineY)
-            .lineTo(550, lineY)
-            .stroke();
-
-        doc.moveDown();
-
-        doc.fontSize(12).text(`Dear ${firstNameEnglish},`);
-
-        doc.moveDown();
-
-        doc.fontSize(12).text('Thank you for registering with us! We are excited to have you on board.');
-
-        doc.moveDown();
+        doc.moveTo(50, doc.y)
+            .lineTo(550, doc.y)
+            .stroke()
+            .moveDown();
 
         doc.fontSize(12)
-            .text(
-                'You have successfully created an account with AgroWorld (Pvt) Ltd. Our platform will help you with all your agricultural needs, providing guidance, weather reports, asset management tools, and much more. We are committed to helping farmers like you grow and succeed.',
-                {
-                    align: 'justify',
-                }
-            );
+            .text(`Dear ${firstNameEnglish},`)
+            .moveDown()
+            .text('Thank you for registering with us! We are excited to have you on board.')
+            .moveDown()
+            .text('You have successfully created an account with AgroWorld (Pvt) Ltd. Our platform will help you with all your agricultural needs, providing guidance, weather reports, asset management tools, and much more. We are committed to helping farmers like you grow and succeed.', { align: 'justify' })
+            .moveDown()
+            .text(`Your User Name/ID: ${empId}`)
+            .text(`Your Password: ${password}`)
+            .moveDown()
+            .text('If you have any questions or need assistance, feel free to reach out to our support team at info@agroworld.lk', { align: 'justify' })
+            .moveDown()
+            .text('We are here to support you every step of the way!', { align: 'justify' })
+            .moveDown()
+            .text('Best Regards,')
+            .text('The AgroWorld Team')
+            .text('AgroWorld (Pvt) Ltd. | All rights reserved.')
+            .moveDown()
+            .text('Address: No:14,')
+            .text('            Sir Baron Jayathilake Mawatha,')
+            .text('            Colombo 01.')
+            .moveDown()
+            .text('Email: info@agroworld.lk');
 
-        doc.moveDown();
-
-        doc.fontSize(12).text(`Your User Name/ID: ${empId}`);
-        doc.fontSize(12).text(`Your Password: ${password}`);
-
-        doc.moveDown();
-
-        doc.fontSize(12)
-            .text(
-                'If you have any questions or need assistance, feel free to reach out to our support team at info@agroworld.lk',
-                {
-                    align: 'justify',
-                }
-            );
-
-        doc.moveDown();
-
-        doc.fontSize(12)
-            .text(
-                'We are here to support you every step of the way!',
-                {
-                    align: 'justify',
-                }
-            );
-
-        doc.moveDown();
-        doc.fontSize(12).text(`Best Regards,`);
-        doc.fontSize(12).text(`The AgroWorld Team`);
-        doc.fontSize(12).text(`AgroWorld (Pvt) Ltd. | All rights reserved.`);
-        doc.moveDown();
-        doc.fontSize(12).text(`Address: No:14,`);
-        doc.fontSize(12).text(`            Sir Baron Jayathilake Mawatha,`);
-        doc.fontSize(12).text(`            Colombo 01.`);
-        doc.moveDown();
-        doc.fontSize(12).text(`Email: info@agroworld.lk`);
-
+        // Finalize the PDF
         doc.end();
 
+        // Wait for PDF to finish generating
+        const pdfBuffer = await new Promise((resolve) => {
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+        });
+
+        // Send email with PDF attachment (without saving to disk)
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
-            port: 465,  // or 587 for TLS
+            port: 465,
             secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
             },
-            tls: {
-                family: 4,
-            },
+            tls: { family: 4 },
         });
 
         const mailOptions = {
@@ -473,26 +446,20 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
             to: email,
             subject: 'Welcome to AgroWorld (Pvt) Ltd - Registration Confirmation',
             text: `Dear ${firstNameEnglish},\n\nYour registration details are attached in the PDF.`,
-            attachments: [
-                {
-                    filename: `password_${empId}.pdf`,  // PDF file name
-                    path: pdfPath,  // Path to the generated PDF
-                },
-            ],
+            attachments: [{
+                filename: `registration_${empId}.pdf`,
+                content: pdfBuffer, // Attach PDF from memory (no file saved)
+            }],
         };
 
-        const info = await transporter.sendMail(mailOptions);
-        
-
+        await transporter.sendMail(mailOptions);
         return { success: true, message: 'Email sent successfully!' };
 
     } catch (error) {
         console.error('Error sending email:', error);
-
         return { success: false, message: 'Failed to send email.', error };
     }
 };
-
 
 
 
@@ -502,11 +469,20 @@ exports.getOfficerByIdDAO = (id) => {
             SELECT 
                 COF.*,
                 COM.companyNameEnglish,
-                CEN.centerName
+                CEN.centerName,
+                VR.*,
+                VR.id AS vehicleRegId
             FROM 
-                collectionofficer COF, company COM, collectioncenter CEN
+                collectionofficer COF
+            LEFT JOIN 
+                company COM ON COF.companyId = COM.id
+            LEFT JOIN 
+                collectioncenter CEN ON COF.centerId = CEN.id
+            LEFT JOIN
+                vehicleregistration VR ON COF.id = VR.coId
             WHERE 
-             COF.centerId = CEN.id AND COF.companyId = COM.id AND COF.id = ?`;
+                COF.id = ?
+        `;
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
@@ -516,6 +492,9 @@ exports.getOfficerByIdDAO = (id) => {
             if (results.length === 0) {
                 return resolve(null); // No officer found
             }
+
+            console.log(results);
+
 
             const officer = results[0];
 
@@ -555,14 +534,41 @@ exports.getOfficerByIdDAO = (id) => {
                     branchName: officer.branchName,
                     companyNameEnglish: officer.companyNameEnglish,
                     centerName: officer.centerName,
-                    centerId:officer.centerId,
-                    companyId:officer.companyId,
-                    irmId:officer.irmId
-
-
-
-
+                    centerId: officer.centerId,
+                    companyId: officer.companyId,
+                    irmId: officer.irmId,
+                    licNo:officer.licNo,
+                    insNo:officer.insNo,
+                    insExpDate:officer.insExpDate,
+                    vType:officer.vType,
+                    vCapacity:officer.vCapacity,
+                    vRegNo:officer.vRegNo,
+                    licFrontImg:officer.licFrontImg, 
+                    licBackImg:officer.licBackImg, 
+                    insFrontImg:officer.insFrontImg,
+                    insBackImg:officer.insBackImg, 
+                    vehFrontImg:officer.vehFrontImg,
+                    vehBackImg:officer.vehBackImg, 
+                    vehSideImgA:officer.vehSideImgA,
+                    vehSideImgB:officer.vehSideImgB 
                 },
+                driver:{
+                    vehicleRegId:officer.vehicleRegId,
+                    licNo:officer.licNo,
+                    insNo:officer.insNo,
+                    insExpDate:officer.insExpDate,
+                    vType:officer.vType,
+                    vCapacity:officer.vCapacity,
+                    vRegNo:officer.vRegNo,
+                    licFrontImg:officer.licFrontImg, 
+                    licBackImg:officer.licBackImg, 
+                    insFrontImg:officer.insFrontImg,
+                    insBackImg:officer.insBackImg, 
+                    vehFrontImg:officer.vehFrontImg,
+                    vehBackImg:officer.vehBackImg, 
+                    vehSideImgA:officer.vehSideImgA,
+                    vehSideImgB:officer.vehSideImgB
+                }
             });
         });
     });
@@ -579,7 +585,7 @@ exports.updateOfficerDetails = (id, officerData, image) => {
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-           
+
             // Generate QR Code
             await deleteFromS3(officerData.previousQR);
 
@@ -588,7 +594,7 @@ exports.updateOfficerDetails = (id, officerData, image) => {
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
             const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
 
-            
+
 
             // Define SQL Query before execution
             const sql = `
@@ -846,7 +852,7 @@ exports.getPassingOfficerDao = (data, officerId) => {
                 WHERE ODT.dailyTargetId = DT.id AND ODT.varietyId = CV.id AND ODT.dailyTargetId = ? AND ODT.officerId = ? AND ODT.varietyId = ? AND ODT.grade = ?
 
                 `;
-        
+
 
         collectionofficer.query(sql, [data.targetId, officerId, data.cropId, data.grade], (err, results) => {
             if (err) {
@@ -905,8 +911,8 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM collectionofficer Coff, collectioncenter Cen 
-            WHERE Coff.companyId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+            FROM collectionofficer Coff
+            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
         `;
 
         let dataSql = `
@@ -926,7 +932,7 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff, collectioncenter Cen 
-                     WHERE Coff.companyId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+                     WHERE Coff.centerId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
 
                  `;
 
@@ -972,10 +978,12 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += " ORDER BY Coff.createdAt DESC ";
+        // dataSql += " ORDER BY Coff.createdAt DESC ";
+        dataSql += " ORDER BY CASE WHEN Coff.empId LIKE 'CCM%' THEN 0 ELSE 1 END";
+
 
         // Add pagination to the data query
-        dataSql += " LIMIT ? OFFSET ?";
+        dataSql += " LIMIT ? OFFSET ? ";
         dataParams.push(limit, offset);
 
         // Execute count query
@@ -994,6 +1002,9 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
                     return reject(dataErr);
                 }
 
+                console.log(total,dataResults);
+                
+
                 resolve({ items: dataResults, total });
             });
         });
@@ -1004,7 +1015,7 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
 exports.getCCHOwnCenters = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            SELECT CC.id, CC.centerName
+            SELECT CC.id, CC.centerName, CC.regCode
             FROM collectioncenter CC, companycenter COMC
             WHERE COMC.centerId = CC.id AND COMC.companyId = ?
         `;
@@ -1021,8 +1032,8 @@ exports.getCCHOwnCenters = (id) => {
 
 exports.getCenterManagerDao = (companyId, centerId) => {
     return new Promise((resolve, reject) => {
-        console.log(companyId,centerId);
-        
+        console.log(companyId, centerId);
+
         const sql = `
             SELECT id, firstNameEnglish, lastNameEnglish
             FROM collectionofficer
@@ -1047,11 +1058,11 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-            if(officerData.jobRole === 'Collection Center Manager'){
+            if (officerData.jobRole === 'Collection Center Manager' || officerData.jobRole === 'Driver') {
                 officerData.irmId = null;
             }
 
-            
+
 
             // Generate QR Code
             const qrData = JSON.stringify({ empId: officerData.empId });
@@ -1131,6 +1142,10 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
 
 exports.CCHupdateOfficerDetails = (id, officerData, image) => {
     return new Promise(async (resolve, reject) => {
+
+        if (officerData.jobRole === 'officerData.jobRole') {
+            officerData.irmId = null;
+        }
 
         try {
             // Debugging: Check if officerData exists
@@ -1240,5 +1255,112 @@ exports.CCHupdateOfficerDetails = (id, officerData, image) => {
             console.error("Error:", error);
             reject(error);
         }
+    });
+};
+
+exports.vehicleRegisterDao = (id, driverData, licFrontImg, licBackImg, insFrontImg, insBackImg, vehFrontImg, vehBackImg, vehSideImgA, vehSideImgB) => {
+    return new Promise((resolve, reject) => {
+        // console.log(companyId,centerId);
+
+        const sql = `
+            INSERT INTO vehicleregistration (coId, licNo, insNo, insExpDate, vType, vCapacity, vRegNo, licFrontImg, licBackImg, insFrontImg, insBackImg, vehFrontImg, vehBackImg, vehSideImgA, vehSideImgB)
+            VaLUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        collectionofficer.query(sql, [
+            id,
+            driverData.licNo,
+            driverData.insNo,
+            driverData.insExpDate,
+            driverData.vType,
+            driverData.vCapacity,
+            driverData.vRegNo,
+            licFrontImg,
+            licBackImg,
+            insFrontImg,
+            insBackImg,
+            vehFrontImg,
+            vehBackImg,
+            vehSideImgA,
+            vehSideImgB
+        ], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.checkExistOfficersDao = (nic) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT *
+            FROM collectionofficer
+            WHERE nic = ?
+        `;
+
+        collectionofficer.query(sql, [nic], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            let validationResult = false;
+            if (results.length > 0) {
+                validationResult = true; // NIC already exists
+            }
+            resolve(validationResult);
+        });
+    });
+};
+
+
+exports.updateVehicleRegistratinDao = (data) => {
+    return new Promise((resolve, reject) => {
+        // console.log(companyId,centerId);
+
+        const sql = `
+            UPDATE vehicleregistration
+            SET
+                licNo = ?, 
+                insNo = ?, 
+                insExpDate = ?, 
+                vType = ?, 
+                vCapacity = ?, 
+                vRegNo = ?, 
+                licFrontImg = ?, 
+                licBackImg = ?, 
+                insFrontImg = ?, 
+                insBackImg = ?, 
+                vehFrontImg = ?, 
+                vehBackImg = ?, 
+                vehSideImgA = ?, 
+                vehSideImgB = ?
+            WHERE 
+                id = ?
+        `;
+
+        collectionofficer.query(sql, [
+            data.licNo,
+            data.insNo,
+            data.insExpDate,
+            data.vType,
+            data.vCapacity,
+            data.vRegNo,
+            data.licFrontImg,
+            data.licBackImg,
+            data.insFrontImg,
+            data.insBackImg,
+            data.vehFrontImg,
+            data.vehBackImg,
+            data.vehSideImgA,
+            data.vehSideImgB,
+            data.vehicleRegId
+        ], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
     });
 };

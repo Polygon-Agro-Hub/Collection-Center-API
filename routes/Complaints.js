@@ -57,4 +57,10 @@ router.post('/add-complain-cch',
     ComplaintEP.addComplaintCCH
 );
 
+router.get(
+    "/get-complain-category",
+    authMiddleware,
+    ComplaintEP.getAllCollectiOfficerCategory
+)
+
 module.exports = router;

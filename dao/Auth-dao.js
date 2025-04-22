@@ -56,6 +56,8 @@ exports.getUserDAO = (userId) => {
         COF.nic,
         COF.phoneNumber01,
         COF.phoneNumber02,
+        COF.phoneCode01,
+        COF.phoneCode02,
         COF.houseNumber,
         COF.city,
         COF.province,
@@ -102,6 +104,8 @@ exports.getUserDAO = (userId) => {
           //     const base64QRcode = Buffer.from(officer.QRcode).toString("base64");
           //     officer.QRcode = `data:image/png;base64,${base64QRcode}`;
           // }
+          console.log(results);
+          
 
           resolve({
               collectionOfficer: {
@@ -129,7 +133,9 @@ exports.getUserDAO = (userId) => {
                   branchName: officer.branchName,
                   image: officer.image,
                   companyNameEnglish: officer.companyNameEnglish,
-                  centerName: officer.centerName
+                  centerName: officer.centerName,
+                  phoneCode01:officer.phoneCode01,
+                  phoneCode02:officer.phoneCode02
 
 
 

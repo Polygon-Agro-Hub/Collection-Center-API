@@ -56,7 +56,12 @@ exports.createOfficer = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     const officerData = JSON.parse(req.body.officerData);
+    const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
+    console.log("checkUserExist", checkUserExist);
 
+    if (checkUserExist) {
+      return res.json({ message: "This NiC Allready exist.", status: false });
+    }
     const centerId = req.user.centerId;
     const companyId = req.user.companyId;
     const managerID = req.user.userId;
@@ -439,6 +444,7 @@ exports.getAllOfficersForCCH = async (req, res) => {
   try {
     // Validate query parameters      
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
+    console.log(req.query);
 
     const companyId = req.user.companyId;
 
@@ -526,26 +532,96 @@ exports.CCHcreateOfficer = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     const officerData = JSON.parse(req.body.officerData);
-    console.log(officerData);
-    
+
 
     // const centerId = req.user.centerId;
     const companyId = req.user.companyId;
-    // const managerID = req.user.userId;
 
-    const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
-    const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
-    const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
+    const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
+    console.log("checkUserExist", checkUserExist);
 
-    const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
-    const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+    if (checkUserExist) {
+      return res.json({ message: "This NIC Number already exist", status: false });
+    }
 
-    const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
+    let profileImageUrl = null;
+
+    if (req.body.file !== 'null') {
+      const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
+      const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
+      const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
+      const fileExtension = mimeType.split("/")[1]; // Extract file extension from MIME type
+      const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+      profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
+    }
+
 
     const result = await ManageOfficerDAO.createCollectionOfficerPersonalCCH(officerData, companyId, profileImageUrl);
 
     if (result.affectedRows === 0) {
       return res.json({ message: "User not found or no changes were made.", status: false });
+    }
+
+    if (officerData.jobRole === "Driver") {
+
+      const driverData = JSON.parse(req.body.driverData);
+      //license front
+      const licFrontbase64String = req.body.licFront.split(",")[1]; // Extract the Base64 content
+      // const licFrontmimeType = req.body.licFront.match(/data:(.*?);base64,/)[1]; // Extract MIME type
+      const licFrontfileBuffer = Buffer.from(licFrontbase64String, "base64"); // Decode Base64 to buffer
+      // const licFrontfileExtension = licFrontmimeType.split("/")[1]; // Extract file extension from MIME type
+      const licFrontfileName = `${driverData.licFrontName}`;
+      const licFrontImageUrl = await uploadFileToS3(licFrontfileBuffer, licFrontfileName, "vehicleregistration/licFrontImg");
+
+      //license back
+      const licBackbase64String = req.body.licBack.split(",")[1]; // Extract the Base64 content
+      const licBackfileBuffer = Buffer.from(licBackbase64String, "base64"); // Decode Base64 to buffer
+      const licBackfileName = `${driverData.licBackName}`;
+      const licBackImageUrl = await uploadFileToS3(licBackfileBuffer, licBackfileName, "vehicleregistration/licBackImg");
+
+      //insurance front
+      const insFrontbase64String = req.body.insFront.split(",")[1]; // Extract the Base64 content
+      const insFrontfileBuffer = Buffer.from(insFrontbase64String, "base64"); // Decode Base64 to buffer
+      const insFrontfileName = `${driverData.insFrontName}`;
+      const insFrontImageUrl = await uploadFileToS3(insFrontfileBuffer, insFrontfileName, "vehicleregistration/insFrontImg");
+
+      //insurance back
+      const insBackbase64String = req.body.insBack.split(",")[1]; // Extract the Base64 content
+      const insBackfileBuffer = Buffer.from(insBackbase64String, "base64"); // Decode Base64 to buffer
+      const insBackfileName = `${driverData.insBackName}`;
+      const insBackImageUrl = await uploadFileToS3(insBackfileBuffer, insBackfileName, "vehicleregistration/insBackImg");
+
+      //vehicle front
+      const vehicleFrontbase64String = req.body.vehiFront.split(",")[1]; // Extract the Base64 content
+      const vehicleFrontfileBuffer = Buffer.from(vehicleFrontbase64String, "base64"); // Decode Base64 to buffer
+      const vehicleFrontfileName = `${driverData.vFrontName}`;
+      const vehicleFrontImageUrl = await uploadFileToS3(vehicleFrontfileBuffer, vehicleFrontfileName, "vehicleregistration/vehFrontImg");
+
+      //vehicle back
+      const vehicleBackbase64String = req.body.vehiBack.split(",")[1]; // Extract the Base64 content
+      const vehicleBackfileBuffer = Buffer.from(vehicleBackbase64String, "base64"); // Decode Base64 to buffer
+      const vehicleBackfileName = `${driverData.vBackName}`;
+      const vehicleBackImageUrl = await uploadFileToS3(vehicleBackfileBuffer, vehicleBackfileName, "vehicleregistration/vehBackImg");
+
+      //vehicle sideA
+      const vehicleSideAbase64String = req.body.vehiSideA.split(",")[1]; // Extract the Base64 content
+      const vehicleSideAfileBuffer = Buffer.from(vehicleSideAbase64String, "base64"); // Decode Base64 to buffer
+      const vehicleSideAfileName = `${driverData.vSideAName}`;
+      const vehicleSideAImageUrl = await uploadFileToS3(vehicleSideAfileBuffer, vehicleSideAfileName, "vehicleregistration/vehSideImgA");
+
+      //vehicle sideB
+      const vehicleSideBbase64String = req.body.vehiSideB.split(",")[1]; // Extract the Base64 content
+      const vehicleSideBfileBuffer = Buffer.from(vehicleSideBbase64String, "base64"); // Decode Base64 to buffer
+      const vehicleSideBfileName = `${driverData.vSideBName}`;
+      const vehicleSideBImageUrl = await uploadFileToS3(vehicleSideBfileBuffer, vehicleSideBfileName, "vehicleregistration/vehSideImgB");
+
+      const Driverresult = await ManageOfficerDAO.vehicleRegisterDao(result.insertId, driverData, licFrontImageUrl, licBackImageUrl, insFrontImageUrl, insBackImageUrl, vehicleFrontImageUrl, vehicleBackImageUrl, vehicleSideAImageUrl, vehicleSideBImageUrl);
+      console.log("Driver Inserted", Driverresult);
+      if (Driverresult.affectedRows === 0) {
+        const deleteUser = await ManageOfficerDAO.DeleteOfficerDao(result.insertId);
+        return res.json({ message: "Driver Onbord Error Occor. Pleace Try again later!", status: false });
+      }
+
     }
 
     console.log("Collection Officer created successfully");
@@ -566,16 +642,22 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
   try {
     const { id } = req.params;
     let result;
+    console.log("Start uopdate Driver");
+
 
     if (!req.body.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
     const officerData = JSON.parse(req.body.officerData)
-    console.log(officerData);
+    // const driverData = JSON.parse(req.body.driverData)
 
-    console.log("req file:",req.body.file);
-    if (req.body.file === "null") {      
+    // console.log(driverData);
+
+    // console.log("req file:", req.body.file);
+    // console.log("req licFront:", req.body.licFront);
+    // console.log("req vehiFront:",typeof  req.body.vehiFront);
+    if (req.body.file === "null") {
       result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, officerData.previousImage);
 
     } else {
@@ -590,6 +672,90 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
       await deleteFromS3(officerData.previousImage);
 
       result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, profileImageUrl);
+
+    }
+
+    if (result.affectedRows > 0 && officerData.jobRole === 'Driver') {
+      const driverData = JSON.parse(req.body.driverData)
+
+      if (req.body.licFront !== 'null') {
+        //license front
+        await deleteFromS3(driverData.licFrontImg);
+        const licFrontbase64String = req.body.licFront.split(",")[1]; // Extract the Base64 content
+        const licFrontfileBuffer = Buffer.from(licFrontbase64String, "base64"); // Decode Base64 to buffer
+        const licFrontfileName = `${driverData.licFrontName}`;
+        driverData.licFrontImg = await uploadFileToS3(licFrontfileBuffer, licFrontfileName, "vehicleregistration/licFrontImg");
+
+      }
+
+      if (req.body.licBack !== 'null') {
+        //license back
+        await deleteFromS3(driverData.licBackImg);
+        const licBackbase64String = req.body.licBack.split(",")[1]; // Extract the Base64 content
+        const licBackfileBuffer = Buffer.from(licBackbase64String, "base64"); // Decode Base64 to buffer
+        const licBackfileName = `${driverData.licBackName}`;
+        driverData.licBackImg = await uploadFileToS3(licBackfileBuffer, licBackfileName, "vehicleregistration/licBackImg");
+      }
+
+
+
+      if (req.body.insFront !== 'null') {
+        //insurance front
+        await deleteFromS3(driverData.insFrontImg);
+        const insFrontbase64String = req.body.insFront.split(",")[1]; // Extract the Base64 content
+        const insFrontfileBuffer = Buffer.from(insFrontbase64String, "base64"); // Decode Base64 to buffer
+        const insFrontfileName = `${driverData.insFrontName}`;
+        driverData.insFrontImg = await uploadFileToS3(insFrontfileBuffer, insFrontfileName, "vehicleregistration/insFrontImg");
+      }
+
+      if (req.body.insBack !== 'null') {
+        //insurance back
+        await deleteFromS3(driverData.insBackImg);
+        const insBackbase64String = req.body.insBack.split(",")[1]; // Extract the Base64 content
+        const insBackfileBuffer = Buffer.from(insBackbase64String, "base64"); // Decode Base64 to buffer
+        const insBackfileName = `${driverData.insBackName}`;
+        driverData.insBackImg = await uploadFileToS3(insBackfileBuffer, insBackfileName, "vehicleregistration/insBackImg");
+      }
+
+      if (req.body.vehiFront !== 'null') {
+        //vehicle front
+        await deleteFromS3(driverData.vehFrontImg);
+        const vehicleFrontbase64String = req.body.vehiFront.split(",")[1]; // Extract the Base64 content
+        const vehicleFrontfileBuffer = Buffer.from(vehicleFrontbase64String, "base64"); // Decode Base64 to buffer
+        const vehicleFrontfileName = `${driverData.vFrontName}`;
+        driverData.vehFrontImg = await uploadFileToS3(vehicleFrontfileBuffer, vehicleFrontfileName, "vehicleregistration/vehFrontImg");
+      }
+
+      if (req.body.vehiBack !== 'null') {
+        //vehicle back
+        await deleteFromS3(driverData.vehBackImg);
+        const vehicleBackbase64String = req.body.vehiBack.split(",")[1]; // Extract the Base64 content
+        const vehicleBackfileBuffer = Buffer.from(vehicleBackbase64String, "base64"); // Decode Base64 to buffer
+        const vehicleBackfileName = `${driverData.vBackName}`;
+        driverData.vehBackImg = await uploadFileToS3(vehicleBackfileBuffer, vehicleBackfileName, "vehicleregistration/vehBackImg");
+      }
+
+      if (req.body.vehiSideA !== 'null') {
+        //vehicle sideA
+        await deleteFromS3(driverData.vehSideImgA);
+        const vehicleSideAbase64String = req.body.vehiSideA.split(",")[1]; // Extract the Base64 content
+        const vehicleSideAfileBuffer = Buffer.from(vehicleSideAbase64String, "base64"); // Decode Base64 to buffer
+        const vehicleSideAfileName = `${driverData.vSideAName}`;
+        driverData.vehSideImgA = await uploadFileToS3(vehicleSideAfileBuffer, vehicleSideAfileName, "vehicleregistration/vehSideImgA");
+
+      }
+
+      if (req.body.vehiSideB !== 'null') {
+        //vehicle sideB
+        await deleteFromS3(driverData.vehSideImgB);
+        const vehicleSideBbase64String = req.body.vehiSideB.split(",")[1]; // Extract the Base64 content
+        const vehicleSideBfileBuffer = Buffer.from(vehicleSideBbase64String, "base64"); // Decode Base64 to buffer
+        const vehicleSideBfileName = `${driverData.vSideBName}`;
+        driverData.vehSideImgB = await uploadFileToS3(vehicleSideBfileBuffer, vehicleSideBfileName, "vehicleregistration/vehSideImgB");
+
+      }
+
+      const updateDriver = await ManageOfficerDAO.updateVehicleRegistratinDao(driverData);
 
     }
 

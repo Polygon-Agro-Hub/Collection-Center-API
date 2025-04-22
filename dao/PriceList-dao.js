@@ -20,8 +20,8 @@ exports.getAllPriceListDao = (companyId, centerId, page, limit, grade, searchTex
         const dataParams = [companyId, centerId];
 
         if (grade) {
-            countSql += " AND MP.grade LIKE ?";
-            dataSql += " AND MP.grade LIKE ?";
+            countSql += " AND MP.grade LIKE ? ";
+            dataSql += " AND MP.grade LIKE ? ";
             countParams.push(grade);
             dataParams.push(grade);
         }

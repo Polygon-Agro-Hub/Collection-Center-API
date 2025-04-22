@@ -1,6 +1,7 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/authMiddleware');
-const TargetEP = require('../end-point/Target-ep')
+const TargetEP = require('../end-point/Target-ep');
+const upload = require("../middlewares/uploadMiddleware");
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.post(
     TargetEP.addDailyTarget
 )
 
+//used
 router.get(
     "/get-daily-target",
     authMiddleware,
@@ -60,11 +62,12 @@ router.get(
 )
 
 router.get(
-    '/get-target-verity/:id',
+    '/get-target-verity/:varietyId/:companyCenterId',
     authMiddleware,
     TargetEP.getTargetVerity
 )
 
+//used
 router.post(
     '/assing-officer-target',
     authMiddleware,
@@ -94,6 +97,86 @@ router.get(
     authMiddleware,
     TargetEP.getSelectedOfficerTarget
 )
+
+router.get(
+    '/get-exist-veriety-target/:varietyId/:companyCenterId',
+    authMiddleware,
+    TargetEP.getExsistVerityTarget
+)
+
+router.post(
+    '/edit-assigned-officer-target',
+    authMiddleware,
+    TargetEP.editAssignedOfficerTarget
+)
+
+router.post(
+    '/create-center',
+    authMiddleware,
+    upload.single("file"),
+    TargetEP.createCenter
+)
+
+router.get(
+    "/get-center-target",
+    authMiddleware,
+    TargetEP.getCenterTarget
+)
+
+//-----------------new parts-------------------//
+router.get(
+    "/get-center-crops/:id",
+    authMiddleware,
+    TargetEP.getCenterCenterCrops
+)
+
+router.post(
+    "/add-center-crops",
+    authMiddleware,
+    TargetEP.addOrRemoveCenterCrops
+)
+
+router.get(
+    "/get-saved-center-crops/:id/:date",
+    authMiddleware,
+    TargetEP.getSavedCenterCrops
+)
+
+router.patch(
+    "/update-target-crop-qty",
+    authMiddleware,
+    TargetEP.updateTargetQty
+)
+
+router.post(
+    "/add-new-center-target",
+    authMiddleware,
+    TargetEP.addNewCenterTarget
+)
+
+router.post(
+    "/officer-target-check-available",
+    authMiddleware,
+    TargetEP.officerTargetCheckAvailable
+)
+
+router.patch(
+    '/transfer-officer-target-to-officer',
+    authMiddleware,
+    TargetEP.transferOfficerTargetToOfficer
+)
+
+router.get(
+    "/download-officer-target-report",
+    authMiddleware,
+    TargetEP.downloadOfficerTarget
+  )
+
+  router.get(
+    "/download-current-target-report",
+    authMiddleware,
+    TargetEP.downloadCurrentTarget
+  )
 
 
 module.exports = router;
