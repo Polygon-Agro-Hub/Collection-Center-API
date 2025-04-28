@@ -277,3 +277,30 @@ exports.getAllCollectiOfficerCategory = async (req, res) => {
       return res.status(500).json({ error: "An error occurred while fetching collection officers" });
     }
   };
+
+
+  exports.CCHReplyComplain = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+
+    try {
+        const complain = await ComplaintValidate.replyComplainSchema.validateAsync(req.body)
+
+        const result = await ComplaintDAO.CCHReplyComplainDao(complain)
+
+        if (result.affectedRows === 0) {
+            return res.json({ message: "Reply Does not send!", status: false })
+        }
+
+        console.log("Reply Send Successfull!");
+        res.status(200).json({ message: "Complaint Replyed!", status: true });
+    } catch (error) {
+        if (error.isJoi) {
+            // Handle validation error
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error forword complaint:", error);
+        return res.status(500).json({ error: "An error occurred while forword complaint" });
+    }
+}

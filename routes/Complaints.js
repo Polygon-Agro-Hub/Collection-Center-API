@@ -63,4 +63,9 @@ router.get(
     ComplaintEP.getAllCollectiOfficerCategory
 )
 
+router.patch('/cch-reply-complain',
+    authMiddleware,
+    ComplaintEP.CCHReplyComplain
+);
+
 module.exports = router;
