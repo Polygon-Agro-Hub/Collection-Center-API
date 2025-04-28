@@ -297,8 +297,8 @@ exports.downloadAllPayments = async (req, res) => {
       {
         'GRN': item.grnNumber,
         'Amount': item.amount,
-        'Center Reg Code': item.regCode,
-        'Center Name': item.centerName,
+        'Centre Reg Code': item.regCode,
+        'Centre Name': item.centerName,
         'Farmer NIC': item.nic,
         'Farmer Name': item.firstName + ' ' + item.lastName,
         'Farmer contact': item.phoneNumber,
@@ -401,8 +401,8 @@ exports.downloadAllCollections = async (req, res) => {
     // Format data for Excel
     const formattedData = data.flatMap(item => [
       {
-        'Center Reg Code': item.RegCode || '',
-        'Center Name': item.centerName || '',
+        'Centre Reg Code': item.RegCode || '',
+        'Centre Name': item.centerName || '',
         'Crop Name': item.cropNameEnglish || '',
         'VarietyName': item.varietyNameEnglish || '',
         'Quantity A (kg)': item.totalGradeAQuantity ?? 0.00,
@@ -420,7 +420,7 @@ exports.downloadAllCollections = async (req, res) => {
 
     worksheet['!cols'] = [
       { wch: 25 }, // regCode
-      { wch: 15 }, // centerName
+      { wch: 15 }, // centreName
       { wch: 20 }, // cropNameEnglish
       { wch: 25 }, // varietyNameEnglish
       { wch: 18 }, // gradeAquan
