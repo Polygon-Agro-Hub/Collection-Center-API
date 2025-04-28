@@ -11,12 +11,6 @@ router.get(
     TargetEP.getAllCropCatogory
 )
 
-router.post(
-    "/create-daily-target",
-    authMiddleware,
-    TargetEP.addDailyTarget
-)
-
 //used
 router.get(
     "/get-daily-target",

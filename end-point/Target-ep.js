@@ -21,32 +21,6 @@ exports.getAllCropCatogory = async (req, res) => {
   }
 }
 
-exports.addDailyTarget = async (req, res) => {
-  try {
-    const target = req.body;
-    const companyId = req.user.companyId;
-    const userId = req.user.userId;
-
-    const targetId = await TargetDAO.createDailyTargetDao(target, companyId, userId);
-    if (!targetId) {
-      return res.json({ message: "Faild create target try again!", status: false })
-    }
-
-    for (let i = 0; i < target.TargetItems.length; i++) {
-      await TargetDAO.createDailyTargetItemsDao(target.TargetItems[i], targetId);
-    }
-    console.log("Daily Target Created Successfully");
-    res.json({ message: "Daily Target Created Successfully!", status: true })
-  } catch (err) {
-    if (err.isJoi) {
-      // Validation error
-      console.error("Validation error:", err.details[0].message);
-      return res.status(400).json({ error: err.details[0].message });
-    }
-    console.error("Error fetching news:", err);
-    res.status(500).json({ error: "An error occurred while fetching news" });
-  }
-};
 
 
 exports.getAllDailyTarget = async (req, res) => {
@@ -64,7 +38,7 @@ exports.getAllDailyTarget = async (req, res) => {
     }
 
     const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(companyCenterId, searchText);
-    console.log('these are results', resultTarget);
+    // console.log('these are results', resultTarget);
 
 
     console.log("Successfully transformed data");
@@ -306,17 +280,20 @@ exports.getAssignCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(fullUrl);
   try {
-    // const { page, limit } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
+    const { searchText } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
     const companyId = req.user.companyId
+
+    console.log("-------SEarch---------",searchText);
+    
 
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
     if (companyCenterId === null) {
       res.json({ items: [], message: "No center found" })
     }
 
-    const resultTarget = await TargetDAO.getAssignCenterTargetDAO(companyCenterId);
-    console.log(resultTarget);
+    const resultTarget = await TargetDAO.getAssignCenterTargetDAO(companyCenterId, searchText);
+    // console.log(resultTarget);
 
     console.log("Successfully transformed data");
     return res.status(200).json(resultTarget);

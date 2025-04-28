@@ -45,53 +45,10 @@ exports.getAllCropNameDAO = () => {
 };
 
 
-exports.createDailyTargetDao = (target, companyId, userId) => {
-    return new Promise((resolve, reject) => {
-        const sql = `
-           INSERT INTO dailytarget (centerId, companyId, fromDate, toDate, fromTime, toTime, createdBy)
-           VALUES (?, ?, ?, ?, ?, ?, ?)
-        `
-        collectionofficer.query(sql, [
-            target.centerId,
-            companyId,
-            target.fromDate,
-            target.toDate,
-            target.fromTime,
-            target.toTime,
-            userId
-        ], (err, results) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(results.insertId);
-        });
-    });
-};
-
-exports.createDailyTargetItemsDao = (data, targetId) => {
-    return new Promise((resolve, reject) => {
-        const sql = `
-           INSERT INTO dailytargetitems (targetId, varietyId, qtyA, qtyB, qtyC)
-           VALUES (?, ?, ?, ?, ?)
-        `
-        collectionofficer.query(sql, [
-            targetId,
-            data.varietyId,
-            data.qtyA,
-            data.qtyB,
-            data.qtyC
-        ], (err, results) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(results.insertId);
-        });
-    });
-};
-
 
 exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
     return new Promise((resolve, reject) => {
+console.log(searchText);
 
         // const offset = (page - 1) * limit;
 
@@ -1834,9 +1791,9 @@ exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date
     });
 };
 
-exports.getAssignCenterTargetDAO = (id) => {
+exports.getAssignCenterTargetDAO = (id, searchText) => {
     return new Promise((resolve, reject) => {
-        const sql = `
+        let sql = `
             SELECT 
                 DT.id, 
                 CG.cropNameEnglish, 
@@ -1864,15 +1821,22 @@ exports.getAssignCenterTargetDAO = (id) => {
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE DT.date = CURDATE() AND DT.companyCenterId = ?
         `;
+        const sqlParams = [id];
 
-        collectionofficer.query(sql, [id], (err, results) => {
+        if(searchText){
+            sql += ` AND CV.varietyNameEnglish LIKE ? `;
+            sqlParams.push(`%${searchText}%`);
+            
+        }
+
+        collectionofficer.query(sql, sqlParams, (err, results) => {
             if (err) {
                 return reject(err);
             }
 
             const grouped = {};
 
-            console.log("results", results);
+            // console.log("results", results);
 
 
             results.forEach(row => {
