@@ -15,7 +15,7 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCMStatus AS status, OC.createdAt, OC.reply, COF.empId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCM" AND COF.irmId = ?
         `;
@@ -87,7 +87,7 @@ exports.forwordComplaintDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET complainAssign = 'CCH'
+           SET complainAssign = 'CCH', CCHStatus = 'Assigned', CCMStatus = 'Opened'
            WHERE id = ?
         `;
         collectionofficer.query(sql, [id], (err, results) => {
@@ -103,7 +103,7 @@ exports.replyComplainDao = (data) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET reply = ?, status = 'Closed'
+           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed'
            WHERE id = ?
         `;
         collectionofficer.query(sql, [data.reply, data.id], (err, results) => {
@@ -131,7 +131,7 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo,  CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
+            SELECT OC.id, OC.refNo,  CC.categoryEnglish AS complainCategory, OC.complain, OC.CCMStatus AS status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" 
         `;
@@ -227,11 +227,11 @@ exports.addComplaintDao = (officerId, category, complaint) => {
             const complainAssign = "CCH";
 
             const sqlInsert = `
-                INSERT INTO officercomplains (officerId, refNo, language, complainCategory, complain, reply, status, complainAssign)
-                VALUES (?, ?, ?, ?, ?, NULL, ?, ?);
+                INSERT INTO officercomplains (officerId, refNo, language, complainCategory, complain, reply, CCHStatus, CCMStatus, complainAssign)
+                VALUES (?, ?, ?, ?, ?, NULL, 'Assigned', 'Opened', 'CCH');
             `;
 
-            collectionofficer.query(sqlInsert, [officerId, refNo, language, category, complaint, status, complainAssign], (err, results) => {
+            collectionofficer.query(sqlInsert, [officerId, refNo, language, category, complaint], (err, results) => {
                 if (err) {
                     return reject(err);
                 }
@@ -257,7 +257,7 @@ exports.getAllRecivedCCHComplainDao = (companyId, page, limit, status, searchTex
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCHStatus AS status, OC.createdAt, OC.reply, COF.empId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
         `;
@@ -319,13 +319,13 @@ exports.getAllSendCCHComplainDao = (userId, companyId, page, limit, status, empt
         let countSql = `
             SELECT COUNT(*) AS total
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
-            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND OC.complainAssign = "Admin" AND COF.companyId = ?
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCHStatus AS status, OC.createdAt, OC.reply, COF.empId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
-            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND OC.complainAssign = "Admin" AND COF.companyId = ?
         `;
 
         if (searchText) {
@@ -393,7 +393,7 @@ exports.forwordComplaintToAdminDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET complainAssign = 'Admin'
+           SET complainAssign = 'Admin' , CCHStatus = 'Opened', AdminStatus = 'Assigned'
            WHERE id = ?
         `;
         collectionofficer.query(sql, [id], (err, results) => {
@@ -438,11 +438,11 @@ exports.addComplaintCCHDao = (officerId, category, complaint) => {
             const complainAssign = "Admin";
 
             const sqlInsert = `
-                INSERT INTO officercomplains (officerId, refNo, language, complainCategory, complain, reply, status, complainAssign)
-                VALUES (?, ?, ?, ?, ?, NULL, ?, ?);
+                INSERT INTO officercomplains (officerId, refNo, language, complainCategory, complain, reply, AdminStatus, CCHStatus, complainAssign)
+                VALUES (?, ?, ?, ?, ?, NULL, 'Assigned', 'Opened', 'Admin');
             `;
 
-            collectionofficer.query(sqlInsert, [officerId, refNo, language, category, complaint, status, complainAssign], (err, results) => {
+            collectionofficer.query(sqlInsert, [officerId, refNo, language, category, complaint], (err, results) => {
                 if (err) {
                     return reject(err);
                 }
@@ -469,6 +469,23 @@ exports.getAllCollectiOfficerCategoryDao = () => {
             }
             console.log(results);
             
+            resolve(results);
+        });
+    });
+};
+
+
+exports.CCHReplyComplainDao = (data) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+           UPDATE officercomplains
+           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed', CCHStatus = 'Closed'
+           WHERE id = ?
+        `;
+        collectionofficer.query(sql, [data.reply, data.id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
             resolve(results);
         });
     });
