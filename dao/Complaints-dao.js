@@ -15,7 +15,7 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCMStatus AS status, OC.createdAt, OC.reply, COF.empId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCM" AND COF.irmId = ?
         `;
@@ -87,7 +87,7 @@ exports.forwordComplaintDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET complainAssign = 'CCH'
+           SET complainAssign = 'CCH', CCHStatus = 'Assigned', CCMStatus = 'Opened'
            WHERE id = ?
         `;
         collectionofficer.query(sql, [id], (err, results) => {
@@ -103,7 +103,7 @@ exports.replyComplainDao = (data) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET reply = ?, status = 'Closed'
+           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed'
            WHERE id = ?
         `;
         collectionofficer.query(sql, [data.reply, data.id], (err, results) => {
@@ -131,7 +131,7 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo,  CC.categoryEnglish AS complainCategory, OC.complain, OC.status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
+            SELECT OC.id, OC.refNo,  CC.categoryEnglish AS complainCategory, OC.complain, OC.CCMStatus AS status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" 
         `;
