@@ -42,7 +42,7 @@ exports.getAllDailyTarget = async (req, res) => {
 
 
     console.log("Successfully transformed data");
-    return res.status(200).json({
+    res.status(200).json({
       items: resultTarget,
       totalPages: total
     });
