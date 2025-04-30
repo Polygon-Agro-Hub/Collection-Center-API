@@ -5,8 +5,6 @@ const jwt = require("jsonwebtoken");
 
 exports.test = async (req, res) => {
   try {
-    //   const { page, limit, searchItem } =
-    //     await ValidateSchema.getAllUsersSchema.validateAsync(req.query);
     res.json("Auth test");
   } catch (err) {
     if (err.isJoi) {
@@ -21,8 +19,6 @@ exports.test = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const { userName, password } = await AuthValidate.loginUserSchema.validateAsync(req.body);
 
@@ -79,8 +75,6 @@ exports.loginUser = async (req, res) => {
 
 exports.updatePassword = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log('Request URL:', fullUrl);
-
   try {
     const { password } = await AuthValidate.logInUpdate.validateAsync(req.body);
     const id = req.user.userId;
@@ -121,12 +115,8 @@ exports.test = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.userId; // Assuming the user ID is stored in the token payload
-  
-    const officerData = await AuthDAO.getUserDAO(userId);
 
-    // if (!officerData === null) {
-    //   return res.status(404).json({ error: "officer not found" });
-    // }
+    const officerData = await AuthDAO.getUserDAO(userId);
 
     res.status(200).json({ officerData });
   } catch (error) {

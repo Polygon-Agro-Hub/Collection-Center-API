@@ -20,8 +20,6 @@ exports.GetAllCenterDAO = () => {
 
 exports.getForCreateIdDao = (role) => {
     return new Promise((resolve, reject) => {
-        console.log(role);
-
         const sql = "SELECT empId FROM collectionofficer WHERE empId LIKE ? ORDER BY empId DESC LIMIT 1";
         collectionofficer.query(sql, [`${role}%`], (err, results) => {
             if (err) {
@@ -157,9 +155,9 @@ exports.createCollectionOfficerCompany = (companyData, collectionOfficerId) => {
 
             ], (err, results) => {
                 if (err) {
-                    return reject(err); // Reject promise if an error occurs
+                    return reject(err);
                 }
-                resolve(results); // Resolve the promise with the query results
+                resolve(results);
             });
     });
 };
@@ -179,9 +177,9 @@ exports.createCollectionOfficerBank = (bankData, collectionOfficerId) => {
                 bankData.branchName,
             ], (err, results) => {
                 if (err) {
-                    return reject(err); // Reject promise if an error occurs
+                    return reject(err);
                 }
-                resolve(results); // Resolve the promise with the query results
+                resolve(results);
             });
     });
 };
@@ -305,9 +303,9 @@ exports.getAllCompanyNamesDao = () => {
         `;
         collectionofficer.query(sql, (err, results) => {
             if (err) {
-                return reject(err); // Reject promise if an error occurs
+                return reject(err);
             }
-            resolve(results); // Resolve the promise with the query results
+            resolve(results);
         });
     });
 };
@@ -322,7 +320,7 @@ exports.DeleteOfficerDao = (id) => {
         `;
         collectionofficer.query(sql, [parseInt(id)], (err, results) => {
             if (err) {
-                return reject(err); // Reject promise if an error occurs
+                return reject(err);
             }
             resolve(results); // Resolve the promise with the query results
         });
@@ -339,7 +337,7 @@ exports.getCollectionOfficerEmailDao = (id) => {
         `;
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                return reject(err); // Reject promise if an error occurs
+                return reject(err);
             }
             if (results.length > 0) {
                 resolve({
@@ -349,7 +347,7 @@ exports.getCollectionOfficerEmailDao = (id) => {
                     Existstatus: results[0].status
                 });
             } else {
-                resolve(null); // Resolve with null if no record is found
+                resolve(null);
             }
         });
     });
@@ -365,9 +363,9 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
         collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
             if (err) {
 
-                return reject(err); // Reject promise if an error occurs
+                return reject(err);
             }
-            resolve(results); // Resolve with the query results
+            resolve(results);
         });
     });
 };
@@ -486,18 +484,13 @@ exports.getOfficerByIdDAO = (id) => {
 
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                return reject(err); // Reject promise if an error occurs
+                return reject(err);
             }
 
             if (results.length === 0) {
-                return resolve(null); // No officer found
+                return resolve(null);
             }
-
-            console.log(results);
-
-
             const officer = results[0];
-
             const empIdWithoutPrefix = officer.empId ? officer.empId.substring(3) : null;
 
             resolve({
@@ -537,37 +530,37 @@ exports.getOfficerByIdDAO = (id) => {
                     centerId: officer.centerId,
                     companyId: officer.companyId,
                     irmId: officer.irmId,
-                    licNo:officer.licNo,
-                    insNo:officer.insNo,
-                    insExpDate:officer.insExpDate,
-                    vType:officer.vType,
-                    vCapacity:officer.vCapacity,
-                    vRegNo:officer.vRegNo,
-                    licFrontImg:officer.licFrontImg, 
-                    licBackImg:officer.licBackImg, 
-                    insFrontImg:officer.insFrontImg,
-                    insBackImg:officer.insBackImg, 
-                    vehFrontImg:officer.vehFrontImg,
-                    vehBackImg:officer.vehBackImg, 
-                    vehSideImgA:officer.vehSideImgA,
-                    vehSideImgB:officer.vehSideImgB 
+                    licNo: officer.licNo,
+                    insNo: officer.insNo,
+                    insExpDate: officer.insExpDate,
+                    vType: officer.vType,
+                    vCapacity: officer.vCapacity,
+                    vRegNo: officer.vRegNo,
+                    licFrontImg: officer.licFrontImg,
+                    licBackImg: officer.licBackImg,
+                    insFrontImg: officer.insFrontImg,
+                    insBackImg: officer.insBackImg,
+                    vehFrontImg: officer.vehFrontImg,
+                    vehBackImg: officer.vehBackImg,
+                    vehSideImgA: officer.vehSideImgA,
+                    vehSideImgB: officer.vehSideImgB
                 },
-                driver:{
-                    vehicleRegId:officer.vehicleRegId,
-                    licNo:officer.licNo,
-                    insNo:officer.insNo,
-                    insExpDate:officer.insExpDate,
-                    vType:officer.vType,
-                    vCapacity:officer.vCapacity,
-                    vRegNo:officer.vRegNo,
-                    licFrontImg:officer.licFrontImg, 
-                    licBackImg:officer.licBackImg, 
-                    insFrontImg:officer.insFrontImg,
-                    insBackImg:officer.insBackImg, 
-                    vehFrontImg:officer.vehFrontImg,
-                    vehBackImg:officer.vehBackImg, 
-                    vehSideImgA:officer.vehSideImgA,
-                    vehSideImgB:officer.vehSideImgB
+                driver: {
+                    vehicleRegId: officer.vehicleRegId,
+                    licNo: officer.licNo,
+                    insNo: officer.insNo,
+                    insExpDate: officer.insExpDate,
+                    vType: officer.vType,
+                    vCapacity: officer.vCapacity,
+                    vRegNo: officer.vRegNo,
+                    licFrontImg: officer.licFrontImg,
+                    licBackImg: officer.licBackImg,
+                    insFrontImg: officer.insFrontImg,
+                    insBackImg: officer.insBackImg,
+                    vehFrontImg: officer.vehFrontImg,
+                    vehBackImg: officer.vehBackImg,
+                    vehSideImgA: officer.vehSideImgA,
+                    vehSideImgB: officer.vehSideImgB
                 }
             });
         });
@@ -686,7 +679,6 @@ exports.updateOfficerDetails = (id, officerData, image) => {
     });
 };
 
-//not
 exports.CreateQRCodeForOfficerDao = (id) => {
     return new Promise(async (resolve, reject) => {
 
@@ -724,12 +716,11 @@ exports.disclaimOfficerDetailsDao = (id) => {
             WHERE id = ?
         `;
 
-        // Pass the `id` as the parameter to the query
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                return reject(err); // Reject the promise if an error occurs
+                return reject(err);
             }
-            resolve(results); // Resolve with the query results
+            resolve(results);
         });
     });
 };
@@ -777,9 +768,9 @@ exports.claimOfficerDao = (id, userid, centerid) => {
         `;
         collectionofficer.query(sql, [centerid, userid, 1, id], (err, results) => {
             if (err) {
-                return reject(err); // Reject promise if an error occurs
+                return reject(err);
             }
-            resolve(results); // Resolve with the query results
+            resolve(results);
         });
     });
 };
@@ -1002,9 +993,6 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
                     return reject(dataErr);
                 }
 
-                console.log(total,dataResults);
-                
-
                 resolve({ items: dataResults, total });
             });
         });
@@ -1032,8 +1020,6 @@ exports.getCCHOwnCenters = (id) => {
 
 exports.getCenterManagerDao = (companyId, centerId) => {
     return new Promise((resolve, reject) => {
-        console.log(companyId, centerId);
-
         const sql = `
             SELECT id, firstNameEnglish, lastNameEnglish
             FROM collectionofficer
@@ -1260,8 +1246,6 @@ exports.CCHupdateOfficerDetails = (id, officerData, image) => {
 
 exports.vehicleRegisterDao = (id, driverData, licFrontImg, licBackImg, insFrontImg, insBackImg, vehFrontImg, vehBackImg, vehSideImgA, vehSideImgB) => {
     return new Promise((resolve, reject) => {
-        // console.log(companyId,centerId);
-
         const sql = `
             INSERT INTO vehicleregistration (coId, licNo, insNo, insExpDate, vType, vCapacity, vRegNo, licFrontImg, licBackImg, insFrontImg, insBackImg, vehFrontImg, vehBackImg, vehSideImgA, vehSideImgB)
             VaLUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1307,7 +1291,7 @@ exports.checkExistOfficersDao = (nic) => {
             }
             let validationResult = false;
             if (results.length > 0) {
-                validationResult = true; // NIC already exists
+                validationResult = true;
             }
             resolve(validationResult);
         });
@@ -1317,8 +1301,6 @@ exports.checkExistOfficersDao = (nic) => {
 
 exports.updateVehicleRegistratinDao = (data) => {
     return new Promise((resolve, reject) => {
-        // console.log(companyId,centerId);
-
         const sql = `
             UPDATE vehicleregistration
             SET

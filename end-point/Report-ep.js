@@ -4,26 +4,18 @@ const XLSX = require('xlsx');
 
 exports.getAllCollectionReportsDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const validatedQuery = await ReportValidate.getAllOfficersSchema.validateAsync(req.query);
     const { page, limit, searchText, role } = validatedQuery;
-    console.log(validatedQuery);
-    
     const centerId = req.user.centerId;
     const companyId = req.user.companyId;
     const userId = req.user.userId
 
     const { items, total } = await ReportDAO.getAllOfficersDAO(centerId, companyId, userId, role, page, limit, searchText);
 
-    console.log("Successfully fetched collection officers");
-    console.log(items, total);
-    
     return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
-      // Handle validation error
       return res.status(400).json({ error: error.details[0].message });
     }
 
@@ -34,7 +26,6 @@ exports.getAllCollectionReportsDetails = async (req, res) => {
 
 exports.getAllSalesReportsDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const validatedQuery = await ReportValidate.getAllOfficersSchema.validateAsync(req.query);
 
@@ -44,11 +35,9 @@ exports.getAllSalesReportsDetails = async (req, res) => {
 
     const { items, total } = await ReportDAO.getAllSalesOfficerDAO(centerId, page, limit, searchText);
 
-    console.log("Successfully fetched collection officers");
     return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
-      // Handle validation error
       return res.status(400).json({ error: error.details[0].message });
     }
     console.error("Error fetching collection officers:", error);
@@ -58,8 +47,6 @@ exports.getAllSalesReportsDetails = async (req, res) => {
 
 exports.getCollectionFarmersList = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const validatedQuery = await ReportValidate.getCollectionFarmerListQuaryParmsSchema.validateAsync(req.query);
     const { id } = await ReportValidate.IdParmsSchema.validateAsync(req.params);
@@ -68,12 +55,10 @@ exports.getCollectionFarmersList = async (req, res) => {
     // const centerId = req.user.centerId;
 
     const { items, total } = await ReportDAO.getCollectionFarmerLisDao(id, page, limit, searchText, date);
-    console.log("Successfully fetched collection farmer list ");
     return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
-      // Handle validation error
-      return res.status(400).json({ error: error.details[0].message });
+     return res.status(400).json({ error: error.details[0].message });
     }
 
     console.error("Error fetching collection farmer list :", error);
@@ -92,7 +77,6 @@ exports.getDailyReport = async (req, res) => {
       return res.json({ message: "No news items found", data: result });
     }
 
-    console.log("Successfully retrieved all collection center");
     res.json(result);
   } catch (err) {
     if (err.isJoi) {
@@ -119,7 +103,6 @@ exports.getMonthlyReportOfficer = async (req, res) => {
       return res.json({ message: "No report items found", officer: resultOfficer[0], dates: resultDates });
     }
 
-    console.log("Successfully retrieved all collection center");
     res.json({ officer: resultOfficer[0], dates: resultDates });
   } catch (err) {
     if (err.isJoi) {
@@ -140,13 +123,10 @@ exports.getFarmerReport = async (req, res) => {
     const UserResult = await ReportDAO.getFarmerDetailsDao(id);
     const CropResult = await ReportDAO.getFarmerCropsDetailsDao(id);
 
-    console.log(UserResult);
-
     if (UserResult.length === 0 || CropResult.length === 0) {
       return res.json({ message: "No report items found", status: false });
     }
 
-    console.log("Successfully retrieved all collection center");
     res.json({ user: UserResult[0], crops: CropResult, status: true });
   } catch (err) {
     if (err.isJoi) {
@@ -163,42 +143,30 @@ exports.getFarmerReport = async (req, res) => {
 
 exports.getAllPayments = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
 
     const user = req.user
-    console.log(user);
-
     const validatedQuery = await ReportValidate.getAllPaymentsSchema.validateAsync(req.query);
 
     const companyId = req.user.companyId;
     const centerId = req.user.centerId;
     const { page, limit, fromDate, toDate, searchText, center } = validatedQuery;
 
-    console.log(fromDate);
-    console.log(limit);
-    
-
     if (user.role === "Collection Center Manager") {
-      // const officers = await ReportDAO.checkOfficersForSameIrmIdDao(user.userId);
-      // console.log(officers);
       const { items, total } = await ReportDAO.getAllPaymentsForCCMDAO(
         companyId, page, limit, fromDate, toDate, searchText, centerId, user.userId
       );
-      console.log('from ccm', items);
       return res.status(200).json({ items, total });
-      
+
     } else {
       const { items, total } = await ReportDAO.getAllPaymentsDAO(
         companyId, page, limit, fromDate, toDate, searchText, center
       );
-      console.log(items);
       return res.status(200).json({ items, total });
     }
 
-    
-  
+
+
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -212,41 +180,32 @@ exports.getAllPayments = async (req, res) => {
 
 exports.getAllCollection = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
 
     const user = req.user
-    console.log(user);
-    // Validate query parameters      
     const validatedQuery = await ReportValidate.getAllCollectionSchema.validateAsync(req.query);
 
     const companyId = req.user.companyId;
     const centerId = req.user.centerId;
 
-    const { page, limit, fromDate, toDate, center, searchText} = validatedQuery;
+    const { page, limit, fromDate, toDate, center, searchText } = validatedQuery;
 
     if (user.role === "Collection Center Manager") {
-      // const officers = await ReportDAO.checkOfficersForSameIrmIdDao(user.userId);
-      // console.log(officers);
       const { items, total } = await ReportDAO.getAllCollectionsForCCMDAO(
         companyId, page, limit, fromDate, toDate, searchText, centerId, user.userId
       );
-      console.log('from ccm', items);
       return res.status(200).json({ items, total });
-      
+
     } else {
       const { items, total } = await ReportDAO.getAllCollectionDAO(
         companyId, page, limit, fromDate, toDate, searchText, center
       );
-      console.log(items);
       return res.status(200).json({ items, total });
     }
 
   } catch (error) {
     if (error.isJoi) {
-      // Handle validation error
-      return res.status(400).json({ error: error.details[0].message });
+     return res.status(400).json({ error: error.details[0].message });
     }
 
     console.error("Error fetching collection officers:", error);
@@ -256,18 +215,14 @@ exports.getAllCollection = async (req, res) => {
 
 exports.downloadAllPayments = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
 
     const user = req.user
-    console.log(user);
-
     const companyId = req.user.companyId;
     const centerId = req.user.centerId;
     const validatedQuery = await ReportValidate.downloadAllPaymentsSchema.validateAsync(req.query);
 
-    const {fromDate, toDate, center, searchText} = validatedQuery;
+    const { fromDate, toDate, center, searchText } = validatedQuery;
     let data;
 
     if (user.role === "Collection Center Manager") {
@@ -279,9 +234,8 @@ exports.downloadAllPayments = async (req, res) => {
         companyId,
         user.userId
       );
-      console.log('ccm data', data);
-      
-    }else {
+
+    } else {
       data = await ReportDAO.downloadPaymentReport(
         fromDate,
         toDate,
@@ -291,7 +245,7 @@ exports.downloadAllPayments = async (req, res) => {
       );
     }
 
-    
+
     // Format data for Excel
     const formattedData = data.flatMap(item => [
       {
@@ -361,19 +315,15 @@ exports.downloadAllPayments = async (req, res) => {
 
 exports.downloadAllCollections = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
 
     const user = req.user
-    console.log(user);
-
     const companyId = req.user.companyId;
     const centerId = req.user.centerId;
 
     const validatedQuery = await ReportValidate.downloadAllCollectionsSchema.validateAsync(req.query);
 
-    const {fromDate, toDate, center, searchText} = validatedQuery;
+    const { fromDate, toDate, center, searchText } = validatedQuery;
 
     let data;
 
@@ -386,9 +336,7 @@ exports.downloadAllCollections = async (req, res) => {
         companyId,
         user.userId
       );
-      console.log('ccm data', data);
-      
-    }else {
+    } else {
       data = await ReportDAO.downloadCollectionReport(
         fromDate,
         toDate,
@@ -413,9 +361,6 @@ exports.downloadAllCollections = async (req, res) => {
 
     ]);
 
-    console.log(formattedData);
-
-    // Create a worksheet and workbook
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
 
     worksheet['!cols'] = [
@@ -456,18 +401,13 @@ exports.downloadAllCollections = async (req, res) => {
 
 exports.getAllCenterPayments = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const validatedQuery = await ReportValidate.getAllCenterPaymentsSchema.validateAsync(req.query);
 
     const { page, limit, fromDate, toDate, centerId, searchText } = validatedQuery;
 
-    console.log(fromDate);
-    console.log(limit);
-
     const { items, total } = await ReportDAO.getAllCenterPaymentsDAO(
-         page, limit, fromDate, toDate, centerId, searchText, 
+      page, limit, fromDate, toDate, centerId, searchText,
     );
 
     return res.status(200).json({ items, total });
@@ -483,12 +423,10 @@ exports.getAllCenterPayments = async (req, res) => {
 
 exports.downloadAllCenterPayments = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const validatedQuery = await ReportValidate.downloadAllCenterPaymentsSchema.validateAsync(req.query);
 
-    const {fromDate, toDate, centerId, searchText} = validatedQuery;
+    const { fromDate, toDate, centerId, searchText } = validatedQuery;
 
     const data = await ReportDAO.downloadCenterPaymentReport(
       fromDate,
@@ -552,8 +490,6 @@ exports.downloadAllCenterPayments = async (req, res) => {
 
     // Send the file to the client
     res.send(excelBuffer);
-
-    // return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -566,19 +502,15 @@ exports.downloadAllCenterPayments = async (req, res) => {
 
 exports.getFarmerReportInvoice = async (req, res) => {
   try {
-    console.log(req.params);
     const { invNo } = await ReportValidate.invNoParmsSchema.validateAsync(req.params);
 
     const UserResult = await ReportDAO.getFarmerInvoiceDetailsDao(invNo);
     const CropResult = await ReportDAO.getFarmerCropsInvoiceDetailsDao(invNo);
 
-    console.log(UserResult);
-
     if (UserResult.length === 0 || CropResult.length === 0) {
       return res.json({ message: "No report items found", status: false });
     }
 
-    console.log("Successfully retrieved all collection center");
     res.json({ user: UserResult[0], crops: CropResult, status: true });
   } catch (err) {
     if (err.isJoi) {

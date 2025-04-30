@@ -199,10 +199,10 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
 exports.addComplaintDao = (officerId, category, complaint) => {
     return new Promise((resolve, reject) => {
         const currentDate = new Date();
-        const year = currentDate.getFullYear().toString().slice(-2); 
-        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); 
-        const day = currentDate.getDate().toString().padStart(2, '0'); 
-        const datePart = `${year}${month}${day}`; 
+        const year = currentDate.getFullYear().toString().slice(-2);
+        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = currentDate.getDate().toString().padStart(2, '0');
+        const datePart = `${year}${month}${day}`;
         const sqlGetMaxRefNo = `
             SELECT MAX(refNo) as maxRefNo FROM officercomplains 
             WHERE refNo LIKE ?;
@@ -214,11 +214,11 @@ exports.addComplaintDao = (officerId, category, complaint) => {
                 return reject(err);
             }
 
-            let nextSequence = 1; 
+            let nextSequence = 1;
             if (results && results[0] && results[0].maxRefNo) {
                 const lastRefNo = results[0].maxRefNo;
-                const lastSequence = parseInt(lastRefNo.slice(-4)); 
-                nextSequence = lastSequence + 1; 
+                const lastSequence = parseInt(lastRefNo.slice(-4));
+                nextSequence = lastSequence + 1;
             }
 
             const refNo = `${refNoPrefix}${nextSequence.toString().padStart(4, '0')}`;
@@ -410,10 +410,10 @@ exports.forwordComplaintToAdminDao = (id) => {
 exports.addComplaintCCHDao = (officerId, category, complaint) => {
     return new Promise((resolve, reject) => {
         const currentDate = new Date();
-        const year = currentDate.getFullYear().toString().slice(-2); 
-        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); 
-        const day = currentDate.getDate().toString().padStart(2, '0'); 
-        const datePart = `${year}${month}${day}`; 
+        const year = currentDate.getFullYear().toString().slice(-2);
+        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = currentDate.getDate().toString().padStart(2, '0');
+        const datePart = `${year}${month}${day}`;
         const sqlGetMaxRefNo = `
             SELECT MAX(refNo) as maxRefNo FROM officercomplains 
             WHERE refNo LIKE ?;
@@ -425,11 +425,11 @@ exports.addComplaintCCHDao = (officerId, category, complaint) => {
                 return reject(err);
             }
 
-            let nextSequence = 1; 
+            let nextSequence = 1;
             if (results && results[0] && results[0].maxRefNo) {
                 const lastRefNo = results[0].maxRefNo;
-                const lastSequence = parseInt(lastRefNo.slice(-4)); 
-                nextSequence = lastSequence + 1; 
+                const lastSequence = parseInt(lastRefNo.slice(-4));
+                nextSequence = lastSequence + 1;
             }
 
             const refNo = `${refNoPrefix}${nextSequence.toString().padStart(4, '0')}`;
@@ -467,8 +467,6 @@ exports.getAllCollectiOfficerCategoryDao = () => {
             if (err) {
                 return reject(err);
             }
-            console.log(results);
-            
             resolve(results);
         });
     });

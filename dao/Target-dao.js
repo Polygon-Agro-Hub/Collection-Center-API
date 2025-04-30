@@ -48,18 +48,6 @@ exports.getAllCropNameDAO = () => {
 
 exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
     return new Promise((resolve, reject) => {
-console.log(searchText);
-
-        // const offset = (page - 1) * limit;
-
-
-        // let countSql = `
-        //     SELECT COUNT(*) AS total
-        //     FROM dailytarget DT, dailytargetitems DTI, plant_care.cropvariety CV, plant_care.cropgroup CG
-        //     WHERE DT.id = DTI.targetId AND DTI.varietyId = CV.id AND CV.cropGroupId = CG.id AND DT.centerId = ?
-        // `
-
-
         let targetSql = `
             SELECT 
                 DT.id, 
@@ -79,9 +67,6 @@ console.log(searchText);
             WHERE DT.date = CURDATE() and DT.companyCenterId = ? AND DT.target != 0 AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id
         `
         const sqlParams = [companyCenterId];
-        // const countParams = [centerId]
-
-
         if (searchText) {
             const searchCondition =
                 ` AND  CV.varietyNameEnglish LIKE ? `;
@@ -90,22 +75,10 @@ console.log(searchText);
             sqlParams.push(searchValue);
         }
 
-        // targetSql += " LIMIT ? OFFSET ? ";
-        // sqlParams.push(limit, offset);
-
-
-        // collectionofficer.query(countSql, countParams, (countErr, countResults) => {
-        //     if (countErr) {
-        //         console.error('Error in count query:', countErr);
-        //         return reject(countErr);
-        //     }
-
-        // const total = countResults[0].total;
         const total = 0;
 
         // Execute data query
         collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
-            console.log(dataResults);
             if (dataErr) {
                 console.error('Error in data query:', dataErr);
                 return reject(dataErr);
@@ -115,7 +88,6 @@ console.log(searchText);
             resolve({ resultTarget: dataResults, total });
         });
     });
-    // });
 };
 
 
@@ -193,126 +165,6 @@ exports.downloadAllDailyTargetCompleteDAO = (companyId, fromDate, toDate) => {
         });
     });
 };
-
-// exports.getCenterDetailsDao = (companyId, province, district, searchText, page, limit) => {
-//     return new Promise((resolve, reject) => {
-//         let countSql = `
-//         SELECT COUNT(DISTINCT CC.id) AS totalCount
-//         FROM companycenter COMC
-//         JOIN collectioncenter CC ON COMC.centerId = CC.id
-//         JOIN collectionofficer COF ON COF.centerId = CC.id
-//         WHERE COMC.companyId = ?
-//     `;
-
-//         // Base SQL query
-//         let dataSql = `
-//             SELECT 
-//                 CC.id AS centerId,
-//                 CC.centerName, 
-//                 CC.province,
-//                 CC.district,
-//                 CC.city,
-//                 CC.contact01,
-//                 CC.regCode,
-//                 COF.jobRole, 
-//                 COUNT(COF.id) AS totCount
-//             FROM 
-//                 companycenter COMC
-//             JOIN 
-//                 collectioncenter CC ON COMC.centerId = CC.id
-//             JOIN 
-//                 collectionofficer COF ON COF.centerId = CC.id
-//             WHERE 
-//                 COMC.companyId = ? `;
-
-//         // Add conditions for province if provided
-//         const queryParams = [companyId];
-//         const countParams = [companyId];
-
-//         if (province) {
-//             dataSql += ` AND CC.province = ? `;
-//             countSql += ` AND CC.province = ? `;
-//             queryParams.push(province);
-//             countParams.push(province);
-//         }
-
-//         if (district) {
-//             dataSql += ` AND CC.district = ? `;
-//             countSql += ` AND CC.district = ? `;
-//             queryParams.push(district);
-//             countParams.push(district);
-//         }
-
-//         if (searchText) {
-//             dataSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?) `;
-//             countSql += ` AND (CC.centerName LIKE ? OR CC.regCode LIKE ?) `;
-//             queryParams.push(`%${searchText}%`, `%${searchText}%`);
-//             countParams.push(`%${searchText}%`, `%${searchText}%`);
-//         }
-
-//         // Group and order the results
-//         dataSql += `
-//             GROUP BY 
-//                 CC.id, CC.centerName, CC.province, CC.district, CC.city, CC.contact01, CC.regCode, COF.jobRole
-//         `;
-
-//         // Add pagination
-//         const offset = (page - 1) * limit;
-//         dataSql += ` LIMIT ? OFFSET ? `;
-//         queryParams.push(limit, offset);
-
-
-
-//         // Execute the query
-//         collectionofficer.query(dataSql, queryParams, (dataErr, dataResults) => {
-//             if (dataErr) {
-//                 console.error('Error in data query:', dataErr);
-//                 return reject(dataErr);
-//             }
-//             console.log('data results', dataResults);
-
-//             const jobRoles = ["Collection Officer", "Customer Officer", "Collection Center Manager", "Customer Service"];
-//             const centerMap = new Map();
-
-//             dataResults.forEach(({ centerId, centerName, province, district, city, contact01, regCode, jobRole, totCount }) => {
-//                 if (!centerMap.has(centerId)) {
-//                     const centerData = {
-//                         id: centerId,
-//                         centerName,
-//                         province,
-//                         district,
-//                         city,
-//                         contact01,
-//                         regCode
-//                     };
-//                     jobRoles.forEach(role => {
-//                         centerData[role.replace(/\s+/g, '')] = 0;
-//                     });
-//                     console.log('this is center data', centerData);
-//                     centerMap.set(centerId, centerData);
-//                     console.log('this is center map', centerMap);
-//                 }
-//                 const center = centerMap.get(centerId);
-//                 if (jobRole) {
-//                     center[jobRole.replace(/\s+/g, '')] = totCount;
-//                 }
-//             });
-
-//             const transformedResults = Array.from(centerMap.values());
-//             console.log('this is transformed data', transformedResults);
-//             collectionofficer.query(countSql, countParams, (countErr, countResults) => {
-//                 if (countErr) {
-//                     console.error('Error in count query:', countErr);
-//                     return reject(countErr);
-//                 }
-
-//                 const totalItems = countResults[0].totalCount;
-//                 resolve({ totalItems, items: transformedResults });
-//             });
-//         });
-//     });
-// };
-
 
 
 exports.getCenterDetailsDaoNew = (companyId, province, district, searchText, page, limit) => {
@@ -552,7 +404,6 @@ exports.getTransactionCountDao = (centerId) => {
         `
         collectionofficer.query(sql, [centerId], (err, results) => {
             if (err) {
-                console.log(err);
                 return reject(err);
             }
 
@@ -612,7 +463,6 @@ exports.getReseantCollectionDao = (centerId) => {
                 return reject(err);
             }
 
-            // Corrected transformation of data
             const transformData = results.flatMap(item => {
                 const entries = [];
 
@@ -703,10 +553,6 @@ exports.differenceBetweenExpences = (centerId) => {
                 return reject(err);
             }
 
-            // if (results.length < 2) {
-            //     return reject(new Error("Not enough data to compare two months."));
-            // }
-
             let difExpences = 0.00
             if (results.length >= 2) {
                 difExpences = ((results[0].monthexpences - results[1].monthexpences) / results[0].monthexpences) * 100;
@@ -788,11 +634,9 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
                 console.error('Error in data query:', dataErr);
                 return reject(dataErr);
             }
-            console.log(dataResults);
 
             const jobRoles = ["Collection Officer", "Customer Officer", "Collection Center Manager"];
 
-            // Using a reducer to transform data efficiently
             const transformedResults = dataResults.reduce((acc, row) => {
                 const { centerId, centerName, province, district, city, contact01, regCode, jobRole, totCount } = row;
 
@@ -807,7 +651,7 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
                         regCode
                     };
 
-                    // Initialize job role counts
+
                     jobRoles.forEach(role => {
                         acc[centerId][role.replace(/\s+/g, '')] = 0;
                     });
@@ -819,11 +663,7 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
 
                 return acc;
             }, {});
-            console.log(transformedResults);
-
             const finalResults = Object.values(transformedResults);
-            console.log(finalResults);
-
             collectionofficer.query(countSql, countParams, (countErr, countResults) => {
                 if (countErr) {
                     console.error('Error in count query:', countErr);
@@ -838,7 +678,6 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
 };
 
 
-//prev dao
 exports.getTargetVerityDao = (companyCenterId, varietyId) => {
     return new Promise((resolve, reject) => {
         const sql = `
@@ -901,8 +740,6 @@ exports.getTargetVerityDao = (companyCenterId, varietyId) => {
                     grouped[key].assignStatusC = row.assignStatus;
                 }
             });
-
-            // console.log(Object.values(grouped));
 
             resolve(Object.values(grouped));
         });
@@ -977,7 +814,6 @@ exports.getOfficerTargetDao = (userId, status, search) => {
 
         const params = [userId];
 
-        // Add the status condition if it is provided
         if (status) {
             sql += ` AND (
                 CASE 
@@ -1132,7 +968,6 @@ exports.getSelectedOfficerTarget = (officerId, status, search) => {
 
         const params = [officerId];
 
-        // Add the status condition if it is provided
         if (status) {
             sql += ` AND (
                 CASE 
@@ -1371,9 +1206,6 @@ exports.getExsistVerityTargetDao = (target, userId) => {
             if (err) {
                 return reject(err);
             }
-            console.log(results);
-
-
             const transformedData = results.reduce((acc, item) => {
                 const { id, empId, jobRole, firstNameEnglish, lastNameEnglish, grade, target, officerTargetId, dailyId } = item;
 
@@ -1414,9 +1246,6 @@ exports.getExsistVerityTargetDao = (target, userId) => {
 
                 return acc;
             }, {});
-
-            console.log(transformedData);
-
 
             const result = Object.values(transformedData);
             resolve(result);
@@ -1488,9 +1317,9 @@ exports.getCenterTargetDAO = (companyCenterId, status, searchText) => {
                     status = 'Exceeded';
                 } else if (complete == target) {
                     status = 'Completed';
-                }  else if (complete < target) {
+                } else if (complete < target) {
                     status = 'Pending';
-                } 
+                }
 
 
                 return {
@@ -1500,8 +1329,6 @@ exports.getCenterTargetDAO = (companyCenterId, status, searchText) => {
                     status: status
                 };
             });
-            console.log(resultTarget)
-
             resolve({ resultTarget });
         });
     });
@@ -1823,10 +1650,10 @@ exports.getAssignCenterTargetDAO = (id, searchText) => {
         `;
         const sqlParams = [id];
 
-        if(searchText){
+        if (searchText) {
             sql += ` AND CV.varietyNameEnglish LIKE ? `;
             sqlParams.push(`%${searchText}%`);
-            
+
         }
 
         collectionofficer.query(sql, sqlParams, (err, results) => {
@@ -1835,9 +1662,6 @@ exports.getAssignCenterTargetDAO = (id, searchText) => {
             }
 
             const grouped = {};
-
-            // console.log("results", results);
-
 
             results.forEach(row => {
                 const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
@@ -1907,17 +1731,10 @@ exports.getAssignTargetIdsDao = (id, cropId) => {
 
             const grouped = {};
 
-            // console.log("results", results);
-
-
             results.forEach(row => {
                 const key = `${row.cropNameEnglish}|${row.varietyNameEnglish}`;
                 if (!grouped[key]) {
                     grouped[key] = {
-                        // varietyId: row.varietyId,
-                        // companyCenterId: row.companyCenterId,
-                        // cropNameEnglish: row.cropNameEnglish,
-                        // varietyNameEnglish: row.varietyNameEnglish,
                         idA: null,
                         idB: null,
                         idC: null,
@@ -1977,54 +1794,6 @@ exports.officerTargetCheckAvailableDao = (data) => {
         });
     });
 };
-
-
-// exports.getAvailableOfficerDao = (officerId, data) => {
-//     return new Promise((resolve, reject) => {
-//         let dataSql = `
-//            SELECT 
-//                CV.varietyNameEnglish, 
-//                CG.cropNameEnglish, 
-//                DT.grade, 
-//                OFT.target, 
-//                OFT.complete, 
-//                DT.date
-//            FROM officertarget OFT
-//            JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
-//            JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
-//            JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-//            WHERE 
-//                OFT.officerId = ? AND DT.date BETWEEN ? AND ?
-
-//         `;
-
-
-//         const dataParams = [officerId, data.fromDate, data.toDate];
-
-//         collectionofficer.query(dataSql, dataParams, (err, results) => {
-//             if (err) return reject(err);
-
-//             const today = new Date().toISOString().split('T')[0];
-
-//             const formattedResults = results.map(row => {
-//                 const formattedDate = new Date(row.date).toISOString().split('T')[0];
-//                 const validity = formattedDate >= today ? 'Valid' : 'Expired';
-
-//                 return {
-//                     ...row,
-//                     target: parseFloat(parseFloat(row.target).toFixed(2)),
-//                     complete: parseFloat(parseFloat(row.complete).toFixed(2)),
-//                     date: formattedDate,
-//                     validity
-//                 };
-//             });
-
-//             resolve(formattedResults);
-//         });
-//     });
-// };
-
-
 
 exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity, searchText) => {
     return new Promise((resolve, reject) => {
@@ -2173,7 +1942,6 @@ exports.officerTargetCheckAvailableForDownloadDao = (empId) => {
 };
 
 exports.downloadOfficerTargetReportDao = (officerId, fromDate, toDate, status, validity, searchText) => {
-    console.log(officerId, fromDate, toDate, status, validity, searchText);
     return new Promise((resolve, reject) => {
         const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
@@ -2278,7 +2046,6 @@ exports.downloadOfficerTargetReportDao = (officerId, fromDate, toDate, status, v
                 };
             });
 
-            console.log('this is formatted results', formattedResults);
             resolve({ items: formattedResults });
         });
     });
@@ -2359,8 +2126,6 @@ exports.downloadCurrentTargetDAO = (companyCenterId, status, searchText) => {
                     status: status
                 };
             });
-            console.log(resultTarget)
-
             resolve({ resultTarget });
         });
     });

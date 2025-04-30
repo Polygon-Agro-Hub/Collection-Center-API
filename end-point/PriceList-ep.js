@@ -3,14 +3,12 @@ const PriceListValidate = require('../validations/PriceList-validation')
 
 exports.getAllPrices = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-    console.log(fullUrl);
     try {
         const centerId = req.user.centerId
         const companyId = req.user.companyId
         const { page, limit, grade, searchText } = await PriceListValidate.getAllPriceListSchema.validateAsync(req.query);
         const { items, total } = await PriceListDAO.getAllPriceListDao(companyId, centerId, page, limit, grade, searchText);
 
-        console.log("Successfully retrieved price list");
         res.status(200).json({ items, total });
     } catch (error) {
         if (error.isJoi) {
@@ -31,7 +29,6 @@ exports.updatePrice = async (req, res) => {
         const result = await PriceListDAO.updatePriceDao(id, value);
 
         if (result.affectedRows === 0) {
-            console.log("faild to update price");
             return res.json({ status: false, message: "Faild to update price" })
 
         }
@@ -46,7 +43,6 @@ exports.updatePrice = async (req, res) => {
 
 exports.getAllRequest = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-    console.log(fullUrl);
     try {
         const centerId = req.user.centerId
 
@@ -54,7 +50,6 @@ exports.getAllRequest = async (req, res) => {
         const { page, limit, grade, status, searchText } = await PriceListValidate.getRequestPriceSchema.validateAsync(req.query);
         const { items, total } = await PriceListDAO.getAllPriceRequestDao(centerId, page, limit, grade, status, searchText);
 
-        console.log("Successfully retrieved price list");
         res.status(200).json({ items, total });
     } catch (error) {
         if (error.isJoi) {
@@ -74,7 +69,6 @@ exports.changeRequestStatus = async (req, res) => {
         const result = await PriceListDAO.ChangeRequestStatusDao(id, status);
 
         if (result.affectedRows === 0) {
-            console.log("faild to update request status");
             return res.json({ status: false, message: "Faild to update request status" })
 
         }

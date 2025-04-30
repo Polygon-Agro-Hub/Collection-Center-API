@@ -5,15 +5,13 @@ const XLSX = require('xlsx');
 
 exports.getAllCropCatogory = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const result = await TargetDAO.getAllCropNameDAO()
 
-    console.log("Successfully fetched gatogory");
     return res.status(200).json(result);
   } catch (error) {
     if (error.isJoi) {
-      // Handle validation error
+
       return res.status(400).json({ error: error.details[0].message });
     }
     console.error("Error fetching crop names and verity:", error);
@@ -25,7 +23,6 @@ exports.getAllCropCatogory = async (req, res) => {
 
 exports.getAllDailyTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
 
   try {
     const { searchText, page, limit } = await TargetValidate.getAllDailyTargetSchema.validateAsync(req.query);
@@ -38,10 +35,6 @@ exports.getAllDailyTarget = async (req, res) => {
     }
 
     const { resultTarget, total } = await TargetDAO.getAllDailyTargetDAO(companyCenterId, searchText);
-    // console.log('these are results', resultTarget);
-
-
-    console.log("Successfully transformed data");
     res.status(200).json({
       items: resultTarget,
       totalPages: total
@@ -57,7 +50,6 @@ exports.getAllDailyTarget = async (req, res) => {
 
 exports.downloadDailyTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
 
   try {
     const { fromDate, toDate } = await TargetValidate.downloadDailyTargetSchema.validateAsync(req.query);
@@ -65,19 +57,15 @@ exports.downloadDailyTarget = async (req, res) => {
     const companyId = req.user.companyId;
 
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
-    console.log(companyCenterId);
-    
+
     if (companyCenterId === null) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "No center found" 
+        message: "No center found"
       });
     }
 
     const { resultTarget } = await TargetDAO.downloadAllDailyTargetDao(companyCenterId, fromDate, toDate);
-    console.log('these are results end point', resultTarget);
-
-    console.log(res.status);
 
     if (!resultTarget || resultTarget.length === 0) {
       return res.status(200).json({
@@ -94,92 +82,24 @@ exports.downloadDailyTarget = async (req, res) => {
 
   } catch (error) {
     if (error.isJoi) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: error.details[0].message 
+        error: error.details[0].message
       });
     }
     console.error("Error fetching Target:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      error: "An error occurred while fetching Target" 
+      error: "An error occurred while fetching Target"
     });
   }
 };
-
-
-// exports.downloadDailyTarget = async (req, res) => {
-//   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-//   console.log(fullUrl);
-//   try {
-//     const { fromDate, toDate } = await TargetValidate.downloadDailyTargetSchema.validateAsync(req.query);
-//     const companyId = req.user.companyId
-
-//     const resultTarget = await TargetDAO.downloadAllDailyTargetDao(companyId, fromDate, toDate);
-//     // const resultComplete = await TargetDAO.downloadAllDailyTargetCompleteDAO(companyId, fromDate, toDate);
-//     const combinedData = [];
-
-//     for (const target of resultTarget) {
-//       if (target.qtyA !== undefined) {
-//         combinedData.push({
-//           cropNameEnglish: target.cropNameEnglish,
-//           varietyNameEnglish: target.varietyNameEnglish,
-//           toDate: target.toDate,
-//           toTime: target.toTime,
-//           grade: "A",
-//           status: parseFloat(target.complteQtyA) >= parseFloat(target.qtyA) ? 'Completed' : 'Pending',
-//           TargetQty: target.qtyA,
-//           CompleteQty: target.complteQtyA || "0.00",
-//         });
-//       }
-
-//       if (target.qtyB !== undefined) {
-//         combinedData.push({
-//           cropNameEnglish: target.cropNameEnglish,
-//           varietyNameEnglish: target.varietyNameEnglish,
-//           toDate: target.toDate,
-//           toTime: target.toTime,
-//           grade: "B",
-//           status: parseFloat(target.complteQtyB) >= parseFloat(target.qtyB) ? 'Completed' : 'Pending',
-//           TargetQty: target.qtyB,
-//           CompleteQty: target.complteQtyB || "0.00",
-//         });
-//       }
-
-//       if (target.qtyC !== undefined) {
-//         combinedData.push({
-//           cropNameEnglish: target.cropNameEnglish,
-//           varietyNameEnglish: target.varietyNameEnglish,
-//           toDate: target.toDate,
-//           toTime: target.toTime,
-//           grade: "C",
-//           status: parseFloat(target.complteQtyC) >= parseFloat(target.qtyC) ? 'Completed' : 'Pending',
-//           TargetQty: target.qtyC,
-//           CompleteQty: target.complteQtyC || "0.00",
-//         });
-//       }
-//     }
-
-
-
-//     console.log("Successfully transformed data");
-//     return res.status(200).json({ message: 'Daily tartget find', status: true, data: combinedData });
-//   } catch (error) {
-//     if (error.isJoi) {
-//       return res.status(400).json({ error: error.details[0].message });
-//     }
-//     console.error("Error fetching crop names and verity:", error);
-//     return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
-//   }
-// };
 
 exports.getCenterDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
 
   try {
-    console.log(fullUrl);
     const companyId = req.user.companyId;
-    console.log(companyId);
     const { province, district, searchText, page, limit } = req.query;
 
     const { totalItems, items } = await TargetDAO.getCenterDetailsDaoNew(
@@ -191,7 +111,6 @@ exports.getCenterDetails = async (req, res) => {
       parseInt(limit)
     );
 
-    console.log("Successfully retrieved company data");
     res.status(200).json({ items, totalItems });
   } catch (error) {
     console.error("Error retrieving center data:", error);
@@ -201,7 +120,6 @@ exports.getCenterDetails = async (req, res) => {
 
 exports.getOfficerDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
 
   try {
     // Validate query parameters      
@@ -209,8 +127,6 @@ exports.getOfficerDetails = async (req, res) => {
     const { centerId, page, limit, role, status, searchText } = validatedQuery;
 
     const { items, total } = await TargetDAO.getOfficerDetailsDAO(centerId, page, limit, role, status, searchText);
-    console.log("Successfully fetched collection officers");
-
     return res.status(200).json({ items, total });
   } catch (error) {
     console.error("Error fetching collection officers:", error);
@@ -225,7 +141,6 @@ exports.getOfficerDetails = async (req, res) => {
 
 exports.getCenterDashbord = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
 
   try {
     const { id } = req.params;
@@ -238,14 +153,9 @@ exports.getCenterDashbord = async (req, res) => {
 
     const limitedResentCollection = resentCollection.slice(0, 5);
 
-    console.log(transCount);
-
-
-    console.log("Successfully fetched gatogory");
     return res.status(200).json({ officerCount, transCount: transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
   } catch (error) {
     if (error.isJoi) {
-      // Handle validation error
       return res.status(400).json({ error: error.details[0].message });
     }
 
@@ -256,15 +166,11 @@ exports.getCenterDashbord = async (req, res) => {
 
 exports.getAllPriceDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const companyId = req.user.companyId
     const { centerId, page, limit, grade, searchText } = await TargetValidate.getAllPriceDetailSchema.validateAsync(req.query);
-    // const { items, total } = await PriceListDAO.getAllPriceListDao(centerId, page, limit, grade, searchText);
-
     const { items, total } = await TargetDAO.getAllPriceDetailsDao(companyId, centerId, page, limit, grade, searchText);
 
-    console.log("Successfully retrieved price list");
     res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
@@ -278,14 +184,10 @@ exports.getAllPriceDetails = async (req, res) => {
 
 exports.getAssignCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const { searchText } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
     const companyId = req.user.companyId
-
-    console.log("-------SEarch---------",searchText);
-    
 
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
     if (companyCenterId === null) {
@@ -293,9 +195,6 @@ exports.getAssignCenterTarget = async (req, res) => {
     }
 
     const resultTarget = await TargetDAO.getAssignCenterTargetDAO(companyCenterId, searchText);
-    // console.log(resultTarget);
-
-    console.log("Successfully transformed data");
     return res.status(200).json(resultTarget);
   } catch (error) {
     if (error.isJoi) {
@@ -309,20 +208,16 @@ exports.getAssignCenterTarget = async (req, res) => {
 
 exports.getTargetVerity = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
+
   try {
     const { varietyId, companyCenterId } = await TargetValidate.getTargetVeritySchema.validateAsync(req.params);
     const userId = req.user.userId;
-    console.log(varietyId, companyCenterId, userId);
-
-
     const resultCrop = await TargetDAO.getTargetVerityDao(companyCenterId, varietyId);
     const resultOfficer = await TargetDAO.getAssingTargetForOfficersDao(userId);
 
     if (resultCrop.length === 0) {
       return res.status(400).json({ error: "No data found" });
     }
-    console.log("Successfully retrieved target crop verity");
     res.status(200).json({ crop: resultCrop[0], officer: resultOfficer });
   } catch (error) {
     if (error.isJoi) {
@@ -336,15 +231,12 @@ exports.getTargetVerity = async (req, res) => {
 
 exports.AssignOfficerTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
+
   try {
     const id = parseInt(req.body.id);
     const verityId = parseInt(req.body.varietyId);
     const targetData = req.body.OfficerData;
     const { idA, idB, idC } = req.body.dailyTargetsIds
-    console.log(req.body);
-
-
 
     for (let i = 0; i < targetData.length; i++) {
       if (targetData[i].targetA !== 0) {
@@ -366,7 +258,6 @@ exports.AssignOfficerTarget = async (req, res) => {
 
     }
 
-    console.log("Successfully Add Target to Officer");
     res.status(200).json({ status: true, messsage: "Target Assigned Successfully" });
   } catch (error) {
     if (error.isJoi) {
@@ -381,7 +272,6 @@ exports.AssignOfficerTarget = async (req, res) => {
 
 exports.getTargetDetailsToPass = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
 
     const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
@@ -389,7 +279,6 @@ exports.getTargetDetailsToPass = async (req, res) => {
     const resultTarget = await TargetDAO.getTargetDetailsToPassDao(id);
     const resultOfficer = await TargetDAO.getOfficersToPassTargetDao(userId);
 
-    console.log("Successfully retrieved target crop verity");
     res.status(200).json({ resultTarget, resultOfficer });
   } catch (error) {
     if (error.isJoi) {
@@ -404,28 +293,16 @@ exports.getTargetDetailsToPass = async (req, res) => {
 //used to transfer CCM target
 exports.passTargetToOfficer = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const target = await TargetValidate.PassTargetValidationSchema.validateAsync(req.body);
-    console.log("body", target);
-    console.log("end body");
     const today = new Date();
     const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
 
     const formattedDate = `${yyyy}-${mm}-${dd}`;
-    console.log(formattedDate); 
-
-
-    //passer details
     const targetResult = await TargetDAO.getTargetDetailsToPassDao(target.target);
-    console.log("targetResult", targetResult);
-
     const passingOfficer = await TargetDAO.getPassingOfficerDao(targetResult, target.officerId, formattedDate);
-    console.log("Pass officer:",passingOfficer);
-    
-
     let resultUpdate
     let result
 
@@ -448,7 +325,6 @@ exports.passTargetToOfficer = async (req, res) => {
       }
     }
 
-    console.log("Successfully passing target");
     res.status(200).json({ status: true, message: "Target Passing successfull!" });
   } catch (error) {
     if (error.isJoi) {
@@ -464,7 +340,6 @@ exports.passTargetToOfficer = async (req, res) => {
 
 exports.getOfficerTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
 
   try {
 
@@ -487,18 +362,14 @@ exports.getOfficerTarget = async (req, res) => {
 
 exports.getSelectedOfficerTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
 
   try {
-
-    // const { officerId, status, search } = req.query
 
     const { officerId, status, search } = await TargetValidate.getSelectedOfficerTargetSchema.validateAsync(req.query);
 
 
     const results = await TargetDAO.getOfficerTargetDao(officerId, status, search);
 
-    console.log("success fully fetched results");
     return res.status(200).json({ items: results });
   } catch (error) {
     if (error.isJoi) {
@@ -513,12 +384,8 @@ exports.getSelectedOfficerTarget = async (req, res) => {
 
 exports.createCenter = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
 
   try {
-    console.log(req.user);
-
-    // Ensure required data is provided
     if (!req.body.centerData) {
       return res.status(400).json({ error: "Center data is missing" });
     }
@@ -531,8 +398,6 @@ exports.createCenter = async (req, res) => {
 
     // Check if data was successfully inserted
     if (result) {
-      console.log("Center created successfully");
-      console.log(result);
       return res.status(201).json({
         message: "Center created successfully",
         status: true,
@@ -551,7 +416,6 @@ exports.createCenter = async (req, res) => {
     }
 
     if (error.isJoi) {
-      // Handle validation error
       return res.status(400).json({ error: error.details[0].message });
     }
 
@@ -567,24 +431,14 @@ exports.createCenter = async (req, res) => {
 
 exports.getExsistVerityTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
-    // /:
-    // const { targetid, cropid } = await TargetValidate.getExsistVerityTargetSchema.validateAsync(req.params);
-    // const targetid = req.params.id
     const { varietyId, companyCenterId } = await TargetValidate.getTargetVeritySchema.validateAsync(req.params);
 
     const userId = req.user.userId;
-    console.log(varietyId, companyCenterId, userId);
-
-
     const resultCrop = await TargetDAO.getTargetVerityDao(companyCenterId, varietyId);
     const targetId = await TargetDAO.getAssignTargetIdsDao(companyCenterId, varietyId);
-    // console.log("target id--------",targetId[0]);
-
     const resultOfficer = await TargetDAO.getExsistVerityTargetDao(targetId[0], userId);
 
-    console.log("Successfully retrieved target crop verity");
     res.status(200).json({ crop: resultCrop[0], officer: resultOfficer, targetId: targetId[0] });
   } catch (error) {
     if (error.isJoi) {
@@ -600,47 +454,36 @@ exports.getExsistVerityTarget = async (req, res) => {
 
 exports.editAssignedOfficerTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     // const id = parseInt(req.body.id);
     const targetId = req.body.targetIds;
     const targetData = req.body.OfficerData;
-    console.log(req.body);
-
-
     for (let i = 0; i < targetData.length; i++) {
       const officerData = targetData[i];
 
       // Update existing targets if they changed
       if (officerData.targetAId !== null && officerData.targetA !== officerData.prevousTargetA) {
-        console.log("hti01", officerData.targetAId, officerData.targetA, officerData);
         await TargetDAO.updateOfficerTargetDao(officerData.targetAId, officerData.targetA);
       }
 
       if (officerData.targetBId !== null && officerData.targetB !== officerData.prevousTargetB) {
-        console.log("hti02", officerData.targetBId, officerData.targetB);
         await TargetDAO.updateOfficerTargetDao(officerData.targetBId, officerData.targetB);
       }
 
       if (officerData.targetCId !== null && officerData.targetC !== officerData.prevousTargetC) {
-        console.log("hti03", officerData.targetCId, officerData.targetC);
         await TargetDAO.updateOfficerTargetDao(officerData.targetCId, officerData.targetC);
       }
 
       // Create new targets if they don't exist
       if (officerData.targetAId === null && officerData.targetA !== 0) {
-        console.log("hti04", officerData.id, 'A', officerData.targetA);
         await TargetDAO.AssignOfficerTargetDao(targetId.idA, officerData.id, officerData.targetA);
       }
 
       if (officerData.targetBId === null && officerData.targetB !== 0) {
-        console.log("hti05", officerData.id, 'B', officerData.targetB);
         await TargetDAO.AssignOfficerTargetDao(targetId.idB, officerData.id, officerData.targetB);
       }
 
       if (officerData.targetCId === null && officerData.targetC !== 0) {
-        console.log("hti06", officerData.id, 'C', officerData.targetC);
         await TargetDAO.AssignOfficerTargetDao(targetId.idC, officerData.id, officerData.targetC);
       }
     }
@@ -648,7 +491,6 @@ exports.editAssignedOfficerTarget = async (req, res) => {
     await TargetDAO.updateAssigStatusAsTrueDao(targetId.idB);
     await TargetDAO.updateAssigStatusAsTrueDao(targetId.idC);
 
-    console.log("Successfully updated officer targets");
     res.status(200).json({ status: true, message: "Target Assigned Successfully" });
   } catch (error) {
     console.error("Error updating officer targets:", error);
@@ -666,11 +508,8 @@ exports.editAssignedOfficerTarget = async (req, res) => {
 
 exports.getCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const { centerId, page, limit, status, searchText } = await TargetValidate.getCenterTargetSchema.validateAsync(req.query);
-    console.log({ centerId, page, limit, status, searchText })
-
     const companyId = req.user.companyId;
 
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
@@ -679,9 +518,6 @@ exports.getCenterTarget = async (req, res) => {
     }
 
     const { resultTarget } = await TargetDAO.getCenterTargetDAO(companyCenterId, status, searchText);
-    console.log(resultTarget);
-  
-    console.log("Successfully transformed data");
     return res.status(200).json({
       items: resultTarget
     });
@@ -700,8 +536,6 @@ exports.getCenterTarget = async (req, res) => {
 
 exports.getCenterCenterCrops = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const companyId = req.user.companyId;
     const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
@@ -713,8 +547,6 @@ exports.getCenterCenterCrops = async (req, res) => {
     }
 
     const { items, total } = await TargetDAO.getCenterCenterCropsDao(companyCenterId, page, limit, searchText);
-    console.log(items, total);
-
     return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
@@ -730,15 +562,9 @@ exports.getCenterCenterCrops = async (req, res) => {
 
 exports.addOrRemoveCenterCrops = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const companyId = req.user.companyId;
-
-    // const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
     const validateData = await TargetValidate.addOrRemoveCenterCropSchema.validateAsync(req.body);
-    console.log(validateData);
-
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, validateData.centerId);
     if (companyCenterId === null) {
       res.json({ items: [], message: "No center found" })
@@ -757,12 +583,11 @@ exports.addOrRemoveCenterCrops = async (req, res) => {
       if (result.affectedRows === 0) {
         return res.json({ status: false, message: "Failed to remove crop" });
       }
-      message = 'Crop Variety was successfully <b>Deactivated</b> on Center Target' 
+      message = 'Crop Variety was successfully <b>Deactivated</b> on Center Target'
     } else {
       return res.json({ status: false, message: "Invalid request" });
     }
 
-    // const results = await TargetDAO.getCenterCenterCropsDao(companyId, id);
     return res.status(200).json({ status: true, message: message });
   } catch (error) {
     if (error.isJoi) {
@@ -778,16 +603,10 @@ exports.addOrRemoveCenterCrops = async (req, res) => {
 
 exports.getSavedCenterCrops = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const companyId = req.user.companyId;
     const { id, date } = await TargetValidate.getSavedCenterCropsSchema.validateAsync(req.params);
     const { searchText } = await TargetValidate.getSavedCenterCropsQuaryParam.validateAsync(req.query);
-    // const { page, limit, searchText } = await TargetValidate.getCenterCropsSchema.validateAsync(req.query);
-    console.log(id, date);
-
-
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, id);
     if (companyCenterId === null) {
       res.json({ items: [], message: "No center found" })
@@ -795,8 +614,6 @@ exports.getSavedCenterCrops = async (req, res) => {
 
     const status = true;
     const result = await TargetDAO.getSavedCenterCropsDao(companyCenterId, date, status, searchText);
-    // console.log(items, total);
-
     return res.status(200).json({ result, companyCenterId });
   } catch (error) {
     if (error.isJoi) {
@@ -812,12 +629,8 @@ exports.getSavedCenterCrops = async (req, res) => {
 
 exports.updateTargetQty = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const { id, qty, date, companyCenterId, grade, varietyId } = await TargetValidate.updateTargetQtySchema.validateAsync(req.body);
-    console.log(req.body);
-
-
     if (id !== null) {
       const resultUpdate = await TargetDAO.updateCenterTargeQtyDao(id, qty, date);
       if (resultUpdate.affectedRows === 0) {
@@ -830,7 +643,6 @@ exports.updateTargetQty = async (req, res) => {
       }
     }
 
-    console.log("Successfully retrieved target crop verity");
     res.status(200).json({ status: true, message: "Successfully updated target quantity" });
   } catch (error) {
     if (error.isJoi) {
@@ -845,10 +657,7 @@ exports.updateTargetQty = async (req, res) => {
 
 exports.addNewCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
-    // const { id, qty, date, companyCenterId, grade, varietyId } = await TargetValidate.updateTargetQtySchema.validateAsync(req.body);
-    // console.log(req.body);
     const companyCenterId = req.body.companyCenterId
     const date = req.body.date
     const cropsData = req.body.crop
@@ -857,20 +666,11 @@ exports.addNewCenterTarget = async (req, res) => {
     let resultB
     let resultC
     for (let i = 0; i < cropsData.length; i++) {
-      // if (cropsData[i].targetA !== 0) {
       resultA = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date);
-      // }
-
-      // if (cropsData[i].targetB !== 0) {
       resultB = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date);
-      // }
-
-      // if (cropsData[i].targetC !== 0) {
       resultC = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date);
-      // }
     }
 
-    console.log("Successfully retrieved target crop verity");
     res.status(200).json({ status: true, message: "Successfully Added New target quantity" });
   } catch (error) {
     if (error.isJoi) {
@@ -885,29 +685,21 @@ exports.addNewCenterTarget = async (req, res) => {
 
 exports.officerTargetCheckAvailable = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const officer = req.body
-    console.log(officer);
     const user = req.user
     const { page, limit, status, validity, searchText } = req.query;
-    console.log(page, limit);
-
     const result = await TargetDAO.officerTargetCheckAvailableDao(officer);
-    console.log(result);
     if (result === null) {
       return res.json({ message: "--No Data Available--", result: result, status: false });
     }
 
     const { items, total } = await TargetDAO.getAvailableOfficerDao(result.id, officer, page, limit, status, validity, searchText);
 
-    // console.log(target);
-
     if (result.companyId === user.companyId && result.centerId === user.centerId && (result.irmId === user.userId || result.id === user.userId)) {
       return res.json({ message: "--Officer Target Available--", result: items, status: true, total: total });
     }
 
-    console.log("Successfully retrieved target crop verity");
     res.json({ status: false, message: "--You did't have permission to access this data--" });
   } catch (error) {
     if (error.isJoi) {
@@ -922,19 +714,10 @@ exports.officerTargetCheckAvailable = async (req, res) => {
 
 exports.transferOfficerTargetToOfficer = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
   try {
     const target = await TargetValidate.PassTargetValidationSchema.validateAsync(req.body);
-    console.log("body", target);
-
-    //passer details
     const targetResult = await TargetDAO.getTargetDetailsToPassDao(target.target);
-    console.log("targetResult", targetResult);
-
     const passingOfficer = await TargetDAO.getPassingOfficerDao(targetResult, target.officerId, target.date);
-    console.log("Pass officer:",passingOfficer);
-    
-
     let resultUpdate
     let result
 
@@ -957,7 +740,6 @@ exports.transferOfficerTargetToOfficer = async (req, res) => {
       }
     }
 
-    console.log("Successfully passing target");
     res.status(200).json({ status: true, message: "Target Passing successfull!" });
   } catch (error) {
     if (error.isJoi) {
@@ -973,28 +755,17 @@ exports.transferOfficerTargetToOfficer = async (req, res) => {
 
 exports.downloadOfficerTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
     const user = req.user
-    console.log('this is user', user);
-   
     const validatedQuery = await TargetValidate.downloadOfficerTargetSchema.validateAsync(req.query);
 
-    const {fromDate, toDate, empId, status, validity, searchText} = validatedQuery;
-    console.log(fromDate, toDate, empId, status, validity, searchText);
-
+    const { fromDate, toDate, empId, status, validity, searchText } = validatedQuery;
     const result = await TargetDAO.officerTargetCheckAvailableForDownloadDao(empId);
-    console.log('this is results', result);
     if (result === null) {
       return res.json({ message: "--No Data Available--", result: result, status: false });
     }
 
     const officerId = result.id
-
-    // if (result.companyId === user.companyId && result.centerId === user.centerId && (result.irmId === user.userId || result.id === user.userId)) {
-    //   return res.json({ message: "--Officer Target Available--", result: items, status: true, total: total });
-    // }
 
     const data = await TargetDAO.downloadOfficerTargetReportDao(
       officerId,
@@ -1005,9 +776,6 @@ exports.downloadOfficerTarget = async (req, res) => {
       searchText
     );
 
-    console.log(data);
-
-    // Format data for Excel
     const formattedData = data.items.flatMap(item => [
       {
         'Crop Name': item.cropNameEnglish,
@@ -1019,13 +787,12 @@ exports.downloadOfficerTarget = async (req, res) => {
         'Date': item.date,
         'Status': item.status,
         'Validity': item.validity,
-        
+
       },
 
     ]);
 
 
-    // Create a worksheet and workbook
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
 
     worksheet['!cols'] = [
@@ -1038,10 +805,7 @@ exports.downloadOfficerTarget = async (req, res) => {
       { wch: 15 }, // Farmer Contact
       { wch: 25 }, // Account Holder Name
       { wch: 20 }, // Account Number
-      // { wch: 20 }, // Bank Name
-      // { wch: 20 }, // Branch Name
-      // { wch: 15 }, // Officer EMP ID
-      // { wch: 15 }  // Collected Time
+
     ];
 
 
@@ -1058,7 +822,6 @@ exports.downloadOfficerTarget = async (req, res) => {
     // Send the file to the client
     res.send(excelBuffer);
 
-    // return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -1072,23 +835,17 @@ exports.downloadOfficerTarget = async (req, res) => {
 
 exports.downloadCurrentTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  console.log(fullUrl);
-
   try {
 
     const companyId = req.user.companyId;
 
     const { centerId, status, searchText } = await TargetValidate.downloadCurrentTargetSchema.validateAsync(req.query);
-    console.log({ centerId, status, searchText })
-
     const companyCenterId = await TargetDAO.getCompanyCenterIDDao(companyId, centerId);
     if (companyCenterId === null) {
       res.json({ items: [], message: "No center found" })
     }
 
     const { resultTarget } = await TargetDAO.downloadCurrentTargetDAO(companyCenterId, status, searchText);
-    console.log(resultTarget);
-
     const formattedData = resultTarget.flatMap(item => [
       {
         'Crop Name': item.cropNameEnglish,
@@ -1115,7 +872,7 @@ exports.downloadCurrentTarget = async (req, res) => {
       { wch: 18 }, // Farmer NIC
       { wch: 25 }, // Farmer Name
       { wch: 15 }, // Farmer Contact
-      
+
     ];
 
 
@@ -1132,7 +889,6 @@ exports.downloadCurrentTarget = async (req, res) => {
     // Send the file to the client
     res.send(excelBuffer);
 
-    // return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });

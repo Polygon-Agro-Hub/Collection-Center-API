@@ -65,10 +65,6 @@ exports.getAllOfficersDAO = (centerId, companyId, userId, role, page, limit, sea
             }
 
             const total = countResults[0].total;
-
-            // Execute data query
-            // console.log(dataSql, dataParams);
-
             collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
                 if (dataErr) {
                     console.error('Error in data query:', dataErr);
@@ -237,12 +233,8 @@ exports.dailyReportDao = (id, date) => {
         GROUP BY CV.varietyNameEnglish
         `;
 
-
-
         collectionofficer.query(sql, [id, date.toISOString().slice(0, 10)], (err, results) => {
             if (err) {
-
-
                 return reject(err);
             }
 
@@ -260,11 +252,8 @@ exports.getMonthlyReportOfficerDao = (id, startDate, endDate) => {
             WHERE RFP.collectionOfficerId = CO.id AND RFP.id = FPC.registerFarmerId AND RFP.collectionOfficerId = ? AND DATE(RFP.createdAt) BETWEEN DATE(?) AND DATE(?)
             GROUP BY CO.id, CO.firstNameEnglish, CO.lastNameEnglish, CO.jobRole, CO.empId
         `;
-
-
         collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
             if (err) {
-
                 return reject(err);
             }
             resolve(results);
@@ -297,10 +286,8 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
 
         collectionofficer.query(sql, [id, startDate, endDate], (err, results) => {
             if (err) {
-
                 return reject(err);
             }
-
             resolve(results);
         });
     });
@@ -316,10 +303,8 @@ exports.getFarmerDetailsDao = (id) => {
         LIMIT 1 
         `;
 
-
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-
                 return reject(err);
             }
             resolve(results);
@@ -336,10 +321,8 @@ exports.getFarmerCropsDetailsDao = (id) => {
         WHERE FPC.registerFarmerId = RFP.id AND FPC.cropId = CV.id AND CV.cropGroupId = CG.id AND RFP.id = ?
         `;
 
-
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-
                 return reject(err);
             }
             resolve(results);
@@ -350,7 +333,6 @@ exports.getFarmerCropsDetailsDao = (id) => {
 
 exports.getAllPaymentsDAO = (companyId, page, limit, fromDate, toDate, searchText, center) => {
 
-    console.log(toDate, fromDate)
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -455,11 +437,7 @@ exports.getAllPaymentsDAO = (companyId, page, limit, fromDate, toDate, searchTex
 
 exports.downloadPaymentReport = (fromDate, toDate, center, searchText, companyId) => {
 
-    // const companyId = req.user.companyId;
-    // console.log(companyId);
     return new Promise((resolve, reject) => {
-
-
         const params = [companyId];
         const countParams = [companyId];
         const totalParams = [companyId];
@@ -494,9 +472,6 @@ exports.downloadPaymentReport = (fromDate, toDate, center, searchText, companyId
             countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
             totalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
         }
-
-        console.log('this is', countParams);
-
 
         let dataSql = `
         SELECT 
@@ -533,8 +508,6 @@ exports.downloadPaymentReport = (fromDate, toDate, center, searchText, companyId
         GROUP BY rfp.id
       `;
 
-        console.log('Executing Count Query...');
-
         collectionofficer.query(dataSql, params, (err, results) => {
             if (err) {
                 return reject(err);
@@ -545,7 +518,7 @@ exports.downloadPaymentReport = (fromDate, toDate, center, searchText, companyId
 };
 
 
-exports.getAllCollectionDAO = (companyId, page, limit, fromDate, toDate, searchText, center ) => {
+exports.getAllCollectionDAO = (companyId, page, limit, fromDate, toDate, searchText, center) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -639,7 +612,6 @@ exports.getAllCollectionDAO = (companyId, page, limit, fromDate, toDate, searchT
         countSql += groupByClause + ") AS grouped_data"; // Close the subquery for count
         dataSql += groupByClause;
 
-        // Add ORDER BY and pagination to data query
         dataSql += `
             ORDER BY 
                 rfp.createdAt
@@ -757,21 +729,17 @@ exports.downloadCollectionReport = (fromDate, toDate, center, searchText, compan
                 rfp.createdAt
         `;
 
-        console.log('Executing Count Query...');
-
         collectionofficer.query(dataSql, dataParams, (err, results) => {
             if (err) {
                 return reject(err);
             }
             resolve(results);
-            console.log('this is results', results)
         });
     });
 };
 
 exports.getAllCenterPaymentsDAO = (page, limit, fromDate, toDate, centerId, searchText) => {
 
-    console.log(toDate, fromDate)
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -926,7 +894,6 @@ exports.downloadCenterPaymentReport = (fromDate, toDate, centerId, searchText) =
                 return reject(err);
             }
             resolve(results);
-            console.log(results);
         });
     });
 };
@@ -947,7 +914,6 @@ exports.getFarmerInvoiceDetailsDao = (invNo) => {
                 return reject(err);
             }
             resolve(results);
-            console.log('user data', results)
         });
     });
 };
@@ -968,7 +934,6 @@ exports.getFarmerCropsInvoiceDetailsDao = (invNo) => {
                 return reject(err);
             }
             resolve(results);
-            console.log('crop data', results)
         });
     });
 };
@@ -995,7 +960,6 @@ exports.checkOfficersForSameIrmIdDao = (userId) => {
 
 exports.getAllPaymentsForCCMDAO = (companyId, page, limit, fromDate, toDate, searchText, centerId, userId) => {
 
-    console.log(toDate, fromDate, userId)
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -1090,7 +1054,6 @@ exports.getAllPaymentsForCCMDAO = (companyId, page, limit, fromDate, toDate, sea
                     console.error('Error in data query:', dataErr);
                     return reject(dataErr);
                 }
-
                 resolve({ items: dataResults, total });
             });
         });
@@ -1186,7 +1149,6 @@ exports.getAllCollectionsForCCMDAO = (companyId, page, limit, fromDate, toDate, 
         countSql += groupByClause + ") AS grouped_data"; // Close the subquery for count
         dataSql += groupByClause;
 
-        // Add ORDER BY and pagination to data query
         dataSql += `
             ORDER BY 
                 rfp.createdAt
@@ -1254,9 +1216,6 @@ exports.downloadPaymentReportForCCM = (fromDate, toDate, centerId, searchText, c
             totalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
         }
 
-        console.log('this is', countParams);
-
-
         let dataSql = `
         SELECT 
           invNo AS grnNumber,
@@ -1291,8 +1250,6 @@ exports.downloadPaymentReportForCCM = (fromDate, toDate, centerId, searchText, c
         ${whereClause}
         GROUP BY rfp.id
       `;
-
-        console.log('Executing Count Query...');
 
         collectionofficer.query(dataSql, params, (err, results) => {
             if (err) {
@@ -1377,21 +1334,16 @@ exports.downloadCollectionReportForCCM = (fromDate, toDate, centerId, searchText
         `;
 
         dataSql += groupByClause;
-
-        // Add ORDER BY and pagination to data query
         dataSql += `
             ORDER BY 
                 rfp.createdAt
         `;
-
-        console.log('Executing Count Query...');
 
         collectionofficer.query(dataSql, dataParams, (err, results) => {
             if (err) {
                 return reject(err);
             }
             resolve(results);
-            console.log('this is results', results)
         });
     });
 };

@@ -1,4 +1,3 @@
-//const ComplaintValidate = require('../validations/Complaints-validation')
 const DashboardDAO = require('../dao/Dashboard-dao');
 
 exports.getOfficerCount = async (req, res) => {
@@ -8,10 +7,6 @@ exports.getOfficerCount = async (req, res) => {
     const COOCount = await DashboardDAO.getCollectionOfficerCountDetails(centerId);
     const CUOCount = await DashboardDAO.getCustomerOfficerCountDetails(centerId);
     const activities = await DashboardDAO.getActivityDetails();
-
-    console.log('====================================');
-    console.log( CUOCount);
-    console.log('====================================');
 
     res.json({ COOCount, CUOCount, activities });
   } catch (err) {
