@@ -6,8 +6,8 @@ exports.getAllOfficersDAO = (centerId, companyId, userId, role, page, limit, sea
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM collectionofficer Coff, company Com 
-            WHERE Coff.companyId = Com.id AND Coff.empId NOT LIKE 'CUO%' AND Coff.centerId = ? 
+            FROM collectionofficer Coff, company Com, collectioncenter CEN
+            WHERE Coff.companyId = Com.id AND Coff.centerId = CEN.id AND Coff.empId NOT LIKE 'CUO%' AND Coff.empId NOT LIKE 'CCH%' AND companyId = ?  
         `;
 
         let dataSql = `
@@ -90,13 +90,13 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
         const offset = (page - 1) * limit;
 
         let countSql = `
-            SELECT RFP.id, U.firstName, U.lastName, U.NICnumber, SUM(FPC.gradeAprice)+SUM(FPC.gradeBprice)+SUM(FPC.gradeCprice) AS totalAmount
+            SELECT COUNT(*) AS total
             FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U
             WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND RFP.collectionOfficerId = ?
         `;
 
         let dataSql = `
-            SELECT RFP.id, U.firstName, U.lastName, U.NICnumber, SUM(FPC.gradeAprice)+SUM(FPC.gradeBprice)+SUM(FPC.gradeCprice) AS totalAmount
+            SELECT RFP.id, U.firstName, U.lastName, U.NICnumber, SUM(FPC.gradeAprice*gradeAquan)+SUM(FPC.gradeBprice*gradeBquan)+SUM(FPC.gradeCprice*gradeCquan) AS totalAmount
             FROM farmerpaymentscrops FPC, registeredfarmerpayments RFP, plant_care.users U
             WHERE FPC.registerFarmerId = RFP.id AND RFP.userId = U.id AND RFP.collectionOfficerId = ?
             
@@ -107,7 +107,9 @@ exports.getCollectionFarmerLisDao = (officerId, page, limit, searchText, date) =
         const dataParams = [officerId];
 
         if (date) {
-            dataSql += " AND DATE(FPC.createdAt) = ?";
+            console.log(date);
+            
+            dataSql += " AND DATE(FPC.createdAt) = ? ";
             dataParams.push(date.toISOString().slice(0, 10));
         }
 

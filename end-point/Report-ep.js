@@ -77,7 +77,7 @@ exports.getDailyReport = async (req, res) => {
       return res.json({ message: "No news items found", data: result });
     }
 
-    res.json(result);
+    res.json({ message: "Repot Dajta found", data: result });
   } catch (err) {
     if (err.isJoi) {
       // Validation error
