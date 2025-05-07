@@ -5,6 +5,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const uploadFileToS3 = require('../middlewares/s3upload');
 const deleteFromS3 = require('../middlewares/s3delete');
+const path = require("path");
 
 exports.GetAllCenterDAO = () => {
     return new Promise((resolve, reject) => {
@@ -379,7 +380,7 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
         doc.on('data', (chunk) => chunks.push(chunk));
 
         // Add watermark (if needed)
-        const watermarkPath = './assets/bg.png';
+        const watermarkPath = path.resolve(__dirname, "../assets/bg.png");
         doc.opacity(0.2)
             .image(watermarkPath, 100, 300, { width: 400 })
             .opacity(1);
@@ -431,7 +432,7 @@ exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEngli
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
             port: 465,
-            secure: false,
+            secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
