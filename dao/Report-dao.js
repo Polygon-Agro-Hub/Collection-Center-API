@@ -1,6 +1,6 @@
 const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
 
-exports.getAllOfficersDAO = (centerId, companyId, userId, role, page, limit, searchText) => {
+exports.getAllOfficersDAO = (centerId, companyId, userId, role, page, limit, searchText, center) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -30,6 +30,14 @@ exports.getAllOfficersDAO = (centerId, companyId, userId, role, page, limit, sea
             countParams.push(centerId, userId, userId);
             dataParams.push(centerId, userId, userId);
         }
+
+        if (center) {
+            countSql += " AND Coff.centerId = ?";
+            dataSql += " AND Coff.centerId = ?";
+            countParams.push(center);
+            dataParams.push(center);
+         }
+
 
 
 

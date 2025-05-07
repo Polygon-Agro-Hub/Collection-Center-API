@@ -6,12 +6,12 @@ exports.getAllCollectionReportsDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   try {
     const validatedQuery = await ReportValidate.getAllOfficersSchema.validateAsync(req.query);
-    const { page, limit, searchText, role } = validatedQuery;
+    const { page, limit, searchText, role, center } = validatedQuery;
     const centerId = req.user.centerId;
     const companyId = req.user.companyId;
     const userId = req.user.userId
 
-    const { items, total } = await ReportDAO.getAllOfficersDAO(centerId, companyId, userId, role, page, limit, searchText);
+    const { items, total } = await ReportDAO.getAllOfficersDAO(centerId, companyId, userId, role, page, limit, searchText, center);
 
     return res.status(200).json({ items, total });
   } catch (error) {
