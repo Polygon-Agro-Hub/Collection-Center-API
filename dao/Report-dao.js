@@ -278,7 +278,7 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
             SELECT 
                 DATE(RFP.createdAt) AS ReportDate, 
                 SUM(FPC.gradeAquan) + SUM(FPC.gradeBquan) + SUM(FPC.gradeCquan) AS TotalQty, 
-                COUNT(DISTINCT RFP.userId) AS TotalFarmers
+                COUNT(RFP.userId) AS TotalFarmers
             FROM 
                 registeredfarmerpayments RFP
             JOIN 
@@ -299,6 +299,8 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
                 return reject(err);
             }
             resolve(results);
+            console.log(results);
+            
         });
     });
 };
