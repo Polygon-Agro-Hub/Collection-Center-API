@@ -517,10 +517,12 @@ exports.getCenterTarget = async (req, res) => {
       res.json({ items: [], message: "No center found" })
     }
 
-    const { resultTarget } = await TargetDAO.getCenterTargetDAO(companyCenterId, status, searchText);
+    const { resultTarget } = await TargetDAO.getCenterTargetDAO(companyCenterId, status, searchText, centerId);
+    console.log('this is', resultTarget);
     return res.status(200).json({
       items: resultTarget
     });
+    
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
