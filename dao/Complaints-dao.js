@@ -33,8 +33,8 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
         }
 
         if (status) {
-            countSql += ` AND OC.status = ? `;
-            dataSql += ` AND OC.status = ? `;
+            countSql += ` AND OC.CCMStatus = ? `;
+            dataSql += ` AND OC.CCMStatus = ? `;
             countParams.push(status);
             dataParams.push(status);
 
@@ -149,8 +149,8 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
         }
 
         if (status) {
-            countSql += ` AND OC.status = ? `;
-            dataSql += ` AND OC.status = ? `;
+            countSql += ` AND OC.CCMStatus = ? `;
+            dataSql += ` AND OC.CCMStatus = ? `;
             countParams.push(status);
             dataParams.push(status);
 
@@ -275,8 +275,8 @@ exports.getAllRecivedCCHComplainDao = (companyId, page, limit, status, searchTex
         }
 
         if (status) {
-            countSql += ` AND OC.status = ? `;
-            dataSql += ` AND OC.status = ? `;
+            countSql += ` AND OC.CCHStatus = ? `;
+            dataSql += ` AND OC.CCHStatus = ? `;
             countParams.push(status);
             dataParams.push(status);
 
@@ -323,7 +323,7 @@ exports.getAllSendCCHComplainDao = (userId, companyId, page, limit, status, empt
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCHStatus AS status, OC.createdAt, OC.reply, COF.empId
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCHStatus AS status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND OC.complainAssign = "Admin" AND COF.companyId = ?
         `;
@@ -341,8 +341,8 @@ exports.getAllSendCCHComplainDao = (userId, companyId, page, limit, status, empt
         }
 
         if (status) {
-            countSql += ` AND OC.status = ? `;
-            dataSql += ` AND OC.status = ? `;
+            countSql += ` AND OC.CCHStatus = ? `;
+            dataSql += ` AND OC.CCHStatus = ? `;
             countParams.push(status);
             dataParams.push(status);
 
