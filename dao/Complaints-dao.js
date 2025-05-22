@@ -136,6 +136,12 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" 
         `;
 
+
+        countSql += ` AND COF.companyId = ? `;
+        dataSql += ` AND COF.companyId = ? `;
+        countParams.push(companyId);
+        dataParams.push(companyId);
+
         if (searchText) {
             const searchCondition = `
                 AND (
@@ -158,15 +164,15 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
 
         if (emptype) {
             if (emptype === 'Own') {
-                countSql += ` AND COF.irmId = ? `;
-                dataSql += ` AND COF.irmId = ? `;
+                countSql += ` AND OC.officerId = ? `;
+                dataSql += ` AND OC.officerId = ? `;
                 countParams.push(userId);
                 dataParams.push(userId);
             } else if (emptype === 'Other') {
-                countSql += ` AND COF.companyId = ? `;
-                dataSql += ` AND COF.companyId = ? `;
-                countParams.push(companyId);
-                dataParams.push(companyId);
+                countSql += ` AND OC.officerId != ? `;
+                dataSql += ` AND OC.officerId != ? `;
+                countParams.push(userId);
+                dataParams.push(userId);
             }
 
         }
