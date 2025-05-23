@@ -9,10 +9,9 @@ exports.getCollectionOfficerCountDetails = (id) => {
             GROUP BY jobRole 
         `;
 
-        // Pass the `id` as the parameter to the query
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                return reject(err); // Reject the promise if an error occurs
+                return reject(err); 
             }
 
             let count;
@@ -22,7 +21,7 @@ exports.getCollectionOfficerCountDetails = (id) => {
                 count = results[0]
             }
 
-            resolve(count); // Resolve with the query results
+            resolve(count); 
         });
     });
 };
@@ -36,10 +35,9 @@ exports.getCustomerOfficerCountDetails = (id) => {
             GROUP BY jobRole 
         `;
 
-        // Pass the `id` as the parameter to the query
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
-                return reject(err); // Reject the promise if an error occurs
+                return reject(err); 
             }
             let count;
             if (results.length === 0) {
@@ -48,7 +46,7 @@ exports.getCustomerOfficerCountDetails = (id) => {
                 count = results[0]
             }
 
-            resolve(count); // Resolve with the query results
+            resolve(count); 
         });
     });
 };
@@ -61,20 +59,10 @@ exports.getActivityDetails = () => {
         WHERE MRP.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MRP.price != MRP.updatedPrice
         `;
 
-        // Pass the `id` as the parameter to the query
         collectionofficer.query(sql, (err, results) => {
             if (err) {
-                return reject(err); // Reject the promise if an error occurs
+                return reject(err); 
             }
-            // const response = results.map(row => ({
-            //     price: row.price,
-            //     updatedPrice: row.updatedPrice,
-            //     updateAt: row.updateAt,
-            //     grade: row.grade,
-            //     varietyName: row.varietyName,
-            //     cropName: row.cropName,
-            // }));
-
             resolve(results);
         });
     });
@@ -123,7 +111,7 @@ exports.getChartDetails = (centerId, filter) => {
 
         collectionofficer.query(sql, [centerId], (err, results) => {
             if (err) {
-                return reject(err); // Reject the promise if an error occurs
+                return reject(err); 
             }
 
             resolve(results);

@@ -11,7 +11,6 @@ router.get(
     TargetEP.getAllCropCatogory
 )
 
-//used
 router.get(
     "/get-daily-target",
     authMiddleware,
@@ -42,7 +41,6 @@ router.get(
     TargetEP.getOfficerDetails
 )
 
-//dao missing
 router.get(
     '/get-all-price',
     authMiddleware,
@@ -61,7 +59,6 @@ router.get(
     TargetEP.getTargetVerity
 )
 
-//used
 router.post(
     '/assing-officer-target',
     authMiddleware,

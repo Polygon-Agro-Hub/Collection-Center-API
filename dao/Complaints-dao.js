@@ -33,8 +33,8 @@ exports.getAllRecivedComplainDao = (userId, page, limit, status, searchText) => 
         }
 
         if (status) {
-            countSql += ` AND OC.status = ? `;
-            dataSql += ` AND OC.status = ? `;
+            countSql += ` AND OC.CCMStatus = ? `;
+            dataSql += ` AND OC.CCMStatus = ? `;
             countParams.push(status);
             dataParams.push(status);
 
@@ -136,6 +136,12 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" 
         `;
 
+
+        countSql += ` AND COF.companyId = ? `;
+        dataSql += ` AND COF.companyId = ? `;
+        countParams.push(companyId);
+        dataParams.push(companyId);
+
         if (searchText) {
             const searchCondition = `
                 AND (
@@ -149,8 +155,8 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
         }
 
         if (status) {
-            countSql += ` AND OC.status = ? `;
-            dataSql += ` AND OC.status = ? `;
+            countSql += ` AND OC.CCMStatus = ? `;
+            dataSql += ` AND OC.CCMStatus = ? `;
             countParams.push(status);
             dataParams.push(status);
 
@@ -158,15 +164,15 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
 
         if (emptype) {
             if (emptype === 'Own') {
-                countSql += ` AND COF.irmId = ? `;
-                dataSql += ` AND COF.irmId = ? `;
+                countSql += ` AND OC.officerId = ? `;
+                dataSql += ` AND OC.officerId = ? `;
                 countParams.push(userId);
                 dataParams.push(userId);
             } else if (emptype === 'Other') {
-                countSql += ` AND COF.companyId = ? `;
-                dataSql += ` AND COF.companyId = ? `;
-                countParams.push(companyId);
-                dataParams.push(companyId);
+                countSql += ` AND OC.officerId != ? `;
+                dataSql += ` AND OC.officerId != ? `;
+                countParams.push(userId);
+                dataParams.push(userId);
             }
 
         }
@@ -199,10 +205,10 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
 exports.addComplaintDao = (officerId, category, complaint) => {
     return new Promise((resolve, reject) => {
         const currentDate = new Date();
-        const year = currentDate.getFullYear().toString().slice(-2); 
-        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); 
-        const day = currentDate.getDate().toString().padStart(2, '0'); 
-        const datePart = `${year}${month}${day}`; 
+        const year = currentDate.getFullYear().toString().slice(-2);
+        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = currentDate.getDate().toString().padStart(2, '0');
+        const datePart = `${year}${month}${day}`;
         const sqlGetMaxRefNo = `
             SELECT MAX(refNo) as maxRefNo FROM officercomplains 
             WHERE refNo LIKE ?;
@@ -214,11 +220,11 @@ exports.addComplaintDao = (officerId, category, complaint) => {
                 return reject(err);
             }
 
-            let nextSequence = 1; 
+            let nextSequence = 1;
             if (results && results[0] && results[0].maxRefNo) {
                 const lastRefNo = results[0].maxRefNo;
-                const lastSequence = parseInt(lastRefNo.slice(-4)); 
-                nextSequence = lastSequence + 1; 
+                const lastSequence = parseInt(lastRefNo.slice(-4));
+                nextSequence = lastSequence + 1;
             }
 
             const refNo = `${refNoPrefix}${nextSequence.toString().padStart(4, '0')}`;
@@ -275,8 +281,8 @@ exports.getAllRecivedCCHComplainDao = (companyId, page, limit, status, searchTex
         }
 
         if (status) {
-            countSql += ` AND OC.status = ? `;
-            dataSql += ` AND OC.status = ? `;
+            countSql += ` AND OC.CCHStatus = ? `;
+            dataSql += ` AND OC.CCHStatus = ? `;
             countParams.push(status);
             dataParams.push(status);
 
@@ -323,7 +329,7 @@ exports.getAllSendCCHComplainDao = (userId, companyId, page, limit, status, empt
         `;
 
         let dataSql = `
-            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCHStatus AS status, OC.createdAt, OC.reply, COF.empId
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCHStatus AS status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND OC.complainAssign = "Admin" AND COF.companyId = ?
         `;
@@ -341,8 +347,8 @@ exports.getAllSendCCHComplainDao = (userId, companyId, page, limit, status, empt
         }
 
         if (status) {
-            countSql += ` AND OC.status = ? `;
-            dataSql += ` AND OC.status = ? `;
+            countSql += ` AND OC.CCHStatus = ? `;
+            dataSql += ` AND OC.CCHStatus = ? `;
             countParams.push(status);
             dataParams.push(status);
 
@@ -410,10 +416,10 @@ exports.forwordComplaintToAdminDao = (id) => {
 exports.addComplaintCCHDao = (officerId, category, complaint) => {
     return new Promise((resolve, reject) => {
         const currentDate = new Date();
-        const year = currentDate.getFullYear().toString().slice(-2); 
-        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0'); 
-        const day = currentDate.getDate().toString().padStart(2, '0'); 
-        const datePart = `${year}${month}${day}`; 
+        const year = currentDate.getFullYear().toString().slice(-2);
+        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = currentDate.getDate().toString().padStart(2, '0');
+        const datePart = `${year}${month}${day}`;
         const sqlGetMaxRefNo = `
             SELECT MAX(refNo) as maxRefNo FROM officercomplains 
             WHERE refNo LIKE ?;
@@ -425,11 +431,11 @@ exports.addComplaintCCHDao = (officerId, category, complaint) => {
                 return reject(err);
             }
 
-            let nextSequence = 1; 
+            let nextSequence = 1;
             if (results && results[0] && results[0].maxRefNo) {
                 const lastRefNo = results[0].maxRefNo;
-                const lastSequence = parseInt(lastRefNo.slice(-4)); 
-                nextSequence = lastSequence + 1; 
+                const lastSequence = parseInt(lastRefNo.slice(-4));
+                nextSequence = lastSequence + 1;
             }
 
             const refNo = `${refNoPrefix}${nextSequence.toString().padStart(4, '0')}`;
@@ -467,8 +473,6 @@ exports.getAllCollectiOfficerCategoryDao = () => {
             if (err) {
                 return reject(err);
             }
-            console.log(results);
-            
             resolve(results);
         });
     });

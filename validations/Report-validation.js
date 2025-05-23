@@ -5,6 +5,7 @@ exports.getAllOfficersSchema = Joi.object({
     limit: Joi.number().integer().min(1).max(100).default(10).optional(),
     searchText: Joi.string().allow('').optional(),
     role: Joi.string().optional(),
+    center: Joi.number().integer().optional(),
 
 });
 
