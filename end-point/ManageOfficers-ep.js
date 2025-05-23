@@ -249,7 +249,6 @@ exports.getOfficerById = async (req, res) => {
   }
 };
 
-
 exports.updateCollectionOfficer = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(`${fullUrl}`);
@@ -264,14 +263,14 @@ exports.updateCollectionOfficer = async (req, res) => {
     const officerData = JSON.parse(req.body.officerData)
     console.log('this is', officerData.nic)
 
-    // const existingNic = await ManageOfficerDAO.checkExistingNic(officerData.nic);
-    // if (existingNic) {
-    //   console.log('exisit')
-    //   return res.status(400).json({ 
-    //     status: false, 
-    //     message: "nic already in use." 
-    //   });
-    // }
+    const existingNic = await ManageOfficerDAO.checkExistingNic(officerData.nic);
+    if (existingNic) {
+      console.log('exisit')
+      return res.status(400).json({ 
+        status: false, 
+        message: "nic already in use." 
+      });
+    }
 
     await deleteFromS3(officerData.previousImage);
     const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
