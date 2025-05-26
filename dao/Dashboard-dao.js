@@ -73,27 +73,27 @@ exports.getChartDetails = (centerId, filter) => {
         let sql;
         if (filter === 'week') {
             sql = `
-                SELECT DAYNAME(RFP.createdAt) AS date,  -- Day name (e.g., Monday)
+                SELECT DAYNAME(RFP.createdAt) AS date,
                 SUM(FPC.gradeAquan) + SUM(FPC.gradeBquan) + SUM(FPC.gradeCquan) AS totCount
-                FROM registeredfarmerpayments RFP
-                JOIN farmerpaymentscrops FPC ON FPC.registerFarmerId = RFP.id
-                JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
-                WHERE COF.centerId = ?
-                AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)  -- Last 7 days
-                GROUP BY DAYNAME(RFP.createdAt)
-                ORDER BY RFP.createdAt
+         FROM registeredfarmerpayments RFP
+         JOIN farmerpaymentscrops FPC ON FPC.registerFarmerId = RFP.id
+         JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
+         WHERE COF.centerId = ?
+         AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) 
+         GROUP BY DAYNAME(RFP.createdAt), DAYOFWEEK(RFP.createdAt)
+         ORDER BY DAYOFWEEK(RFP.createdAt)
             `;
         } else if (filter === 'month') {
             sql = `
-                SELECT DAY(RFP.createdAt) AS date,  -- Day number (e.g., 1, 2, 3, ...)
+                SELECT DAY(RFP.createdAt) AS date, 
                 SUM(FPC.gradeAquan) + SUM(FPC.gradeBquan) + SUM(FPC.gradeCquan) AS totCount
                 FROM registeredfarmerpayments RFP
                 JOIN farmerpaymentscrops FPC ON FPC.registerFarmerId = RFP.id
                 JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
                 WHERE COF.centerId = ?
-                AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)  -- Last 30 days
+                AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) 
                 GROUP BY DAY(RFP.createdAt)
-                ORDER BY RFP.createdAt
+                ORDER BY DAY(RFP.createdAt)
             `;
         } else if (filter === 'year') {
             sql = `
@@ -104,11 +104,10 @@ exports.getChartDetails = (centerId, filter) => {
                 JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
                 WHERE COF.centerId = ?
                 AND RFP.createdAt >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-                GROUP BY MONTHNAME(RFP.createdAt)
+                GROUP BY MONTHNAME(RFP.createdAt), YEAR(RFP.createdAt), MONTH(RFP.createdAt)
                 ORDER BY YEAR(RFP.createdAt), MONTH(RFP.createdAt)
             `;
         }
-
         collectionofficer.query(sql, [centerId], (err, results) => {
             if (err) {
                 return reject(err); 

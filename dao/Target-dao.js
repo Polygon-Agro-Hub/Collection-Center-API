@@ -1258,7 +1258,7 @@ exports.getExsistVerityTargetDao = (target, userId) => {
 exports.getCenterTargetDAO = (companyCenterId, status, searchText) => {
     return new Promise((resolve, reject) => {
         let targetSql = `
-        SELECT 
+        SELECT
             dt.id, 
             dt.companyCenterId, 
             cv.varietyNameEnglish, 
@@ -1266,10 +1266,13 @@ exports.getCenterTargetDAO = (companyCenterId, status, searchText) => {
             dt.grade, 
             dt.target, 
             dt.complete,
-            dt.date 
+            dt.date,
+            coc.regCode
         FROM collection_officer.dailytarget dt
         LEFT JOIN plant_care.cropvariety cv ON dt.varietyId = cv.id
         LEFT JOIN plant_care.cropgroup cg ON cv.cropGroupId = cg.id
+        LEFT JOIN collection_officer.companycenter cc ON dt.companyCenterId = cc.id
+        LEFT JOIN collection_officer.collectioncenter coc ON cc.centerId = coc.id
         WHERE dt.companyCenterId = ? AND DATE(dt.date) = CURDATE()
         `;
 

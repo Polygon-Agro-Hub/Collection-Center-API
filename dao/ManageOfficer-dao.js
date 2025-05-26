@@ -300,7 +300,6 @@ exports.getAllCompanyNamesDao = () => {
         const sql = `
             SELECT id, companyNameEnglish
             FROM company
-            GROUP BY companyNameEnglish
         `;
         collectionofficer.query(sql, (err, results) => {
             if (err) {
@@ -1347,3 +1346,16 @@ exports.updateVehicleRegistratinDao = (data) => {
         });
     });
 };
+
+exports.checkExistingNic = (nic) => {
+    return new Promise((resolve, reject) => {
+        const sql = "SELECT * FROM collection_officer WHERE nic = ?";
+        collection_officer.query(sql, [nic], (err, results) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(results[0]);
+            }
+        });
+    });
+  };
