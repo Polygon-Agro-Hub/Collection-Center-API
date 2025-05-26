@@ -300,7 +300,6 @@ exports.getAllCompanyNamesDao = () => {
         const sql = `
             SELECT id, companyNameEnglish
             FROM company
-            GROUP BY companyNameEnglish
         `;
         collectionofficer.query(sql, (err, results) => {
             if (err) {
