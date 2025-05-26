@@ -149,6 +149,12 @@ exports.deleteOfficer = async (req, res) => {
   try {
 
     const { id } = await ManageOfficerValidate.deleteOfficerSchema.validateAsync(req.params);
+    const officerData = await ManageOfficerDAO.getOfficerByIdDAO(id);
+    console.log('officerData', officerData);
+    await deleteFromS3(officerData.collectionOfficer.image);
+    await deleteFromS3(officerData.collectionOfficer.QRcode);
+    
+
     const results = await ManageOfficerDAO.DeleteOfficerDao(id);
 
     if (results.affectedRows > 0) {
