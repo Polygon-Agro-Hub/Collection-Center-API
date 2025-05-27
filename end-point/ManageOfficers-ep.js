@@ -262,20 +262,28 @@ exports.updateCollectionOfficer = async (req, res) => {
     const { id } = req.params;
     console.log(id);
 
-    if (!req.body.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
+    // if (!req.body.file) {
+    //   return res.status(400).json({ error: "No file uploaded" });
+    // }
+
+    console.log(req.body.file);
 
     const officerData = JSON.parse(req.body.officerData)
     console.log('this is', officerData.nic)
 
-    const existingNic = await ManageOfficerDAO.checkExistingNic(officerData.nic);
+    const existingNic = await ManageOfficerDAO.getExistingNic(officerData.nic, id);
     if (existingNic) {
       console.log('exisit')
-      return res.status(400).json({ 
+      return res.status(409).json({ 
         status: false, 
         message: "nic already in use." 
       });
+    }
+
+    const existingEmail = await ManageOfficerDAO.getExistingEmail(officerData.email, id);
+    if (existingEmail) {
+      console.log('Email exists');
+      return res.status(410).json({ status: false, message: "Email already exists for another collection officer" });
     }
 
     await deleteFromS3(officerData.previousImage);
@@ -584,13 +592,31 @@ exports.CCHcreateOfficer = async (req, res) => {
 
 exports.CCHupdateCollectionOfficer = async (req, res) => {
   try {
+
+    console.log(req.body);
     const { id } = req.params;
+
     let result;
     if (!req.body.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const officerData = JSON.parse(req.body.officerData)
+    const officerData = JSON.parse(req.body.officerData);
+    const nic = officerData.nic;
+    const email = officerData.email;
+    console.log(officerData);
+    const existingNic = await ManageOfficerDAO.getExistingNic(nic, id); // assuming you'll check by NIC and exclude by ID
+    console.log('starts functions')
+    if (existingNic) {
+      console.log('NIC exists');
+      return res.status(409).json({ status: false, message: "NIC already exists for another collection officer" });
+    }
+    const existingEmail = await ManageOfficerDAO.getExistingEmail(email, id);
+    if (existingEmail) {
+      console.log('Email exists');
+      return res.status(410).json({ status: false, message: "Email already exists for another collection officer" });
+    }
+
     if (req.body.file === "null") {
       result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, officerData.previousImage);
 
@@ -699,3 +725,36 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
     res.status(500).json({ error: 'Failed to update collection officer details' });
   }
 };
+
+// exports.CCHupdateCollectionOfficer = async (req, res) => {
+//   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+//   console.log(fullUrl);
+//   try {
+//     const { id } = req.params;
+//     const { nic } = req.body;
+
+//     if (!req.body.file) {
+//       return res.status(400).json({ status: false, message: "No file uploaded" });
+//     }
+
+//     // Check for duplicate NIC (excluding current officer)
+//     const existingOfficer = await ManageOfficerDAO.getExistingEmail(nic); // assuming you'll check by NIC and exclude by ID
+//     console.log('starts functions')
+//     if (existingOfficer) {
+//       console.log('NIC exists');
+//       return res.status(409).json({ status: false, message: "NIC already exists for another collection officer" });
+//     }else {
+//       return res.status(409).json({ status: true, message: "this is working" });
+//     }
+
+//     // TODO: Add your update logic here if needed
+//     // Example: await ManageOfficerDAO.updateOfficer(id, req.body);
+
+//     // return res.status(200).json({ status: true, message: "Collection officer details updated successfully" });
+//   } catch (err) {
+//     console.error('Error updating collection officer details:', err);
+//     return res.status(500).json({ status: false, message: "Failed to update collection officer details" });
+//   }
+// };
+
+

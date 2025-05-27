@@ -1349,8 +1349,8 @@ exports.updateVehicleRegistratinDao = (data) => {
 
 exports.checkExistingNic = (nic) => {
     return new Promise((resolve, reject) => {
-        const sql = "SELECT * FROM collection_officer WHERE nic = ?";
-        collection_officer.query(sql, [nic], (err, results) => {
+        const sql = "SELECT * FROM collectionofficer WHERE nic = ?";
+        collectionofficer.query(sql, [nic], (err, results) => {
             if (err) {
                 reject(err);
             } else {
@@ -1358,4 +1358,56 @@ exports.checkExistingNic = (nic) => {
             }
         });
     });
-  };
+};
+
+
+exports.getExistingNic = (nic, id) => {
+    return new Promise((resolve, reject) => {
+        const dataSql = `
+            SELECT id 
+            FROM collection_officer.collectionofficer co 
+            WHERE co.nic = ? AND co.id != ?
+        `;
+        const dataParams = [nic, id];
+
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length > 0) {
+                // A different record with the same NIC exists
+                return resolve(results[0].id);
+            }
+
+            // No duplicate NIC found (or only found the current user's NIC)
+            resolve(null);
+        });
+    });
+};
+
+
+exports.getExistingEmail = (email, id) => {
+    return new Promise((resolve, reject) => {
+        const dataSql = `
+            SELECT id 
+            FROM collection_officer.collectionofficer co 
+            WHERE co.email = ? AND co.id != ?
+        `;
+        const dataParams = [email, id];
+
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length > 0) {
+                // A different record with the same NIC exists
+                return resolve(results[0].id);
+            }
+
+            // No duplicate NIC found (or only found the current user's NIC)
+            resolve(null);
+        });
+    });
+};
