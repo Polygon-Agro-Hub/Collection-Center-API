@@ -517,6 +517,8 @@ exports.getCenterTarget = async (req, res) => {
       res.json({ items: [], message: "No center found" })
     }
 
+    console.log(companyCenterId);
+
     const { resultTarget } = await TargetDAO.getCenterTargetDAO(companyCenterId, status, searchText, centerId);
     console.log('this is', resultTarget);
     return res.status(200).json({

@@ -809,7 +809,7 @@ exports.getOfficerTargetDao = (userId, status, search) => {
                 ELSE OFT.target - OFT.complete
             END AS remaining
         FROM dailytarget DT, officertarget OFT, plant_care.cropgroup CG, plant_care.cropvariety CV, collectionofficer CO
-        WHERE OFT.officerId = ? AND DT.date = CURDATE() AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id AND OFT.officerId = CO.id
+        WHERE OFT.officerId = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id AND OFT.officerId = CO.id
     `;
 
         const params = [userId];
@@ -1006,8 +1006,8 @@ exports.getAllPriceDetailsDao = (companyId, centerId, page, limit, grade, search
 
         let dataSql = `
             SELECT MPS.id, CG.cropNameEnglish, CV.varietyNameEnglish,  MP.averagePrice, MP.grade, MPS.updatedPrice, MP.createdAt, CEN.centerName
-            FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG, collectioncenter CC, collectioncenter CEN
-            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.companyCenterId = CC.id AND CC.id = CEN.id AND MPS.companyCenterId = (SELECT id FROM companycenter WHERE companyId = ? AND centerId = ?)
+            FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG, companycenter CC, collectioncenter CEN
+            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.companyCenterId = CC.id AND CC.centerId = CEN.id AND MPS.companyCenterId = (SELECT id FROM companycenter WHERE companyId = ? AND centerId = ?)
         `;
 
         const countParams = [companyId, centerId];

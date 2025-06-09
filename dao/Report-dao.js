@@ -240,7 +240,7 @@ exports.dailyReportDao = (id, date) => {
         SELECT CV.id, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS gradeA, SUM(FPC.gradeBquan) AS gradeB, SUM(FPC.gradeCquan) AS gradeC, SUM(FPC.gradeAquan)+SUM(FPC.gradeBquan)+SUM(FPC.gradeCquan) AS total
         FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, plant_care.cropvariety CV
         WHERE FPC.registerFarmerId = RFP.id AND FPC.cropId = CV.id AND RFP.collectionOfficerId = ? AND DATE(FPC.createdAt) = ?
-        GROUP BY CV.id, CV.varietyNameEnglish
+        GROUP BY CV.id, CV.varietyNameEnglish ORDER BY CV.varietyNameEnglish ASC
         `;
 
         collectionofficer.query(sql, [id, date.toISOString().slice(0, 10)], (err, results) => {
