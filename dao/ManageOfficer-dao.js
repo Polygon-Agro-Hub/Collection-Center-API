@@ -1411,3 +1411,33 @@ exports.getExistingEmail = (email, id) => {
         });
     });
 };
+
+
+exports.ProfileImageBase64ByIdDAO = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                COF.image
+            FROM 
+                collectionofficer COF
+            LEFT JOIN 
+                company COM ON COF.companyId = COM.id
+            LEFT JOIN 
+                collectioncenter CEN ON COF.centerId = CEN.id
+            LEFT JOIN
+                vehicleregistration VR ON COF.id = VR.coId
+            WHERE 
+                COF.id = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            resolve({
+                results
+            });
+        });
+    });
+};

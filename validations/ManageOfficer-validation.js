@@ -42,3 +42,7 @@ exports.PassTargetValidationSchema = Joi.object({
     amount: Joi.number().required(),
 });
 
+exports.getProfileImageBase64ByIdSchema = Joi.object({
+    id: Joi.number().required(),
+})
+

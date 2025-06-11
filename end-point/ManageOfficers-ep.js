@@ -78,7 +78,7 @@ exports.createOfficer = async (req, res) => {
     return res.status(201).json({ message: "Collection Officer created successfully", status: true });
   } catch (error) {
     if (error.isJoi) {
-      
+
       return res.status(400).json({ error: error.details[0].message });
     }
 
@@ -153,7 +153,7 @@ exports.deleteOfficer = async (req, res) => {
     console.log('officerData', officerData);
     await deleteFromS3(officerData.collectionOfficer.image);
     await deleteFromS3(officerData.collectionOfficer.QRcode);
-    
+
 
     const results = await ManageOfficerDAO.DeleteOfficerDao(id);
 
@@ -245,6 +245,62 @@ exports.getOfficerById = async (req, res) => {
       return res.status(404).json({ error: "Collection Officer not found" });
     }
 
+    console.log(officerData);
+
+    // If image URL exists, fetch and convert to Base64
+    // if (officerData.collectionOfficer.image) {
+    //   try {
+    //     const imageUrl = officerData.collectionOfficer.image;
+
+    //     // Add validation to ensure URL is not undefined/null
+    //     if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
+    //       console.log('Image URL is invalid:', imageUrl);
+    //       officerData.collectionOfficer.base64Image = null;
+    //     } else {
+    //       console.log('Fetching image from URL:', imageUrl);
+
+    //       // Fetch the image using native fetch (Node 18+)
+    //       const response = await fetch(imageUrl);
+
+    //       // Check if request was successful
+    //       if (!response.ok) {
+    //         throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+    //       }
+
+    //       // Get image as ArrayBuffer
+    //       const buffer = await response.arrayBuffer();
+
+    //       // Convert to Base64
+    //       const base64Image = Buffer.from(buffer).toString('base64');
+
+    //       // Get MIME type from response headers (fallback to 'image/jpeg')
+    //       const mimeType = response.headers.get('content-type') || 'image/jpeg';
+
+    //       // Add Base64 data URL to officerData
+    //       officerData.collectionOfficer.base64Image = `data:${mimeType};base64,${base64Image}`;
+    //       console.log('Successfully converted image to base64');
+    //       console.log(officerData);
+    //     }
+    //   } catch (imageError) {
+    //     console.error('Error converting image to Base64:', imageError);
+    //     // Set base64Image to null if conversion fails
+    //     officerData.collectionOfficer.base64Image = null;
+    //   }
+    // } else {
+    //   // No image URL provided
+    //   officerData.collectionOfficer.base64Image = null;
+    // }
+
+    const responseData = { officerData };
+
+    // Convert to JSON string
+    const jsonString = JSON.stringify(responseData);
+
+    // Get byte size
+    const sizeInBytes = Buffer.byteLength(jsonString, 'utf8');
+
+    console.log(`Response size: ${sizeInBytes} bytes`);
+
     res.json({ officerData });
   } catch (err) {
     if (err.isJoi) {
@@ -274,9 +330,9 @@ exports.updateCollectionOfficer = async (req, res) => {
     const existingNic = await ManageOfficerDAO.getExistingNic(officerData.nic, id);
     if (existingNic) {
       console.log('exisit')
-      return res.status(409).json({ 
-        status: false, 
-        message: "nic already in use." 
+      return res.status(409).json({
+        status: false,
+        message: "nic already in use."
       });
     }
 
@@ -472,7 +528,7 @@ exports.getCCHOwnCenters = async (req, res) => {
 
 exports.getCenterManager = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-  try {   
+  try {
     const { id } = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
     const companyId = req.user.companyId
     const result = await ManageOfficerDAO.getCenterManagerDao(companyId, id);
@@ -756,5 +812,85 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
 //     return res.status(500).json({ status: false, message: "Failed to update collection officer details" });
 //   }
 // };
+
+
+exports.getProfileImageBase64ById = async (req, res) => {
+  try {
+    // const { id } = await ManageOfficerValidate.getProfileImageBase64ByIdSchema.validateAsync(req.params);
+    const { id } = req.params;
+    const {results} = await ManageOfficerDAO.ProfileImageBase64ByIdDAO(id);
+
+    if (!results) {
+      return res.status(404).json({ error: "Collection Officer not found" });
+    }
+
+    console.log(results);
+    const image = results[0].image
+    console.log(image);
+    let profileImageBase64 = '';
+
+    // If image URL exists, fetch and convert to Base64
+    if (image) {
+      try {
+        const imageUrl = image;
+
+        // Add validation to ensure URL is not undefined/null
+        if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null') {
+          console.log('Image URL is invalid:', imageUrl);
+          profileImageBase64 = null;
+        } else {
+          console.log('Fetching image from URL:', imageUrl);
+
+          // Fetch the image using native fetch (Node 18+)
+          const response = await fetch(imageUrl);
+
+          // Check if request was successful
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+          }
+
+          // Get image as ArrayBuffer
+          const buffer = await response.arrayBuffer();
+
+          // Convert to Base64
+          const base64Image = Buffer.from(buffer).toString('base64');
+
+          // Get MIME type from response headers (fallback to 'image/jpeg')
+          const mimeType = response.headers.get('content-type') || 'image/jpeg';
+
+          // Add Base64 data URL to officerData
+          profileImageBase64 = `data:${mimeType};base64,${base64Image}`;
+          console.log('Successfully converted image to base64');
+          console.log(profileImageBase64);
+        }
+      } catch (imageError) {
+        console.error('Error converting image to Base64:', imageError);
+        // Set base64Image to null if conversion fails
+        profileImageBase64 = null;
+      }
+    } else {
+      // No image URL provided
+      profileImageBase64 = null;
+    }
+
+    const responseData = { profileImageBase64 };
+
+    // Convert to JSON string
+    const jsonString = JSON.stringify(responseData);
+
+    // Get byte size
+    const sizeInBytes = Buffer.byteLength(jsonString, 'utf8');
+
+    console.log(`Response size: ${sizeInBytes} bytes`);
+
+    res.json({ profileImageBase64 });
+  } catch (err) {
+    if (err.isJoi) {
+      return res.status(400).json({ error: err.details[0].message });
+    }
+    console.error("Error executing query:", err);
+    res.status(500).send("An error occurred while fetching data.");
+  }
+};
 
 

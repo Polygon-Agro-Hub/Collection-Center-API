@@ -148,6 +148,12 @@ router.put(
     ManageOfficerEP.CCHupdateCollectionOfficer
 );
 
+router.get(
+    "/get-profile-image-base64-by-id/:id",
+    authMiddleware,
+    ManageOfficerEP.getProfileImageBase64ById
+);
+
 
 module.exports = router;
 
