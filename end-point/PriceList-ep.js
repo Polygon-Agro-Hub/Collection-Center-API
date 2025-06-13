@@ -43,12 +43,14 @@ exports.updatePrice = async (req, res) => {
 
 exports.getAllRequest = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl)
     try {
         const centerId = req.user.centerId
-
-
+        console.log(centerId);
         const { page, limit, grade, status, searchText } = await PriceListValidate.getRequestPriceSchema.validateAsync(req.query);
+        console.log(page, limit)
         const { items, total } = await PriceListDAO.getAllPriceRequestDao(centerId, page, limit, grade, status, searchText);
+        console.log(total)
 
         res.status(200).json({ items, total });
     } catch (error) {

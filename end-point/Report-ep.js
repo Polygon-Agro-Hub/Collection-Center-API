@@ -73,6 +73,8 @@ exports.getDailyReport = async (req, res) => {
 
     const result = await ReportDAO.dailyReportDao(id, date);
 
+    console.log(result);
+
     if (result.length === 0) {
       return res.json({ message: "No news items found", data: result });
     }
@@ -315,6 +317,7 @@ exports.downloadAllPayments = async (req, res) => {
 
 exports.downloadAllCollections = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl)
   try {
 
     const user = req.user
