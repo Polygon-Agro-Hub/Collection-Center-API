@@ -424,7 +424,7 @@ exports.addComplaintCCHDao = (officerId, category, complaint) => {
             SELECT MAX(refNo) as maxRefNo FROM officercomplains 
             WHERE refNo LIKE ?;
         `;
-        const refNoPrefix = `CC${datePart}`;
+        const refNoPrefix = `CCH${datePart}`;
 
         collectionofficer.query(sqlGetMaxRefNo, [`${refNoPrefix}%`], (err, results) => {
             if (err) {
@@ -452,6 +452,8 @@ exports.addComplaintCCHDao = (officerId, category, complaint) => {
                 if (err) {
                     return reject(err);
                 }
+                console.log(results);
+
                 resolve(results);
             });
         });
@@ -491,6 +493,41 @@ exports.CCHReplyComplainDao = (data) => {
                 return reject(err);
             }
             resolve(results);
+        });
+    });
+};
+
+
+exports.GetComplainTemplateDataDao = (id) => {
+    console.log('GetComplainTemplateDataDao called with id:', id);
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                CONCAT(COF.firstNameEnglish, ' ', COF.lastNameEnglish) AS EngName,
+                CONCAT(COF.firstNameSinhala, ' ', COF.lastNameSinhala) AS SinName,
+                CONCAT(COF.firstNameTamil, ' ', COF.lastNameTamil) AS TamName,
+                COM.companyNameEnglish,
+                COM.companyNameSinhala,
+                COM.companyNameTamil
+            FROM 
+                collectionofficer COF
+            LEFT JOIN 
+                company COM ON COF.companyId = COM.id  -- Assuming there's a companyId foreign key
+            WHERE 
+                COF.id = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                console.error('Database error in GetComplainTemplateDataDao:', err);
+                return reject(new Error('Failed to fetch template data'));
+            }
+
+            if (!results || results.length === 0) {
+                return resolve(null);  // Explicitly return null for no results
+            }
+
+            resolve(results[0]);  // Return first row since we're querying by ID
         });
     });
 };

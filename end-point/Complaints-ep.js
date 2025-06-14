@@ -24,13 +24,17 @@ exports.getAllRecivedComplain = async (req, res) => {
 exports.getRecivedComplainById = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     try {
+        const userId = req.user.userId
         const { id } = await ComplaintValidate.getparmasIdSchema.validateAsync(req.params);
         const result = await ComplaintDAO.GetReciveReplyByIdDao(id)
+        const templateData = await ComplaintDAO.GetComplainTemplateDataDao(userId)
+
+
         if (result.length === 0) {
-            return res.json({ message: "no data found!", status: false, data: result[0] })
+            return res.json({ message: "no data found!", status: false, data: result[0], template: templateData });
         }
 
-        res.status(200).json({ message: "Data found!", status: true, data: result[0] });
+        res.status(200).json({ message: "Data found!", status: true, data: result[0], template: templateData });
     } catch (error) {
         if (error.isJoi) {
             return res.status(400).json({ error: error.details[0].message });
@@ -54,7 +58,7 @@ exports.forwordComplaint = async (req, res) => {
         res.status(200).json({ message: "Complaint was forward to Center Head!", status: true });
     } catch (error) {
         if (error.isJoi) {
-           return res.status(400).json({ error: error.details[0].message });
+            return res.status(400).json({ error: error.details[0].message });
         }
 
         console.error("Error forword complaint:", error);
@@ -140,7 +144,7 @@ exports.getAllRecivedCCHComplain = async (req, res) => {
         return res.status(200).json({ items, total });
     } catch (error) {
         if (error.isJoi) {
-           return res.status(400).json({ error: error.details[0].message });
+            return res.status(400).json({ error: error.details[0].message });
         }
 
         console.error("Error fetching recived complaind:", error);
@@ -161,7 +165,7 @@ exports.getAllSentCCHComplaint = async (req, res) => {
         return res.status(200).json({ items, total, userId });
     } catch (error) {
         if (error.isJoi) {
-           return res.status(400).json({ error: error.details[0].message });
+            return res.status(400).json({ error: error.details[0].message });
         }
 
         console.error("Error fetching recived complaind:", error);
@@ -182,7 +186,7 @@ exports.forwordComplaintToAdmin = async (req, res) => {
         res.status(200).json({ message: "Complaint was forward to Agro World Admin!", status: true });
     } catch (error) {
         if (error.isJoi) {
-           return res.status(400).json({ error: error.details[0].message });
+            return res.status(400).json({ error: error.details[0].message });
         }
 
         console.error("Error forword complaint:", error);
@@ -218,20 +222,20 @@ exports.addComplaintCCH = async (req, res) => {
 exports.getAllCollectiOfficerCategory = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     try {
-      const result = await ComplaintDAO.getAllCollectiOfficerCategoryDao();
-  
-      return res.status(200).json(result);
+        const result = await ComplaintDAO.getAllCollectiOfficerCategoryDao();
+
+        return res.status(200).json(result);
     } catch (error) {
-      if (error.isJoi) {
-        return res.status(400).json({ error: error.details[0].message });
-      }
-      console.error("Error fetching collection officers:", error);
-      return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+        console.error("Error fetching collection officers:", error);
+        return res.status(500).json({ error: "An error occurred while fetching collection officers" });
     }
-  };
+};
 
 
-  exports.CCHReplyComplain = async (req, res) => {
+exports.CCHReplyComplain = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     try {
         const complain = await ComplaintValidate.replyComplainSchema.validateAsync(req.body)
