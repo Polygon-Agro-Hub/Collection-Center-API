@@ -299,8 +299,6 @@ exports.getMonthlyReportDao = (id, startDate, endDate) => {
                 return reject(err);
             }
             resolve(results);
-            console.log(results);
-
         });
     });
 };
@@ -487,7 +485,7 @@ exports.downloadPaymentReport = (fromDate, toDate, center, searchText, companyId
             invNo LIKE ?
           )
             `;
-            const searchPattern = `% ${ searchText }% `;
+            const searchPattern = `% ${searchText}% `;
             params.push(searchPattern, searchPattern, searchPattern, searchPattern);
             countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
             totalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
@@ -524,7 +522,7 @@ exports.downloadPaymentReport = (fromDate, toDate, center, searchText, companyId
           company c ON co.companyId = c.id
         LEFT JOIN
         plant_care.userbankdetails ub ON us.id = ub.userId
-        ${ whereClause }
+        ${whereClause}
         GROUP BY rfp.id
             `;
 
@@ -562,7 +560,7 @@ exports.getAllCollectionDAO = (companyId, page, limit, fromDate, toDate, searchT
             cc.centerName,
             cg.cropNameEnglish,
             cv.varietyNameEnglish
-                ${ baseQuery }
+                ${baseQuery}
             `;
 
         let dataSql = `
@@ -583,7 +581,7 @@ exports.getAllCollectionDAO = (companyId, page, limit, fromDate, toDate, searchT
                 IFNULL(fpc.gradeBprice, 0) * IFNULL(fpc.gradeBquan, 0) +
                 IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
             ) AS totalAmount
-            ${ baseQuery }
+            ${baseQuery}
             `;
 
         const countParams = [companyId, fromDate, toDate];
@@ -602,7 +600,7 @@ exports.getAllCollectionDAO = (companyId, page, limit, fromDate, toDate, searchT
                 `;
             countSql += searchCondition;
             dataSql += searchCondition;
-            const searchValue = `% ${ searchText } % `;
+            const searchValue = `% ${searchText} % `;
             countParams.push(
                 searchValue, searchValue,
                 searchValue, searchValue
@@ -704,7 +702,7 @@ exports.downloadCollectionReport = (fromDate, toDate, center, searchText, compan
                 IFNULL(fpc.gradeCquan, 0)
             ) AS totalQuan
 
-            ${ baseQuery }
+            ${baseQuery}
             `;
         const dataParams = [companyId, fromDate, toDate];
 
@@ -720,7 +718,7 @@ exports.downloadCollectionReport = (fromDate, toDate, center, searchText, compan
                 )
                 `;
             dataSql += searchCondition;
-            const searchValue = `% ${ searchText } % `;
+            const searchValue = `% ${searchText} % `;
             dataParams.push(
                 searchValue, searchValue,
                 searchValue, searchValue
@@ -816,7 +814,7 @@ exports.getAllCenterPaymentsDAO = (page, limit, fromDate, toDate, centerId, sear
                 `;
             countSql += searchCondition;
             dataSql += searchCondition;
-            const searchValue = `% ${ searchText } % `;
+            const searchValue = `% ${searchText} % `;
             countParams.push(searchValue, searchValue, searchValue, searchValue);
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
@@ -903,7 +901,7 @@ exports.downloadCenterPaymentReport = (fromDate, toDate, centerId, searchText) =
                 )
                 `;
             dataSql += searchCondition;
-            const searchValue = `% ${ searchText } % `;
+            const searchValue = `% ${searchText} % `;
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
@@ -1056,7 +1054,7 @@ exports.getAllPaymentsForCCMDAO = (companyId, page, limit, fromDate, toDate, sea
                 `;
             countSql += searchCondition;
             dataSql += searchCondition;
-            const searchValue = `% ${ searchText } % `;
+            const searchValue = `% ${searchText} % `;
             countParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
             dataParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
         }
@@ -1127,7 +1125,7 @@ exports.getAllCollectionsForCCMDAO = (companyId, page, limit, fromDate, toDate, 
                 cc.centerName,
                 cg.cropNameEnglish,
                 cv.varietyNameEnglish
-                ${ baseQuery }
+                ${baseQuery}
                 `;
 
         let dataSql = `
@@ -1148,7 +1146,7 @@ exports.getAllCollectionsForCCMDAO = (companyId, page, limit, fromDate, toDate, 
                     IFNULL(fpc.gradeBprice, 0) * IFNULL(fpc.gradeBquan, 0) +
                     IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
                 ) AS totalAmount
-            ${ baseQuery }
+            ${baseQuery}
                 `;
 
         const countParams = [companyId, fromDate, toDate, centerId, userId, userId];
@@ -1167,7 +1165,7 @@ exports.getAllCollectionsForCCMDAO = (companyId, page, limit, fromDate, toDate, 
                     `;
             countSql += searchCondition;
             dataSql += searchCondition;
-            const searchValue = `% ${ searchText } % `;
+            const searchValue = `% ${searchText} % `;
             countParams.push(
                 searchValue, searchValue,
                 searchValue, searchValue
@@ -1250,7 +1248,7 @@ exports.downloadPaymentReportForCCM = (fromDate, toDate, centerId, searchText, c
             invNo LIKE ?
           )
                     `;
-            const searchPattern = `% ${ searchText } % `;
+            const searchPattern = `% ${searchText} % `;
             params.push(searchPattern, searchPattern, searchPattern, searchPattern);
             countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
             totalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
@@ -1287,7 +1285,7 @@ exports.downloadPaymentReportForCCM = (fromDate, toDate, centerId, searchText, c
           company c ON co.companyId = c.id
         LEFT JOIN 
           plant_care.userbankdetails ub ON us.id = ub.userId
-        ${ whereClause }
+        ${whereClause}
         GROUP BY rfp.id
                 `;
 
@@ -1342,7 +1340,7 @@ exports.downloadCollectionReportForCCM = (fromDate, toDate, centerId, searchText
                     IFNULL(fpc.gradeCquan, 0)
                 ) AS totalQuan
 
-            ${ baseQuery }
+            ${baseQuery}
                 `;
         const dataParams = [companyId, fromDate, toDate, centerId, userId, userId];
 
@@ -1358,7 +1356,7 @@ exports.downloadCollectionReportForCCM = (fromDate, toDate, centerId, searchText
                 )
                     `;
             dataSql += searchCondition;
-            const searchValue = `% ${ searchText } % `;
+            const searchValue = `% ${searchText} % `;
             dataParams.push(
                 searchValue, searchValue,
                 searchValue, searchValue
