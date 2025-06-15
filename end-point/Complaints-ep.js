@@ -78,7 +78,7 @@ exports.replyComplain = async (req, res) => {
             return res.json({ message: "Reply Does not send!", status: false })
         }
 
-        res.status(200).json({ message: "Complaint Replyed!", status: true });
+        res.status(200).json({ message: "Complaint Replied!", status: true });
     } catch (error) {
         if (error.isJoi) {
             return res.status(400).json({ error: error.details[0].message });

@@ -127,7 +127,7 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
         let countSql = `
             SELECT COUNT(*) AS total
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
-            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" 
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH"
         `;
 
         let dataSql = `
@@ -137,10 +137,10 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
         `;
 
 
-        countSql += ` AND COF.companyId = ? `;
-        dataSql += ` AND COF.companyId = ? `;
-        countParams.push(companyId);
-        dataParams.push(companyId);
+        countSql += ` AND (COF.irmId = ? OR COF.id = ?) `;
+        dataSql += ` AND (COF.irmId = ? OR COF.id = ?) `;
+        countParams.push(userId, userId);
+        dataParams.push(userId, userId);
 
         if (searchText) {
             const searchCondition = `
@@ -169,8 +169,8 @@ exports.getAllSendComplainDao = (userId, companyId, page, limit, status, emptype
                 countParams.push(userId);
                 dataParams.push(userId);
             } else if (emptype === 'Other') {
-                countSql += ` AND OC.officerId != ? `;
-                dataSql += ` AND OC.officerId != ? `;
+                countSql += ` AND COF.id != ? `;
+                dataSql += ` AND COF.id != ? `;
                 countParams.push(userId);
                 dataParams.push(userId);
             }
@@ -213,7 +213,7 @@ exports.addComplaintDao = (officerId, category, complaint) => {
             SELECT MAX(refNo) as maxRefNo FROM officercomplains 
             WHERE refNo LIKE ?;
         `;
-        const refNoPrefix = `CC${datePart}`;
+        const refNoPrefix = `CCM${datePart}`;
 
         collectionofficer.query(sqlGetMaxRefNo, [`${refNoPrefix}%`], (err, results) => {
             if (err) {
