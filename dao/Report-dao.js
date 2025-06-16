@@ -492,39 +492,52 @@ exports.downloadPaymentReport = (fromDate, toDate, center, searchText, companyId
         }
 
         let dataSql = `
-        SELECT 
-          invNo AS grnNumber,
-            cc.regCode AS regCode,
-                cc.centerName AS centerName,
-                    ROUND(SUM(IFNULL(fpc.gradeAprice * fpc.gradeAquan, 0) + IFNULL(fpc.gradeBprice * fpc.gradeBquan, 0) + IFNULL(fpc.gradeCprice * fpc.gradeCquan, 0)), 2) AS amount,
-                        us.firstName AS firstName,
-                            us.lastName AS lastName,
-                                us.NICnumber AS nic,
-                                    us.phoneNumber AS phoneNumber,
-                                        us.phoneNumber AS phoneNumber,
-                                            ub.accHolderName AS accHolderName,
-                                                ub.accNumber AS accNumber,
-                                                    ub.bankName AS bankName,
-                                                        ub.branchName AS branchName,
-                                                            co.empId AS empId,
-                                                                TIME(rfp.createdAt) AS createdAt
-        FROM 
-          registeredfarmerpayments rfp
-        LEFT JOIN 
-          farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
-        JOIN 
-          collectionofficer co ON rfp.collectionOfficerId = co.id
-        JOIN
+    SELECT 
+        invNo AS grnNumber,
+        cc.regCode AS regCode,
+        cc.centerName AS centerName,
+        ROUND(SUM(IFNULL(fpc.gradeAprice * fpc.gradeAquan, 0) + IFNULL(fpc.gradeBprice * fpc.gradeBquan, 0) + IFNULL(fpc.gradeCprice * fpc.gradeCquan, 0)), 2) AS amount,
+        us.firstName AS firstName,
+        us.lastName AS lastName,
+        us.NICnumber AS nic,
+        us.phoneNumber AS phoneNumber,
+        ub.accHolderName AS accHolderName,
+        ub.accNumber AS accNumber,
+        ub.bankName AS bankName,
+        ub.branchName AS branchName,
+        co.empId AS empId,
+        TIME(rfp.createdAt) AS createdAt
+    FROM 
+        registeredfarmerpayments rfp
+    LEFT JOIN 
+        farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+    JOIN 
+        collectionofficer co ON rfp.collectionOfficerId = co.id
+    JOIN
         plant_care.users us ON rfp.userId = us.id
-        JOIN 
-          collectioncenter cc ON co.centerId = cc.id
-        JOIN 
-          company c ON co.companyId = c.id
-        LEFT JOIN
+    JOIN 
+        collectioncenter cc ON co.centerId = cc.id
+    JOIN 
+        company c ON co.companyId = c.id
+    LEFT JOIN
         plant_care.userbankdetails ub ON us.id = ub.userId
-        ${whereClause}
-        GROUP BY rfp.id
-            `;
+    ${whereClause}
+    GROUP BY 
+        rfp.id,
+        rfp.invNo,
+        cc.regCode,
+        cc.centerName,
+        us.firstName,
+        us.lastName,
+        us.NICnumber,
+        us.phoneNumber,
+        ub.accHolderName,
+        ub.accNumber,
+        ub.bankName,
+        ub.branchName,
+        co.empId,
+        rfp.createdAt
+`;
 
         collectionofficer.query(dataSql, params, (err, results) => {
             if (err) {
@@ -757,7 +770,6 @@ exports.downloadCollectionReport = (fromDate, toDate, center, searchText, compan
 };
 
 exports.getAllCenterPaymentsDAO = (page, limit, fromDate, toDate, centerId, searchText) => {
-
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
@@ -774,24 +786,23 @@ exports.getAllCenterPaymentsDAO = (page, limit, fromDate, toDate, centerId, sear
         let dataSql = `
             SELECT 
                 rfp.createdAt,
-            rfp.invNo,
-            cc.RegCode AS centerCode,
-            cc.centerName,
-            co.firstNameEnglish,
-            u.NICnumber AS nic,
-            co.companyId,
-            SUM(IFNULL(fpc.gradeAprice, 0)) AS gradeAprice,
-            SUM(IFNULL(fpc.gradeAquan, 0)) AS gradeAquan,
-            SUM(IFNULL(fpc.gradeBprice, 0)) AS gradeBprice,
-            SUM(IFNULL(fpc.gradeBquan, 0)) AS gradeBquan,
-            SUM(IFNULL(fpc.gradeCprice, 0)) AS gradeCprice,
-            SUM(IFNULL(fpc.gradeCquan, 0)) AS gradeCquan,
-
-            SUM(
-                IFNULL(fpc.gradeAprice, 0) * IFNULL(fpc.gradeAquan, 0) +
-                IFNULL(fpc.gradeBprice, 0) * IFNULL(fpc.gradeBquan, 0) +
-                IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
-            ) AS totalAmount
+                rfp.invNo,
+                cc.RegCode AS centerCode,
+                cc.centerName,
+                co.firstNameEnglish,
+                u.NICnumber AS nic,
+                co.companyId,
+                SUM(IFNULL(fpc.gradeAprice, 0)) AS gradeAprice,
+                SUM(IFNULL(fpc.gradeAquan, 0)) AS gradeAquan,
+                SUM(IFNULL(fpc.gradeBprice, 0)) AS gradeBprice,
+                SUM(IFNULL(fpc.gradeBquan, 0)) AS gradeBquan,
+                SUM(IFNULL(fpc.gradeCprice, 0)) AS gradeCprice,
+                SUM(IFNULL(fpc.gradeCquan, 0)) AS gradeCquan,
+                SUM(
+                    IFNULL(fpc.gradeAprice, 0) * IFNULL(fpc.gradeAquan, 0) +
+                    IFNULL(fpc.gradeBprice, 0) * IFNULL(fpc.gradeBquan, 0) +
+                    IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
+                ) AS totalAmount
             FROM collection_officer.registeredfarmerpayments rfp
             LEFT JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
             LEFT JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
@@ -805,21 +816,32 @@ exports.getAllCenterPaymentsDAO = (page, limit, fromDate, toDate, centerId, sear
 
         if (searchText) {
             const searchCondition = `
-                AND(
-                rfp.invNo LIKE ?
-                OR rfp.createdAt LIKE ?
-                OR cc.RegCode LIKE ?
-                OR u.NICnumber LIKE ?
+                AND (
+                    rfp.invNo LIKE ?
+                    OR rfp.createdAt LIKE ?
+                    OR cc.RegCode LIKE ?
+                    OR u.NICnumber LIKE ?
                 )
                 `;
             countSql += searchCondition;
             dataSql += searchCondition;
-            const searchValue = `% ${searchText} % `;
+            const searchValue = `%${searchText}%`;
             countParams.push(searchValue, searchValue, searchValue, searchValue);
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += " GROUP BY rfp.invNo ";
+        // Modified GROUP BY clause to include all non-aggregated columns
+        dataSql += `
+            GROUP BY 
+                rfp.invNo,
+                rfp.createdAt,
+                cc.RegCode,
+                cc.centerName,
+                co.firstNameEnglish,
+                u.NICnumber,
+                co.companyId
+            `;
+            
         // Add pagination to the data query
         dataSql += " LIMIT ? OFFSET ?";
         dataParams.push(limit, offset);
@@ -848,78 +870,86 @@ exports.getAllCenterPaymentsDAO = (page, limit, fromDate, toDate, centerId, sear
 
 exports.downloadCenterPaymentReport = (fromDate, toDate, centerId, searchText) => {
     return new Promise((resolve, reject) => {
-
         let dataSql = `
-            SELECT 
-            rfp.createdAt,
-            rfp.invNo,
-            cc.RegCode AS centerCode,
-            cc.centerName,
-            co.firstNameEnglish,
-            u.NICnumber AS nic,
-            co.companyId,
-            SUM(IFNULL(fpc.gradeAprice, 0)) AS gradeAprice,
-            SUM(IFNULL(fpc.gradeAquan, 0)) AS gradeAquan,
-            SUM(IFNULL(fpc.gradeBprice, 0)) AS gradeBprice,
-            SUM(IFNULL(fpc.gradeBquan, 0)) AS gradeBquan,
-            SUM(IFNULL(fpc.gradeCprice, 0)) AS gradeCprice,
-            SUM(IFNULL(fpc.gradeCquan, 0)) AS gradeCquan,
-
-            SUM(
-                IFNULL(fpc.gradeAprice, 0) * IFNULL(fpc.gradeAquan, 0) +
-                IFNULL(fpc.gradeBprice, 0) * IFNULL(fpc.gradeBquan, 0) +
-                IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
-            ) AS totalAmount,
-            u.firstName,
-            u.lastName,
-            u.phoneNumber AS phoneNumber,
-            ub.accHolderName AS accHolderName,
-            ub.accNumber AS accNumber,
-            ub.bankName AS bankName,
-            ub.branchName AS branchName,
-            co.empId
+        SELECT 
+                rfp.createdAt,
+                rfp.invNo,
+                cc.RegCode AS centerCode,
+                cc.centerName,
+                co.firstNameEnglish,
+                u.NICnumber AS nic,
+                co.companyId,
+                SUM(IFNULL(fpc.gradeAprice, 0)) AS gradeAprice,
+                SUM(IFNULL(fpc.gradeAquan, 0)) AS gradeAquan,
+                SUM(IFNULL(fpc.gradeBprice, 0)) AS gradeBprice,
+                SUM(IFNULL(fpc.gradeBquan, 0)) AS gradeBquan,
+                SUM(IFNULL(fpc.gradeCprice, 0)) AS gradeCprice,
+                SUM(IFNULL(fpc.gradeCquan, 0)) AS gradeCquan,
+                ROUND(
+                    SUM(
+                        IFNULL(fpc.gradeAprice, 0) * IFNULL(fpc.gradeAquan, 0) +
+                        IFNULL(fpc.gradeBprice, 0) * IFNULL(fpc.gradeBquan, 0) +
+                        IFNULL(fpc.gradeCprice, 0) * IFNULL(fpc.gradeCquan, 0)
+                    ), 2
+                ) AS totalAmount,
+                u.firstName,
+                u.lastName,
+                u.phoneNumber AS phoneNumber,
+                ub.accHolderName AS accHolderName,
+                ub.accNumber AS accNumber,
+                ub.bankName AS bankName,
+                ub.branchName AS branchName,
+                co.empId
             FROM collection_officer.registeredfarmerpayments rfp
             LEFT JOIN collection_officer.farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
             LEFT JOIN collection_officer.collectionofficer co ON co.id = rfp.collectionOfficerId
             LEFT JOIN collection_officer.collectioncenter cc ON cc.id = co.centerId
             LEFT JOIN plant_care.users u ON u.id = rfp.userId
-            LEFT JOIN 
-            plant_care.userbankdetails ub ON u.id = ub.userId
+            LEFT JOIN plant_care.userbankdetails ub ON u.id = ub.userId
             WHERE co.centerId = ? AND DATE(rfp.createdAt) BETWEEN ? AND ?
-            `;
-
-
+        `;
         const dataParams = [centerId, fromDate, toDate];
 
         if (searchText) {
             const searchCondition = `
-                AND(
-                rfp.invNo LIKE ?
-                OR rfp.createdAt LIKE ?
-                OR cc.RegCode LIKE ?
-                OR u.NICnumber LIKE ?
+                AND (
+                    rfp.invNo LIKE ?
+                    OR rfp.createdAt LIKE ?
+                    OR cc.RegCode LIKE ?
+                    OR u.NICnumber LIKE ?
                 )
-                `;
+            `;
             dataSql += searchCondition;
-            const searchValue = `% ${searchText} % `;
+            const searchValue = `%${searchText}%`;
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += ` GROUP BY 
-                        rfp.createdAt,
-                        rfp.invNo,
-                        cc.RegCode,
-                        cc.centerName,
-                        co.firstNameEnglish,
-                        u.NICnumber,
-                        co.companyId
+        dataSql += ` 
+            GROUP BY 
+                rfp.invNo,
+                rfp.createdAt,
+                cc.RegCode,
+                cc.centerName,
+                co.firstNameEnglish,
+                u.NICnumber,
+                co.companyId,
+                u.firstName,
+                u.lastName,
+                u.phoneNumber,
+                ub.accHolderName,
+                ub.accNumber,
+                ub.bankName,
+                ub.branchName,
+                co.empId
         `;
 
         collectionofficer.query(dataSql, dataParams, (err, results) => {
             if (err) {
+                console.error('Error in download report query:', err);
                 return reject(err);
             }
             resolve(results);
+            console.log(results);
         });
     });
 };
@@ -1256,38 +1286,39 @@ exports.downloadPaymentReportForCCM = (fromDate, toDate, centerId, searchText, c
 
         let dataSql = `
         SELECT 
-          invNo AS grnNumber,
-                cc.regCode AS regCode,
-                cc.centerName AS centerName,
-                ROUND(SUM(IFNULL(fpc.gradeAprice * fpc.gradeAquan, 0) + IFNULL(fpc.gradeBprice * fpc.gradeBquan, 0) + IFNULL(fpc.gradeCprice * fpc.gradeCquan, 0)), 2) AS amount,
-                us.firstName AS firstName,
-                us.lastName AS lastName,
-                us.NICnumber AS nic,
-                us.phoneNumber AS phoneNumber,
-                us.phoneNumber AS phoneNumber,
-                ub.accHolderName AS accHolderName,
-                ub.accNumber AS accNumber,
-                ub.bankName AS bankName,
-                ub.branchName AS branchName,
-                co.empId AS empId,
-                TIME(rfp.createdAt) AS createdAt
+        invNo AS grnNumber,
+        cc.regCode AS regCode,
+        cc.centerName AS centerName,
+        ROUND(SUM(IFNULL(fpc.gradeAprice * fpc.gradeAquan, 0) + IFNULL(fpc.gradeBprice * fpc.gradeBquan, 0) + IFNULL(fpc.gradeCprice * fpc.gradeCquan, 0)), 2) AS amount,
+        us.firstName AS firstName,
+        us.lastName AS lastName,
+        us.NICnumber AS nic,
+        us.phoneNumber AS phoneNumber,
+        ub.accHolderName AS accHolderName,
+        ub.accNumber AS accNumber,
+        ub.bankName AS bankName,
+        ub.branchName AS branchName,
+        co.empId AS empId,
+        TIME(rfp.createdAt) AS createdAt
         FROM 
-          registeredfarmerpayments rfp
+        registeredfarmerpayments rfp
         LEFT JOIN 
-          farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
+        farmerpaymentscrops fpc ON rfp.id = fpc.registerFarmerId
         JOIN 
-          collectionofficer co ON rfp.collectionOfficerId = co.id
+        collectionofficer co ON rfp.collectionOfficerId = co.id
         JOIN 
-          plant_care.users us ON rfp.userId = us.id
+        plant_care.users us ON rfp.userId = us.id
         JOIN 
-          collectioncenter cc ON co.centerId = cc.id
+        collectioncenter cc ON co.centerId = cc.id
         JOIN 
-          company c ON co.companyId = c.id
+        company c ON co.companyId = c.id
         LEFT JOIN 
-          plant_care.userbankdetails ub ON us.id = ub.userId
+        plant_care.userbankdetails ub ON us.id = ub.userId
         ${whereClause}
-        GROUP BY rfp.id
-                `;
+        GROUP BY rfp.id, invNo, cc.regCode, cc.centerName, us.firstName, us.lastName, 
+                us.NICnumber, us.phoneNumber, ub.accHolderName, ub.accNumber, 
+                ub.bankName, ub.branchName, co.empId, TIME(rfp.createdAt)
+        `;
 
         collectionofficer.query(dataSql, params, (err, results) => {
             if (err) {
