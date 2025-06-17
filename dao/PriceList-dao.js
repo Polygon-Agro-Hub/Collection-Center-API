@@ -141,7 +141,7 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             dataParams.push(searchValue, searchValue);
         }
 
-        dataSql += " ORDER BY MPR.createdAt DESC LIMIT ? OFFSET ? ";
+        dataSql += " ORDER BY CG.cropNameEnglish ASC, CV.varietyNameEnglish ASC, MPR.createdAt DESC LIMIT ? OFFSET ? ";
         dataParams.push(limit, offset);
 
         // Execute count query

@@ -485,7 +485,7 @@ exports.downloadPaymentReport = (fromDate, toDate, center, searchText, companyId
             invNo LIKE ?
           )
             `;
-            const searchPattern = `% ${searchText}% `;
+            const searchPattern = `%${searchText}%`;
             params.push(searchPattern, searchPattern, searchPattern, searchPattern);
             countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
             totalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
@@ -613,7 +613,7 @@ exports.getAllCollectionDAO = (companyId, page, limit, fromDate, toDate, searchT
                 `;
             countSql += searchCondition;
             dataSql += searchCondition;
-            const searchValue = `% ${searchText} % `;
+            const searchValue = `%${searchText}%`;
             countParams.push(
                 searchValue, searchValue,
                 searchValue, searchValue
@@ -731,7 +731,7 @@ exports.downloadCollectionReport = (fromDate, toDate, center, searchText, compan
                 )
                 `;
             dataSql += searchCondition;
-            const searchValue = `% ${searchText} % `;
+            const searchValue = `%${searchText}%`;
             dataParams.push(
                 searchValue, searchValue,
                 searchValue, searchValue
@@ -1015,6 +1015,7 @@ exports.checkOfficersForSameIrmIdDao = (userId) => {
 };
 
 exports.getAllPaymentsForCCMDAO = (companyId, page, limit, fromDate, toDate, searchText, centerId, userId) => {
+    console.log(toDate, fromDate, searchText)
 
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
@@ -1084,7 +1085,7 @@ exports.getAllPaymentsForCCMDAO = (companyId, page, limit, fromDate, toDate, sea
                 `;
             countSql += searchCondition;
             dataSql += searchCondition;
-            const searchValue = `% ${searchText} % `;
+            const searchValue = `%${searchText}%`;
             countParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
             dataParams.push(searchValue, searchValue, searchValue, searchValue, searchValue);
         }
@@ -1144,7 +1145,8 @@ exports.getAllCollectionsForCCMDAO = (companyId, page, limit, fromDate, toDate, 
                 WHERE co.companyId = ?
             AND rfp.createdAt BETWEEN ? AND ?
                 AND co.centerId = ?
-                    AND(co.irmId = ? OR co.id = ?) AND AND fpc.cropId IS NOT NULL
+                AND (co.irmId = ? OR co.id = ?) 
+                AND fpc.cropId IS NOT NULL
             `;
 
         let countSql = `
@@ -1195,7 +1197,7 @@ exports.getAllCollectionsForCCMDAO = (companyId, page, limit, fromDate, toDate, 
                     `;
             countSql += searchCondition;
             dataSql += searchCondition;
-            const searchValue = `% ${searchText} % `;
+            const searchValue = `%${searchText}%`;
             countParams.push(
                 searchValue, searchValue,
                 searchValue, searchValue
@@ -1211,7 +1213,8 @@ exports.getAllCollectionsForCCMDAO = (companyId, page, limit, fromDate, toDate, 
                 cc.RegCode,
                 cc.centerName,
                 cg.cropNameEnglish,
-                cv.varietyNameEnglish
+                cv.varietyNameEnglish,
+                rfp.createdAt
                     `;
 
         countSql += groupByClause + ") AS grouped_data"; // Close the subquery for count
@@ -1278,7 +1281,7 @@ exports.downloadPaymentReportForCCM = (fromDate, toDate, centerId, searchText, c
             invNo LIKE ?
           )
                     `;
-            const searchPattern = `% ${searchText} % `;
+            const searchPattern = `%${searchText}%`;
             params.push(searchPattern, searchPattern, searchPattern, searchPattern);
             countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
             totalParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
@@ -1387,7 +1390,7 @@ exports.downloadCollectionReportForCCM = (fromDate, toDate, centerId, searchText
                 )
                     `;
             dataSql += searchCondition;
-            const searchValue = `% ${searchText} % `;
+            const searchValue = `%${searchText}%`;
             dataParams.push(
                 searchValue, searchValue,
                 searchValue, searchValue
@@ -1396,10 +1399,11 @@ exports.downloadCollectionReportForCCM = (fromDate, toDate, centerId, searchText
 
         const groupByClause = `
             GROUP BY 
-                cc.RegCode,
-                cc.centerName,
-                cg.cropNameEnglish,
-                cv.varietyNameEnglish
+            cc.RegCode,
+            cc.centerName,
+            cg.cropNameEnglish,
+            cv.varietyNameEnglish,
+            rfp.createdAt
                     `;
 
         dataSql += groupByClause;
