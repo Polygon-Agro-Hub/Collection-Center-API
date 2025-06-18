@@ -101,7 +101,17 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
         `;
 
         let dataSql = `
-            SELECT DISTINCT MPR.id, MPR.requestPrice, MPR.status, COF.empId, MP.grade, CV.varietyNameEnglish, CG.cropNameEnglish, MPR.createdAt
+            SELECT DISTINCT 
+                MPR.id, 
+                MPR.requestPrice, 
+                MPR.status, 
+                COF.empId, 
+                MP.grade, 
+                CV.varietyNameEnglish, 
+                CG.cropNameEnglish, 
+                CG.id AS cropGroupId,  -- Added for better grouping
+                CV.id AS varietyId,    -- Added for better ordering
+                MPR.createdAt
             FROM marketpricerequest MPR
             JOIN marketprice MP ON MPR.marketPriceId = MP.id
             JOIN collectionofficer COF ON MPR.empId = COF.id
@@ -141,7 +151,14 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
             dataParams.push(searchValue, searchValue);
         }
 
-        dataSql += " ORDER BY CG.cropNameEnglish ASC, CV.varietyNameEnglish ASC, MPR.createdAt DESC LIMIT ? OFFSET ? ";
+        // Modified ORDER BY clause for proper grouping
+        dataSql += ` 
+            ORDER BY 
+                CG.cropNameEnglish ASC,  
+                
+                MPR.createdAt DESC 
+            LIMIT ? OFFSET ? 
+        `;
         dataParams.push(limit, offset);
 
         // Execute count query
