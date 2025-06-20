@@ -40,7 +40,7 @@ exports.getAllPriceListDao = (companyId, centerId, page, limit, grade, searchTex
             dataParams.push(searchValue, searchValue);
         }
 
-        dataSql += " ORDER BY CG.cropNameEnglish, MP.grade "
+        dataSql += " ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish, MP.grade  "
 
         dataSql += " LIMIT ? OFFSET ?";
         dataParams.push(limit, offset);
