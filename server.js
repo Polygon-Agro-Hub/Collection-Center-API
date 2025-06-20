@@ -76,7 +76,7 @@ dash.getConnection((err, connection) => {
 
 
 app.use(`${BASE_API_PATH}/test`, (req, res) => {
-  res.json("Testing run!")
+  res.json("Testing run prod!")
 })
 app.use(`${BASE_API_PATH}/api/auth`, AuthRoutes);
 app.use(`${BASE_API_PATH}/api/manage-officers`, ManageOffcerRoutes);
