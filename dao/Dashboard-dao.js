@@ -54,9 +54,32 @@ exports.getCustomerOfficerCountDetails = (id) => {
 exports.getActivityDetails = () => {
     return new Promise((resolve, reject) => {
         const sql = `
-        SELECT MRP.price, MRP.updatedPrice, MRP.updateAt, MP.grade, CV.varietyNameEnglish, CG.cropNameEnglish
-        FROM marketpriceserve MRP, marketprice MP, plant_care.cropvariety CV, plant_care.cropgroup CG
-        WHERE MRP.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MRP.price != MRP.updatedPrice
+        SELECT 
+            MRP.price, 
+            MRP.updatedPrice, 
+            CASE 
+                WHEN DATE(MRP.updateAt) = CURDATE() 
+                    THEN DATE_FORMAT(MRP.updateAt, 'At %l:%i %p')
+                ELSE DATE_FORMAT(MRP.updateAt, '%Y-%m-%d At %l:%i %p')
+            END AS updateAt,
+            MP.grade, 
+            CV.varietyNameEnglish, 
+            CG.cropNameEnglish
+        FROM 
+            collection_officer.marketpriceserve MRP
+        JOIN 
+            collection_officer.marketprice MP ON MRP.marketPriceId = MP.id
+        JOIN 
+            plant_care.cropvariety CV ON MP.varietyId = CV.id
+        JOIN 
+            plant_care.cropgroup CG ON CV.cropGroupId = CG.id
+        WHERE 
+            MRP.price != MRP.updatedPrice
+        ORDER BY 
+            MRP.updateAt DESC
+        LIMIT 5
+
+
         `;
 
         collectionofficer.query(sql, (err, results) => {

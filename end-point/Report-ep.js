@@ -73,6 +73,8 @@ exports.getDailyReport = async (req, res) => {
 
     const result = await ReportDAO.dailyReportDao(id, date);
 
+    console.log(result);
+
     if (result.length === 0) {
       return res.json({ message: "No news items found", data: result });
     }
@@ -249,28 +251,25 @@ exports.downloadAllPayments = async (req, res) => {
     // Format data for Excel
     const formattedData = data.flatMap(item => [
       {
-        'GRN': item.grnNumber,
-        'Amount': item.amount,
-        'Centre Reg Code': item.regCode,
-        'Centre Name': item.centerName,
-        'Farmer NIC': item.nic,
-        'Farmer Name': item.firstName + ' ' + item.lastName,
-        'Farmer contact': item.phoneNumber,
-        'Account holder name': item.accHolderName,
-        'Account Number': item.accNumber,
-        'Bank Name': item.bankName,
-        'Branch Name': item.branchName,
-        'Officer EMP ID': item.empId,
-        'Collected time': item.createdAt
-
-      },
-
+        'GRN': item.grnNumber ?? 'N/A',
+        'Amount': item.amount ?? 0,
+        'Centre Reg Code': item.regCode ?? 'N/A',
+        'Centre Name': item.centerName ?? 'N/A',
+        'Farmer NIC': item.nic ?? 'N/A',
+        'Farmer Name': `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim() || 'N/A',
+        'Farmer contact': item.phoneNumber ?? 'N/A',
+        'Account holder name': item.accHolderName ?? 'N/A',
+        'Account Number': item.accNumber ?? 'N/A',
+        'Bank Name': item.bankName ?? 'N/A',
+        'Branch Name': item.branchName ?? 'N/A',
+        'Officer EMP ID': item.empId ?? 'N/A',
+        'Collected time': item.createdAt ?? 'N/A'
+      }
     ]);
-
-
+    
     // Create a worksheet and workbook
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
-
+    
     worksheet['!cols'] = [
       { wch: 25 }, // GRN
       { wch: 15 }, // Amount
@@ -315,6 +314,7 @@ exports.downloadAllPayments = async (req, res) => {
 
 exports.downloadAllCollections = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl)
   try {
 
     const user = req.user
@@ -439,28 +439,26 @@ exports.downloadAllCenterPayments = async (req, res) => {
     // Format data for Excel
     const formattedData = data.flatMap(item => [
       {
-        'GRN': item.invNo,
-        'Amount': item.totalAmount,
-        'Center Reg Code': item.centerCode,
-        'Center Name': item.centerName,
-        'Farmer NIC': item.nic,
-        'Farmer Name': item.firstName + ' ' + item.lastName,
-        'Farmer contact': item.phoneNumber,
-        'Account holder name': item.accHolderName,
-        'Account Number': item.accNumber,
-        'Bank Name': item.bankName,
-        'Branch Name': item.branchName,
-        'Officer EMP ID': item.empId,
-        'Collected time': item.createdAt
-
-      },
-
+        'GRN': item.invNo || 'N/A',
+        'Amount': item.totalAmount !== null && item.totalAmount !== undefined ? item.totalAmount : 'N/A',
+        'Center Reg Code': item.centerCode || 'N/A',
+        'Center Name': item.centerName || 'N/A',
+        'Farmer NIC': item.nic || 'N/A',
+        'Farmer Name': `${item.firstName || ''} ${item.lastName || ''}`.trim() || 'N/A',
+        'Farmer contact': item.phoneNumber || 'N/A',
+        'Account holder name': item.accHolderName || 'N/A',
+        'Account Number': item.accNumber || 'N/A',
+        'Bank Name': item.bankName || 'N/A',
+        'Branch Name': item.branchName || 'N/A',
+        'Officer EMP ID': item.empId || 'N/A',
+        'Collected time': item.createdAt || 'N/A'
+      }
     ]);
-
-
+    
     // Create a worksheet and workbook
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
-
+    
+    // Format columns with proper widths
     worksheet['!cols'] = [
       { wch: 25 }, // GRN
       { wch: 15 }, // Amount
