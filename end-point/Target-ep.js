@@ -689,14 +689,19 @@ exports.addNewCenterTarget = async (req, res) => {
 
 exports.officerTargetCheckAvailable = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
   try {
     const officer = req.body
+    console.log('officer', officer)
     const user = req.user
+    console.log('user', user)
     const { page, limit, status, validity, searchText } = req.query;
     const result = await TargetDAO.officerTargetCheckAvailableDao(officer);
     if (result === null) {
       return res.json({ message: "--No Data Available--", result: result, status: false });
     }
+
+    console.log('result', result, 'officer', officer, page, limit, status, validity, searchText)
 
     const { items, total } = await TargetDAO.getAvailableOfficerDao(result.id, officer, page, limit, status, validity, searchText);
 
