@@ -432,6 +432,8 @@ exports.getTargetDetails = async (req, res) => {
 
     const { id } = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
 
+    console.log(id);
+
     const resultTarget = await ManageOfficerDAO.getTargetDetailsToPassDao(id);
     const resultOfficer = await ManageOfficerDAO.getOfficersToPassTargetDao(resultTarget.officerId, resultTarget.companyId, resultTarget.centerId);
 

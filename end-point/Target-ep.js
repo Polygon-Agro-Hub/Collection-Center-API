@@ -184,6 +184,7 @@ exports.getAllPriceDetails = async (req, res) => {
 
 exports.getAssignCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
   try {
     const { searchText } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
@@ -194,7 +195,11 @@ exports.getAssignCenterTarget = async (req, res) => {
       res.json({ items: [], message: "No center found" })
     }
 
+    console.log('cc', companyCenterId)
+
     const resultTarget = await TargetDAO.getAssignCenterTargetDAO(companyCenterId, searchText);
+
+    console.log(resultTarget);
     return res.status(200).json(resultTarget);
   } catch (error) {
     if (error.isJoi) {

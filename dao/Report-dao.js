@@ -236,6 +236,7 @@ exports.getAllSalesOfficerDAO = (centerId, page, limit, searchText) => {
 
 exports.dailyReportDao = (id, date) => {
     return new Promise((resolve, reject) => {
+        console.log(date.toISOString().slice(0, 10));
         const sql = `
         SELECT CV.id, CV.varietyNameEnglish, SUM(FPC.gradeAquan) AS gradeA, SUM(FPC.gradeBquan) AS gradeB, SUM(FPC.gradeCquan) AS gradeC, SUM(FPC.gradeAquan)+SUM(FPC.gradeBquan)+SUM(FPC.gradeCquan) AS total
         FROM registeredfarmerpayments RFP, farmerpaymentscrops FPC, plant_care.cropvariety CV

@@ -4,6 +4,8 @@ exports.getOfficerCount = async (req, res) => {
   try {
     const centerId = req.user.centerId;
 
+    console.log(centerId);
+
     const COOCount = await DashboardDAO.getCollectionOfficerCountDetails(centerId);
     const CUOCount = await DashboardDAO.getCustomerOfficerCountDetails(centerId);
     const activities = await DashboardDAO.getActivityDetails();

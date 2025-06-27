@@ -6,6 +6,7 @@ exports.getAllRecivedComplain = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     try {
         const userId = req.user.userId
+        console.log(userId);
         const { page, limit, searchText, status } = await ComplaintValidate.getAllDailyTargetSchema.validateAsync(req.query);
 
         const { items, total } = await ComplaintDAO.getAllRecivedComplainDao(userId, page, limit, status, searchText)

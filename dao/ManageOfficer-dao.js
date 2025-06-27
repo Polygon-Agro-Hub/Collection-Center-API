@@ -492,6 +492,7 @@ exports.getOfficerByIdDAO = (id) => {
             }
             const officer = results[0];
             const empIdWithoutPrefix = officer.empId ? officer.empId.substring(3) : null;
+            const empIdWithPrefix = officer.empId;
 
             resolve({
                 collectionOfficer: {
@@ -519,6 +520,7 @@ exports.getOfficerByIdDAO = (id) => {
                     country: officer.country,
                     languages: officer.languages,
                     empId: empIdWithoutPrefix,
+                    empIdPrefix: empIdWithPrefix,
                     jobRole: officer.jobRole,
                     employeeType: officer.empType,
                     accHolderName: officer.accHolderName,
