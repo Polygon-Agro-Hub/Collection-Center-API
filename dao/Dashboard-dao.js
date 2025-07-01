@@ -1,17 +1,19 @@
 const { plantcare, collectionofficer, marketPlace, dash } = require('../startup/database');
 
-exports.getCollectionOfficerCountDetails = (id) => {
+exports.getCollectionOfficerCountDetails = (centerId, companyId, userId) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            SELECT COUNT(*) AS COOCount
-            FROM collectionofficer
-            WHERE centerId = ? AND jobRole = 'Collection Officer'
-            GROUP BY jobRole 
+        SELECT COUNT(*) AS COOCOUNT FROM 
+        collection_officer.collectionofficer co
+        JOIN collection_officer.collectioncenter cc ON co.centerId = cc.id
+        JOIN collection_officer.companycenter comc ON comc.centerId = cc.id
+        JOIN collection_officer.company c ON comc.companyId = c.id
+        WHERE c.id = ? AND cc.id = ? AND co.irmId = ? AND jobRole = 'Collection Officer'
         `;
 
-        collectionofficer.query(sql, [id], (err, results) => {
+        collectionofficer.query(sql, [companyId, centerId, userId], (err, results) => {
             if (err) {
-                return reject(err); 
+                return reject(err);
             }
 
             let count;
@@ -21,23 +23,28 @@ exports.getCollectionOfficerCountDetails = (id) => {
                 count = results[0]
             }
 
-            resolve(count); 
+            resolve(count);
         });
     });
 };
 
-exports.getCustomerOfficerCountDetails = (id) => {
+exports.getCustomerOfficerCountDetails = (centerId, companyId, userId) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            SELECT COUNT(*) AS CUOCount
-            FROM collectionofficer
-            WHERE centerId = ? AND jobRole = 'Customer Officer'
-            GROUP BY jobRole 
+
+        SELECT COUNT(*) AS CUOCount FROM 
+        collection_officer.collectionofficer co
+        JOIN collection_officer.collectioncenter cc ON co.centerId = cc.id
+        JOIN collection_officer.companycenter comc ON comc.centerId = cc.id
+        JOIN collection_officer.company c ON comc.companyId = c.id
+        WHERE c.id = ? AND cc.id = ? AND co.irmId = ? AND jobRole = 'Customer Officer'
+
+            
         `;
 
-        collectionofficer.query(sql, [id], (err, results) => {
+        collectionofficer.query(sql, [companyId, centerId, userId], (err, results) => {
             if (err) {
-                return reject(err); 
+                return reject(err);
             }
             let count;
             if (results.length === 0) {
@@ -46,10 +53,15 @@ exports.getCustomerOfficerCountDetails = (id) => {
                 count = results[0]
             }
 
-            resolve(count); 
+            resolve(count);
         });
     });
 };
+
+//             SELECT COUNT(*) AS CUOCount
+//             FROM collectionofficer
+//             WHERE centerId = ? AND jobRole = 'Customer Officer'
+//             GROUP BY jobRole 
 
 exports.getActivityDetails = () => {
     return new Promise((resolve, reject) => {
@@ -84,7 +96,7 @@ exports.getActivityDetails = () => {
 
         collectionofficer.query(sql, (err, results) => {
             if (err) {
-                return reject(err); 
+                return reject(err);
             }
             resolve(results);
         });
@@ -133,7 +145,7 @@ exports.getChartDetails = (centerId, filter) => {
         }
         collectionofficer.query(sql, [centerId], (err, results) => {
             if (err) {
-                return reject(err); 
+                return reject(err);
             }
 
             resolve(results);

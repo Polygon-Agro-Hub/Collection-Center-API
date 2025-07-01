@@ -437,6 +437,9 @@ exports.getTargetDetails = async (req, res) => {
     const resultTarget = await ManageOfficerDAO.getTargetDetailsToPassDao(id);
     const resultOfficer = await ManageOfficerDAO.getOfficersToPassTargetDao(resultTarget.officerId, resultTarget.companyId, resultTarget.centerId);
 
+    // const resultTarget = [];
+    // const resultOfficer = [];
+
     res.status(200).json({ resultTarget, resultOfficer });
   } catch (error) {
     if (error.isJoi) {

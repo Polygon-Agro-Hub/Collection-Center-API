@@ -284,6 +284,7 @@ exports.getTargetDetailsToPass = async (req, res) => {
     const resultTarget = await TargetDAO.getTargetDetailsToPassDao(id);
     const resultOfficer = await TargetDAO.getOfficersToPassTargetDao(userId);
 
+    
     res.status(200).json({ resultTarget, resultOfficer });
   } catch (error) {
     if (error.isJoi) {
