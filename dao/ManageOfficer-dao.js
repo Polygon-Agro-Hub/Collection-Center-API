@@ -1300,6 +1300,65 @@ exports.checkExistOfficersDao = (nic) => {
     });
 };
 
+exports.checkExistEmailsDao = (email) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT *
+            FROM collectionofficer
+            WHERE email = ?
+        `;
+
+        collectionofficer.query(sql, [email], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            let validationResult = false;
+            if (results.length > 0) {
+                validationResult = true;
+            }
+            resolve(validationResult);
+        });
+    });
+};
+
+exports.checkExistPhoneDao = (phone1) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT *
+            FROM collectionofficer
+            WHERE phoneNumber01 = ? OR phoneNumber02 = ?
+        `;
+
+        collectionofficer.query(sql, [phone1, phone1], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            let validationResult = false;
+            if (results.length > 0) {
+                validationResult = true;
+            }
+            resolve(validationResult);
+        });
+    });
+};
+
+exports.checkExistPhone2Dao = (phone2) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT *
+            FROM collectionofficer
+            WHERE phoneNumber01 = ? OR phoneNumber02 = ?
+        `;
+
+        collectionofficer.query(sql, [phone2, phone2], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            const validationResult = results.length > 0;
+            resolve(validationResult);
+        });
+    });
+};
 
 exports.updateVehicleRegistratinDao = (data) => {
     return new Promise((resolve, reject) => {
@@ -1397,6 +1456,57 @@ exports.getExistingEmail = (email, id) => {
             WHERE co.email = ? AND co.id != ?
         `;
         const dataParams = [email, id];
+
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length > 0) {
+                // A different record with the same NIC exists
+                return resolve(results[0].id);
+            }
+
+            // No duplicate NIC found (or only found the current user's NIC)
+            resolve(null);
+        });
+    });
+};
+
+exports.getExistingPhone1 = (phone1, id) => {
+    return new Promise((resolve, reject) => {
+        const dataSql = `
+            SELECT id 
+            FROM collection_officer.collectionofficer co 
+            WHERE co.phoneNumber01 = ? OR co.phoneNumber02 = ? AND co.id != ?
+        `;
+        const dataParams = [phone1, phone1, id];
+
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length > 0) {
+                // A different record with the same NIC exists
+                return resolve(results[0].id);
+            }
+
+            // No duplicate NIC found (or only found the current user's NIC)
+            resolve(null);
+        });
+    });
+};
+
+
+exports.getExistingPhone2 = (phone2, id) => {
+    return new Promise((resolve, reject) => {
+        const dataSql = `
+            SELECT id 
+            FROM collection_officer.collectionofficer co 
+            WHERE co.phoneNumber01 = ? OR co.phoneNumber02 = ? AND co.id != ?
+        `;
+        const dataParams = [phone2, phone2, id];
 
         collectionofficer.query(dataSql, dataParams, (err, results) => {
             if (err) {

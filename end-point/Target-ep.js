@@ -437,12 +437,14 @@ exports.createCenter = async (req, res) => {
 
 exports.getExsistVerityTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
   try {
     const { varietyId, companyCenterId } = await TargetValidate.getTargetVeritySchema.validateAsync(req.params);
 
     const userId = req.user.userId;
     const resultCrop = await TargetDAO.getTargetVerityDao(companyCenterId, varietyId);
     const targetId = await TargetDAO.getAssignTargetIdsDao(companyCenterId, varietyId);
+    console.log('target', targetId[0]);
     const resultOfficer = await TargetDAO.getExsistVerityTargetDao(targetId[0], userId);
 
     res.status(200).json({ crop: resultCrop[0], officer: resultOfficer, targetId: targetId[0] });
