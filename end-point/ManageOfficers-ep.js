@@ -52,10 +52,30 @@ exports.createOfficer = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
     const officerData = JSON.parse(req.body.officerData);
+    console.log('officerData', officerData);
     const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
     if (checkUserExist) {
       return res.json({ message: "This NIC Number already exist.", status: false });
     }
+
+    const checkEmailExist = await ManageOfficerDAO.checkExistEmailsDao(officerData.email);
+    if (checkEmailExist) {
+      return res.json({ message: "This Email already exist.", status: false });
+    }
+
+    const checkPhoneExist = await ManageOfficerDAO.checkExistPhoneDao(officerData.phoneNumber01);
+    if (checkPhoneExist) {
+      return res.json({ message: "This Phone Number - 1 already exist.", status: false });
+    }
+
+    if (officerData.phoneNumber02) {
+      console.log('phonenumber 2')
+      const checkPhone2Exist = await ManageOfficerDAO.checkExistPhone2Dao(officerData.phoneNumber02);
+      if (checkPhone2Exist) {
+        return res.json({ message: "This Phone Number - 2 already exist.", status: false });
+      }
+    }
+
     const centerId = req.user.centerId;
     const companyId = req.user.companyId;
     const managerID = req.user.userId;
@@ -342,6 +362,20 @@ exports.updateCollectionOfficer = async (req, res) => {
       return res.status(410).json({ status: false, message: "Email already exists for another collection officer" });
     }
 
+    const existingPhone1 = await ManageOfficerDAO.getExistingPhone1(officerData.phoneNumber01, id);
+    if (existingPhone1) {
+      console.log('phone exists');
+      return res.status(411).json({ status: false, message: "Phone Number - 1 already exists for another collection officer" });
+    }
+
+    if (officerData.phoneNumber02) {
+      const existingPhone2 = await ManageOfficerDAO.getExistingPhone2(officerData.phoneNumber02, id);
+      if (existingPhone2) {
+        console.log('phone exists');
+        return res.status(412).json({ status: false, message: "Phone Number - 2 already exists for another collection officer" });
+      }
+    }
+
     await deleteFromS3(officerData.previousImage);
     const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
     const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
@@ -432,8 +466,13 @@ exports.getTargetDetails = async (req, res) => {
 
     const { id } = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
 
+    console.log(id);
+
     const resultTarget = await ManageOfficerDAO.getTargetDetailsToPassDao(id);
     const resultOfficer = await ManageOfficerDAO.getOfficersToPassTargetDao(resultTarget.officerId, resultTarget.companyId, resultTarget.centerId);
+
+    // const resultTarget = [];
+    // const resultOfficer = [];
 
     res.status(200).json({ resultTarget, resultOfficer });
   } catch (error) {
@@ -818,7 +857,7 @@ exports.getProfileImageBase64ById = async (req, res) => {
   try {
     // const { id } = await ManageOfficerValidate.getProfileImageBase64ByIdSchema.validateAsync(req.params);
     const { id } = req.params;
-    const {results} = await ManageOfficerDAO.ProfileImageBase64ByIdDAO(id);
+    const { results } = await ManageOfficerDAO.ProfileImageBase64ByIdDAO(id);
 
     if (!results) {
       return res.status(404).json({ error: "Collection Officer not found" });

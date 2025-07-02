@@ -70,6 +70,7 @@ exports.getCollectionFarmersList = async (req, res) => {
 exports.getDailyReport = async (req, res) => {
   try {
     const { id, date } = await ReportValidate.dailyReportSchema.validateAsync(req.params);
+    console.log(id, date);
 
     const result = await ReportDAO.dailyReportDao(id, date);
 

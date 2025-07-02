@@ -65,6 +65,8 @@ exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
 
             FROM dailytarget DT, plant_care.cropvariety CV, plant_care.cropgroup CG
             WHERE DT.date = CURDATE() and DT.companyCenterId = ? AND DT.target != 0 AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id
+            ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish
+            
         `
         const sqlParams = [companyCenterId];
         if (searchText) {
@@ -1649,7 +1651,8 @@ exports.getAssignCenterTargetDAO = (id, searchText) => {
             FROM dailytarget DT
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-            WHERE DT.date = CURDATE() AND DT.companyCenterId = ?
+            WHERE  DATE(DT.date) = CURDATE() AND DT.companyCenterId = ?
+            ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish
         `;
         const sqlParams = [id];
 
@@ -1663,6 +1666,7 @@ exports.getAssignCenterTargetDAO = (id, searchText) => {
             if (err) {
                 return reject(err);
             }
+            console.log(results);
 
             const grouped = {};
 
@@ -1811,6 +1815,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?`;
+            
 
         let dataSql =
             `SELECT 
@@ -1825,7 +1830,8 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?`;
+            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ? 
+            ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish`;
 
         const dataParams = [officerId, data.fromDate, data.toDate];
         const countParams = [officerId, data.fromDate, data.toDate];

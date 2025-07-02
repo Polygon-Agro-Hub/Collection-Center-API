@@ -184,6 +184,7 @@ exports.getAllPriceDetails = async (req, res) => {
 
 exports.getAssignCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
   try {
     const { searchText } = await TargetValidate.assignDailyTargetSchema.validateAsync(req.query);
     const centerId = req.user.centerId
@@ -194,7 +195,11 @@ exports.getAssignCenterTarget = async (req, res) => {
       res.json({ items: [], message: "No center found" })
     }
 
+    console.log('cc', companyCenterId)
+
     const resultTarget = await TargetDAO.getAssignCenterTargetDAO(companyCenterId, searchText);
+
+    console.log(resultTarget);
     return res.status(200).json(resultTarget);
   } catch (error) {
     if (error.isJoi) {
@@ -279,6 +284,7 @@ exports.getTargetDetailsToPass = async (req, res) => {
     const resultTarget = await TargetDAO.getTargetDetailsToPassDao(id);
     const resultOfficer = await TargetDAO.getOfficersToPassTargetDao(userId);
 
+    
     res.status(200).json({ resultTarget, resultOfficer });
   } catch (error) {
     if (error.isJoi) {
@@ -431,12 +437,14 @@ exports.createCenter = async (req, res) => {
 
 exports.getExsistVerityTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
   try {
     const { varietyId, companyCenterId } = await TargetValidate.getTargetVeritySchema.validateAsync(req.params);
 
     const userId = req.user.userId;
     const resultCrop = await TargetDAO.getTargetVerityDao(companyCenterId, varietyId);
     const targetId = await TargetDAO.getAssignTargetIdsDao(companyCenterId, varietyId);
+    console.log('target', targetId[0]);
     const resultOfficer = await TargetDAO.getExsistVerityTargetDao(targetId[0], userId);
 
     res.status(200).json({ crop: resultCrop[0], officer: resultOfficer, targetId: targetId[0] });
@@ -689,14 +697,19 @@ exports.addNewCenterTarget = async (req, res) => {
 
 exports.officerTargetCheckAvailable = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
   try {
     const officer = req.body
+    console.log('officer', officer)
     const user = req.user
+    console.log('user', user)
     const { page, limit, status, validity, searchText } = req.query;
     const result = await TargetDAO.officerTargetCheckAvailableDao(officer);
     if (result === null) {
       return res.json({ message: "--No Data Available--", result: result, status: false });
     }
+
+    console.log('result', result, 'officer', officer, page, limit, status, validity, searchText)
 
     const { items, total } = await TargetDAO.getAvailableOfficerDao(result.id, officer, page, limit, status, validity, searchText);
 
