@@ -29,7 +29,7 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ error: "User not found." });
     }
 
-    if (user.jobRole !== 'Collection Center Manager' && user.jobRole !== 'Collection Center Head') {
+    if (user.jobRole !== 'Collection Center Manager' && user.jobRole !== 'Collection Center Head' && user.jobRole !== 'Distribution Center Manager') {
       return res.status(401).json({ error: "User have not access for this web" });
     }
 
@@ -45,7 +45,7 @@ exports.loginUser = async (req, res) => {
 
       if (verify_password) {
         const token = jwt.sign(
-          { userId: user.id, role: user.jobRole, centerId: user.centerId, companyId: user.companyId },
+          { userId: user.id, role: user.jobRole, centerId: user.centerId, companyId: user.companyId, distributedCenterId: user.distributedCenterId },
           process.env.JWT_SECRET,
           { expiresIn: "5h" }
         );
@@ -58,6 +58,7 @@ exports.loginUser = async (req, res) => {
           role: user.jobRole,
           userName: user.empId,
           updatedPassword: user.passwordUpdated,
+          distributedCenterId: user.distributedCenterId,
           image: user.image,
           expiresIn: 18000,
         };
