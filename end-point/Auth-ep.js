@@ -28,8 +28,10 @@ exports.loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: "User not found." });
     }
+    console.log(user);
+    
 
-    if (user.jobRole !== 'Collection Center Manager' && user.jobRole !== 'Collection Center Head' && user.jobRole !== 'Distribution Center Manager') {
+    if (user.jobRole !== 'Collection Center Manager' && user.jobRole !== 'Collection Center Head' && user.jobRole !== 'Distribution Center Head' && user.jobRole !== 'Distribution Center Manager') {
       return res.status(401).json({ error: "User have not access for this web" });
     }
 

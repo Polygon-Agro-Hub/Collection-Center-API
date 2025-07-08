@@ -14,6 +14,7 @@ const ReportRoutes = require('./routes/Report');
 const TargetRoutes = require('./routes/Target');
 const ComplaintRoutes = require('./routes/Complaints')
 const DashbordRoutes = require('./routes/Dashboards')
+const DistributedManageOfficerRoutes = require('./routes/DistributedManageOfficers')
 const heathRoutes = require('./routes/healthRoutes')
 
 
@@ -85,6 +86,7 @@ app.use(`${BASE_API_PATH}/api/report`, ReportRoutes);
 app.use(`${BASE_API_PATH}/api/target`, TargetRoutes);
 app.use(`${BASE_API_PATH}/api/complaint`, ComplaintRoutes);
 app.use(`${BASE_API_PATH}/api/dashboard`, DashbordRoutes);
+app.use(`${BASE_API_PATH}/api/distributed/manage-officers`, DistributedManageOfficerRoutes);
 
 app.use(`${BASE_API_PATH}`, heathRoutes);
 

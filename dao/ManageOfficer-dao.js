@@ -300,6 +300,7 @@ exports.getAllCompanyNamesDao = () => {
         const sql = `
             SELECT id, companyNameEnglish
             FROM company
+            WHERE isCollection = 1
         `;
         collectionofficer.query(sql, (err, results) => {
             if (err) {
