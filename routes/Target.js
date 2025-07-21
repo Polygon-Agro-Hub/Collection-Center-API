@@ -169,6 +169,19 @@ router.get(
     TargetEP.downloadCurrentTarget
   )
 
+  router.get(
+    "/get-center-data/:centreId",
+    authMiddleware,
+    TargetEP.getCenterData
+)
+
+router.post(
+    '/edit-center',
+    authMiddleware,
+    upload.single("file"),
+    TargetEP.editCenter
+)
+
 
 module.exports = router;
 

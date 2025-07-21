@@ -141,3 +141,7 @@ exports.downloadCurrentTargetSchema = Joi.object({
 
 });
 
+exports.getCenterDataSchema = Joi.object({
+    centreId: Joi.number().integer().required()
+});
+

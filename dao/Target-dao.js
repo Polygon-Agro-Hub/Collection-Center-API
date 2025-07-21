@@ -2139,3 +2139,100 @@ exports.downloadCurrentTargetDAO = (companyCenterId, status, searchText) => {
         });
     });
 };
+
+exports.getCentreDataDao = (centreId) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+        SELECT cc.id, cc.regCode, cc.centerName, cc.district, cc.province, cc.country, cc.buildingNumber, cc.street, cc.city FROM collection_officer.collectioncenter cc WHERE cc.id = ?;
+        `;
+        collectionofficer.query(dataSql, [centreId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            if (results.length === 0) {
+                return resolve(null);
+            }
+            resolve(results);
+            console.log('results', results)
+        });
+    });
+};
+
+exports.editCenter = (centerData, companyId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Validate input data
+            if (!centerData || !centerData.centerName || !centerData.id) {
+                return reject(new Error("Center data is missing or incomplete"));
+            }
+
+            const centerId = centerData.id;
+
+            // SQL query to check for duplicate regCode, excluding current center
+            const checkDuplicateSQL = `
+                SELECT regCode FROM collectioncenter 
+                WHERE regCode = ? AND id != ?
+            `;
+
+            collectionofficer.query(
+                checkDuplicateSQL,
+                [centerData.regCode, centerId],
+                (err, duplicateResults) => {
+                    if (err) {
+                        console.error("Database Error (check duplicate):", err);
+                        return reject(err);
+                    }
+
+                    if (duplicateResults.length > 0) {
+                        return reject(new Error(`Duplicate regCode: ${centerData.regCode} already exists.`));
+                    }
+
+                    // SQL query to update collectioncenter
+                    const updateCenterSQL = `
+                        UPDATE collectioncenter
+                        SET
+                            regCode = ?,
+                            centerName = ?,
+                            district = ?,
+                            province = ?,
+                            buildingNumber = ?,
+                            city = ?,
+                            street = ?,
+                            country = ?
+                        WHERE id = ?
+                    `;
+
+                    collectionofficer.query(
+                        updateCenterSQL,
+                        [
+                            centerData.regCode,
+                            centerData.centerName,
+                            centerData.district,
+                            centerData.province,
+                            centerData.buildingNumber,
+                            centerData.city,
+                            centerData.street,
+                            centerData.country,
+                            centerId
+                        ],
+                        (err, updateResults) => {
+                            if (err) {
+                                console.error("Database Error (update center):", err);
+                                return reject(err);
+                            }
+
+                            // Return success response
+                            resolve({
+                                message: "Center updated successfully",
+                                centerId: centerId
+                            });
+                        }
+                    );
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};

@@ -915,3 +915,74 @@ exports.downloadCurrentTarget = async (req, res) => {
     return res.status(500).json({ error: "An error occurred while fetching Current Center Target" });
   }
 };
+
+exports.getCenterData = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+    // const { centreId } = await TargetValidate.getCenterDataSchema.validateAsync(req.params);
+
+    const { centreId } = req.params;
+
+    console.log('centreId', centreId)
+
+    const results = await TargetDAO.getCentreDataDao(centreId);
+    console.log('this is', results);
+    return res.status(200).json({
+      centreData: results
+    });
+    
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching crop names and verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
+  }
+};
+
+exports.editCenter = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+
+  try {
+    if (!req.body.centerData) {
+      return res.status(400).json({ error: "Center data is missing" });
+    }
+
+    const centerData = JSON.parse(req.body.centerData);
+    const companyId = req.user.companyId;
+
+    // Call the TargetDAO.createCenter function with the required parameters
+    const result = await TargetDAO.editCenter(centerData, companyId);
+
+    // Check if data was successfully inserted
+    if (result) {
+      return res.status(201).json({
+        message: "Center created successfully",
+        status: true,
+        data: result,
+      });
+    } else {
+      return res.status(400).json({
+        message: "Data insertion failed or no changes were made",
+        status: false,
+      });
+    }
+  } catch (error) {
+    if (error.message.includes("Duplicate regCode")) {
+      // Handle duplicate regCode error
+      return res.status(409).json({ error: error.message });
+    }
+
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error creating Center:", error);
+    return res.status(500).json({
+      error: "An error occurred while creating the Center",
+    });
+  }
+};
+
