@@ -1477,9 +1477,10 @@ exports.getExistingEmail = (email, id) => {
 exports.getExistingPhone1 = (phone1, id) => {
     return new Promise((resolve, reject) => {
         const dataSql = `
-            SELECT id 
-            FROM collection_officer.collectionofficer co 
-            WHERE co.phoneNumber01 = ? OR co.phoneNumber02 = ? AND co.id != ?
+        SELECT id 
+        FROM collection_officer.collectionofficer co 
+        WHERE (co.phoneNumber01 = ? OR co.phoneNumber02 = ?) 
+          AND co.id != ?
         `;
         const dataParams = [phone1, phone1, id];
 
@@ -1503,9 +1504,10 @@ exports.getExistingPhone1 = (phone1, id) => {
 exports.getExistingPhone2 = (phone2, id) => {
     return new Promise((resolve, reject) => {
         const dataSql = `
-            SELECT id 
-            FROM collection_officer.collectionofficer co 
-            WHERE co.phoneNumber01 = ? OR co.phoneNumber02 = ? AND co.id != ?
+        SELECT id 
+        FROM collection_officer.collectionofficer co 
+        WHERE (co.phoneNumber01 = ? OR co.phoneNumber02 = ?) 
+          AND co.id != ?
         `;
         const dataParams = [phone2, phone2, id];
 

@@ -370,7 +370,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
             const qrData = JSON.stringify({ empId: officerData.empId });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "distributionofficer/QRcode");
 
 
             // Define SQL Query before execution
@@ -442,6 +442,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
 };
 
 exports.getCCIDforCreateEmpIdDao = (employee) => {
+    console.log('employee', employee)
     return new Promise((resolve, reject) => {
       const sql = `
         SELECT empId 
@@ -472,6 +473,7 @@ exports.getCCIDforCreateEmpIdDao = (employee) => {
             return resolve("DIO00001");
           }
         }
+        console.log('results', results)
   
         const highestId = results[0].empId;
   
@@ -481,9 +483,236 @@ exports.getCCIDforCreateEmpIdDao = (employee) => {
   
         const nextNumber = number + 1;
         const nextId = `${prefix}${nextNumber.toString().padStart(5, "0")}`; // e.g., "CCM00008"
+        console.log('nextId', nextId)
   
         resolve(nextId);
       });
     });
   };
+
+  exports.getOfficerByIdDAO = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                COF.*,
+                COM.companyNameEnglish,
+                DC.centerName
+            FROM 
+                collectionofficer COF
+            LEFT JOIN 
+                company COM ON COF.companyId = COM.id
+            LEFT JOIN 
+            distributedcenter DC ON COF.distributedCenterId = DC.id
+            WHERE 
+                COF.id = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length === 0) {
+                return resolve(null);
+            }
+            const officer = results[0];
+            console.log('officer', officer)
+            const empIdWithoutPrefix = officer.empId ? officer.empId.substring(3) : null;
+            const empIdPrefix = officer.empId ? officer.empId.substring(0, 3) : null;
+            const empIdWithPrefix = officer.empId;
+
+            resolve({
+                collectionOfficer: {
+                    id: officer.id,
+                    firstNameEnglish: officer.firstNameEnglish,
+                    firstNameSinhala: officer.firstNameSinhala,
+                    firstNameTamil: officer.firstNameTamil,
+                    lastNameEnglish: officer.lastNameEnglish,
+                    lastNameSinhala: officer.lastNameSinhala,
+                    lastNameTamil: officer.lastNameTamil,
+                    phoneNumber01: officer.phoneNumber01,
+                    phoneNumber02: officer.phoneNumber02,
+                    phoneCode01: officer.phoneCode01,
+                    phoneCode02: officer.phoneCode02,
+                    image: officer.image,
+                    QRcode: officer.QRcode,
+                    nic: officer.nic,
+                    email: officer.email,
+                    passwordUpdated: officer.passwordUpdated,
+                    houseNumber: officer.houseNumber,
+                    streetName: officer.streetName,
+                    city: officer.city,
+                    district: officer.district,
+                    province: officer.province,
+                    country: officer.country,
+                    languages: officer.languages,
+                    empId: empIdWithoutPrefix,
+                    empIdPrefix: empIdWithPrefix,
+                    empIdFirst: empIdPrefix,
+                    jobRole: officer.jobRole,
+                    employeeType: officer.empType,
+                    accHolderName: officer.accHolderName,
+                    accNumber: officer.accNumber,
+                    bankName: officer.bankName,
+                    branchName: officer.branchName,
+                    companyNameEnglish: officer.companyNameEnglish,
+                    centerName: officer.centerName,
+                    centerId: officer.distributedCenterId,
+                    companyId: officer.companyId,
+                    irmId: officer.irmId,
+                   
+                }
+               
+            });
+        });
+    });
+};
+
+exports.getCenterName = (centerId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT centerName
+            FROM distributedcenter
+            WHERE id = ? 
+        `;
+
+        collectionofficer.query(sql, [centerId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results[0]);
+        });
+    });
+}
+
+
+exports.updateOfficerDetails = (id, officerData, image) => {
+    console.log('officer data', officerData )
+    return new Promise(async (resolve, reject) => {
+
+        try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
+
+            let qrcodeURL = officerData.previousQR || '';
+
+            // Generate QR Code
+            if (officerData.empIdPrefix !== officerData.previousEmpId) {
+                    console.log('empIdPrefix', officerData.empIdPrefix, 'previousEmpId', officerData.previousEmpId )
+                    await deleteFromS3(officerData.previousQR);
+
+                    const qrData = JSON.stringify({ empId: officerData.empIdPrefix });
+                    const qrCodeBase64 = await QRCode.toDataURL(qrData);
+                    const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+                    qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empIdPrefix}.png`, "distributionofficer/QRcode");
+                    console.log('qrcodeURL', qrcodeURL)
+                    const isprevious = qrcodeURL == officerData.previousQR
+                    console.log('isprevious', isprevious)
+            }
+            // await deleteFromS3(officerData.previousQR);
+
+            // const qrData = JSON.stringify({ empId: officerData.empId });
+            // const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            // const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            // const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "distributionofficer/QRcode");
+
+            // console.log('officer dat', officerData )
+
+
+
+            // Define SQL Query before execution
+            const sql = `
+                UPDATE collectionofficer
+                SET firstNameEnglish = ?,
+                    firstNameSinhala = ?,
+                    firstNameTamil = ?,
+                    lastNameEnglish = ?,
+                    lastNameSinhala = ?,
+                    lastNameTamil = ?,
+                    jobRole = ?,
+                    empId = ?,
+                    empType = ?,
+                    phoneCode01 = ?,
+                    phoneNumber01 = ?,
+                    phoneCode02 = ?,
+                    phoneNumber02 = ?,
+                    distributedCenterId = ?,
+                    nic = ?,
+                    email = ?,
+                    irmId = ?,
+                    password = ?,
+                    passwordUpdated = ?,
+                    houseNumber = ?,
+                    streetName = ?,
+                    city = ?,
+                    district = ?,
+                    province = ?,
+                    country = ?,
+                    languages = ?,
+                    accHolderName = ?,
+                    accNumber = ?,
+                    bankName = ?,
+                    branchName = ?,
+                    status = ?,
+                    image = ?,
+                    QRcode = ?
+                WHERE id = ?
+            `;
+
+            const updateOfficerParams = [
+                officerData.firstNameEnglish,
+                officerData.firstNameSinhala,
+                officerData.firstNameTamil,
+                officerData.lastNameEnglish,
+                officerData.lastNameSinhala,
+                officerData.lastNameTamil,
+                officerData.jobRole,
+                officerData.empIdPrefix,
+                officerData.employeeType,
+                officerData.phoneCode01,
+                officerData.phoneNumber01,
+                officerData.phoneCode02,
+                officerData.phoneNumber02,
+                officerData.centerId,
+                officerData.nic,
+                officerData.email,
+                officerData.irmId,
+                null,
+                0,
+                officerData.houseNumber,
+                officerData.streetName,
+                officerData.city,
+                officerData.district,
+                officerData.province,
+                officerData.country,
+                officerData.languages,
+                officerData.accHolderName,
+                officerData.accNumber,
+                officerData.bankName,
+                officerData.branchName,
+                "Not Approved",
+                image,
+                qrcodeURL,
+                parseInt(id),
+            ];
+
+            // Execute SQL Query
+            collectionofficer.query(
+                sql, updateOfficerParams,
+                (err, results) => {
+                    if (err) {
+                        console.error("Database Error:", err);
+                        return reject(err);
+                    }
+                    resolve(results);
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};
   

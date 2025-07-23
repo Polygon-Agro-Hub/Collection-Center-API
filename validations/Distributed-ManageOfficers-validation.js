@@ -24,3 +24,7 @@ exports.getAllOfficersSchema = Joi.object({
     center: Joi.number().integer().optional()
     
 });
+
+exports.getOfficerByIdSchema = Joi.object({
+    id: Joi.number().required(),
+})

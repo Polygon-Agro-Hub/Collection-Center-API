@@ -54,4 +54,17 @@ router.post(
     DistributedManageOfficerEP.createOfficer
 )
 
+router.get(
+    "/get-officer-by-id/:id",
+    authMiddleware,
+    DistributedManageOfficerEP.getOfficerById
+);
+
+router.put(
+    '/update-officer/:id', 
+    authMiddleware, 
+    upload.single("file"),
+    DistributedManageOfficerEP.updateCollectionOfficer
+);
+
 module.exports = router;
