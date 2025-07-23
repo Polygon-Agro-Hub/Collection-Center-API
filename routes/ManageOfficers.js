@@ -154,6 +154,18 @@ router.get(
     ManageOfficerEP.getProfileImageBase64ById
 );
 
+router.get(
+    "/get-centers-dch-own",
+    authMiddleware,
+    ManageOfficerEP.getDCHOwnCenters
+)
+
+router.get(
+    "/get-distribution-center-managers/:id",
+    authMiddleware,
+    ManageOfficerEP.getDistributionCenterManager
+)
+
 
 module.exports = router;
 

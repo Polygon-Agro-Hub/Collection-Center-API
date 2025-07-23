@@ -552,9 +552,12 @@ exports.getAllOfficersForCCH = async (req, res) => {
 
 exports.getCCHOwnCenters = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     const companyId = req.user.companyId;
+    console.log('companyId', companyId)
     const result = await ManageOfficerDAO.getCCHOwnCenters(companyId);
+    console.log('result', result)
     return res.status(200).json(result);
   } catch (error) {
     if (error.isJoi) {
@@ -929,6 +932,42 @@ exports.getProfileImageBase64ById = async (req, res) => {
     }
     console.error("Error executing query:", err);
     res.status(500).send("An error occurred while fetching data.");
+  }
+};
+
+exports.getDCHOwnCenters = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+    const companyId = req.user.companyId;
+    console.log('companyId', companyId)
+    const result = await ManageOfficerDAO.getDCHOwnCenters(companyId);
+    console.log('result', result)
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+exports.getDistributionCenterManager = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl)
+  try {
+    // const { id } = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
+    const { id } = req.params
+    const companyId = req.user.companyId
+    const result = await ManageOfficerDAO.getDistributionCenterManagerDao(companyId, id);
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
   }
 };
 

@@ -1554,3 +1554,37 @@ exports.ProfileImageBase64ByIdDAO = (id) => {
         });
     });
 };
+
+exports.getDCHOwnCenters = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT DC.id, DC.centerName, DC.regCode
+            FROM distributedcenter DC, distributedcompanycenter DCC
+            WHERE DCC.centerId = DC.id AND DCC.companyId = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.getDistributionCenterManagerDao = (companyId, centerId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT id, firstNameEnglish, lastNameEnglish
+            FROM collectionofficer
+            WHERE companyId = ? AND distributedCenterId = ? AND empId LIKE 'DCM%'
+        `;
+
+        collectionofficer.query(sql, [companyId, centerId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};

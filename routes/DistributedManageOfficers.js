@@ -29,4 +29,29 @@ router.get(
     DistributedManageOfficerEP.getDCHOwnCenters
 )
 
+router.get(
+    "/get-centers-dch-own",
+    authMiddleware,
+    DistributedManageOfficerEP.getDCHOwnCenters
+)
+
+router.get(
+    "/get-distribution-center-managers/:id",
+    authMiddleware,
+    DistributedManageOfficerEP.getDistributionCenterManager
+)
+
+router.get(
+    "/get-last-emp-id/:role",
+    authMiddleware,
+    DistributedManageOfficerEP.getForCreateId
+)
+
+router.post(
+    "/create-officer",
+    authMiddleware,
+    upload.single("file"),
+    DistributedManageOfficerEP.createOfficer
+)
+
 module.exports = router;
