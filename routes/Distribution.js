@@ -18,5 +18,11 @@ router.post(
     DistributionEp.createDistributionCenter
 )
 
+router.get(
+    "/get-all-center-officers-for-dch",
+    authMiddleware,
+    DistributionEp.getAllCenterOfficersForDCH
+)
+
 
 module.exports = router;

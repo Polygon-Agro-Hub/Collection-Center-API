@@ -67,4 +67,16 @@ router.put(
     DistributedManageOfficerEP.updateCollectionOfficer
 );
 
+router.delete(
+    "/delete-officer/:id",
+    authMiddleware,
+    DistributedManageOfficerEP.deleteOfficer
+)
+
+router.get(
+    "/update-status/:id/:status",
+    authMiddleware,
+    DistributedManageOfficerEP.UpdateStatusAndSendPassword
+)
+
 module.exports = router;

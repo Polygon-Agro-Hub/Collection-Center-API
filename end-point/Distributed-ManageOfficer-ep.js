@@ -358,6 +358,96 @@ if (req.body.file && req.body.file.includes("base64,")) {
   }
 };
 
+exports.deleteOfficer = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  try {
+
+    const { id } = await ManageOfficerValidate.deleteOfficerSchema.validateAsync(req.params);
+    const officerData = await ManageOfficerDAO.getOfficerByIdDAO(id);
+    console.log('officerData', officerData);
+    await deleteFromS3(officerData.collectionOfficer.image);
+    await deleteFromS3(officerData.collectionOfficer.QRcode);
+
+
+    const results = await ManageOfficerDAO.DeleteOfficerDao(id);
+
+    if (results.affectedRows > 0) {
+      res.status(200).json({ results: results, status: true });
+    } else {
+      res.json({ results: results, status: false });
+
+    }
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message, status: false });
+    }
+
+    console.error("Error delete  officer:", error);
+    return res.status(500).json({ error: "An error occurred while delete officer" });
+  }
+};
+
+exports.UpdateStatusAndSendPassword = async (req, res) => {
+  try {
+    const { id, status } = req.params;
+
+    if (!id || !status) {
+      return res.status(400).json({ message: 'ID and status are required.', status: false });
+    }
+    const officerData = await ManageOfficerDAO.getCollectionOfficerEmailDao(id);
+    if (!officerData) {
+      return res.status(404).json({ message: 'Distribution officer not found.', status: false });
+    }
+    const { email, firstNameEnglish, empId, Existstatus } = officerData;
+
+
+    if (Existstatus === status) {
+      return res.json({ message: 'Status already updated.', status: false });
+    }
+
+
+    if (status === 'Approved') {
+      const generatedPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(generatedPassword, parseInt(process.env.SALT_ROUNDS));
+
+      const updateResult = await ManageOfficerDAO.UpdateCollectionOfficerStatusAndPasswordDao({
+        id,
+        status,
+        password: hashedPassword,
+      });
+
+      if (updateResult.affectedRows === 0) {
+        return res.status(400).json({ message: 'Failed to update status and password.', status: false });
+      }
+
+      const emailResult = await ManageOfficerDAO.SendGeneratedPasswordDao(email, generatedPassword, empId, firstNameEnglish);
+
+      if (!emailResult.success) {
+        return res.status(500).json({ message: 'Failed to send password email.', error: emailResult.error });
+      }
+    } else {
+      const updateResult = await ManageOfficerDAO.UpdateCollectionOfficerStatusAndPasswordDao({
+        id,
+        status,
+        password: null,
+      });
+    }
+
+    // Return success response with empId and email
+    res.status(200).json({
+      message: 'Status updated and password sent successfully.',
+      status: true,
+      data: {
+        empId,
+        email,
+      },
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'An error occurred.', error });
+  }
+};
+
 
 // const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData, profileImageUrl);
 

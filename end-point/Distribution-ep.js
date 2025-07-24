@@ -79,4 +79,28 @@ exports.getDistributionCenterDetails = async (req, res) => {
       });
     }
   };
+
+  exports.getAllCenterOfficersForDCH = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(`Request received at: ${fullUrl}`);
+    
+    try {
+      // Validate query parameters      
+      const validatedQuery = await DistributionValidate.getAllCenterOfficersSchema.validateAsync(req.query);
+      const companyId = req.user.companyId;
+  
+      console.log('companyId', companyId)
+      const { page, limit, centerId, status, role, searchText } = validatedQuery;
+      console.log(page, limit, centerId, status, role, searchText)
+      const { items, total } = await DistributionDAO.getAllOfficersForDCHDAO(companyId, centerId, page, limit, status, role, searchText);
+      return res.status(200).json({ items, total });
+    } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({ error: error.details[0].message });
+      }
+  
+      console.error("Error fetching collection officers:", error);
+      return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+    }
+  };
   

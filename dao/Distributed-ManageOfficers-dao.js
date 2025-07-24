@@ -715,4 +715,165 @@ exports.updateOfficerDetails = (id, officerData, image) => {
         }
     });
 };
-  
+
+exports.DeleteOfficerDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            DELETE FROM collectionofficer
+            WHERE id = ?
+        `;
+        collectionofficer.query(sql, [parseInt(id)], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results); // Resolve the promise with the query results
+        });
+    });
+};
+
+exports.getCollectionOfficerEmailDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT email, firstNameEnglish, empId, status
+            FROM collectionofficer 
+            WHERE id = ?
+        `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            if (results.length > 0) {
+                resolve({
+                    email: results[0].email,
+                    firstNameEnglish: results[0].firstNameEnglish,
+                    empId: results[0].empId,
+                    Existstatus: results[0].status
+                });
+            } else {
+                resolve(null);
+            }
+        });
+    });
+};
+
+exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE collectionofficer
+            SET status = ?, password = ?, passwordUpdated = 0
+            WHERE id = ?
+        `;
+        collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
+            if (err) {
+
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.SendGeneratedPasswordDao = async (email, password, empId, firstNameEnglish) => {
+    try {
+        const doc = new PDFDocument();
+
+        const chunks = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
+
+        // Add watermark (if needed)
+        const watermarkPath = path.resolve(__dirname, "../assets/bg.png");
+        doc.opacity(0.2)
+            .image(watermarkPath, 100, 300, { width: 400 })
+            .opacity(1);
+
+        // Add content to PDF
+        doc.fontSize(20)
+            .fillColor('#071a51')
+            .text('Welcome to AgroWorld (Pvt) Ltd - Registration Confirmation', { align: 'center' })
+            .moveDown();
+
+        doc.moveTo(50, doc.y)
+            .lineTo(550, doc.y)
+            .stroke()
+            .moveDown();
+
+        doc.fontSize(12)
+            .text(`Dear ${firstNameEnglish},`)
+            .moveDown()
+            .text('Thank you for registering with us! We are excited to have you on board.')
+            .moveDown()
+            .text('You have successfully created an account with AgroWorld (Pvt) Ltd. Our platform will help you with all your agricultural needs, providing guidance, weather reports, asset management tools, and much more. We are committed to helping farmers like you grow and succeed.', { align: 'justify' })
+            .moveDown()
+            .text(`Your User Name/ID: ${empId}`)
+            .text(`Your Password: ${password}`)
+            .moveDown()
+            .text('If you have any questions or need assistance, feel free to reach out to our support team at info@agroworld.lk', { align: 'justify' })
+            .moveDown()
+            .text('We are here to support you every step of the way!', { align: 'justify' })
+            .moveDown()
+            .text('Best Regards,')
+            .text('The AgroWorld Team')
+            .text('AgroWorld (Pvt) Ltd. | All rights reserved.')
+            .moveDown()
+            .text('Address: No:14,')
+            .text('            Sir Baron Jayathilake Mawatha,')
+            .text('            Colombo 01.')
+            .moveDown()
+            .text('Email: info@agroworld.lk');
+
+        // Finalize the PDF
+        doc.end();
+
+        // Wait for PDF to finish generating
+        const pdfBuffer = await new Promise((resolve) => {
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+        });
+
+        // Send email with PDF attachment (without saving to disk)
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+            tls: { family: 4 },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Welcome to AgroWorld (Pvt) Ltd - Registration Confirmation',
+            text: `Dear ${firstNameEnglish},\n\nYour registration details are attached in the PDF.`,
+            attachments: [{
+                filename: `registration_${empId}.pdf`,
+                content: pdfBuffer, // Attach PDF from memory (no file saved)
+            }],
+        };
+
+        await transporter.sendMail(mailOptions);
+        return { success: true, message: 'Email sent successfully!' };
+
+    } catch (error) {
+        console.error('Error sending email:', error);
+        return { success: false, message: 'Failed to send email.', error };
+    }
+};
+
+exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE collectionofficer
+            SET status = ?, password = ?, passwordUpdated = 0
+            WHERE id = ?
+        `;
+        collectionofficer.query(sql, [params.status, params.password, parseInt(params.id)], (err, results) => {
+            if (err) {
+
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};  

@@ -8,3 +8,14 @@ exports.getDistributionCenterSchema = Joi.object({
     district: Joi.string().optional()
 
 });
+
+exports.getAllCenterOfficersSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    centerId: Joi.number().integer().required(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().optional(),
+    role: Joi.string().optional(),
+    center: Joi.number().integer().optional()
+    
+});
