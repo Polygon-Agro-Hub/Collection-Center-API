@@ -245,7 +245,7 @@ exports.getDistributionCenterManagerDao = (companyId, centerId) => {
         const sql = `
             SELECT id, firstNameEnglish, lastNameEnglish
             FROM collectionofficer
-            WHERE companyId = ? AND distributedCenterId = ? AND empId LIKE 'DBM%'
+            WHERE companyId = ? AND distributedCenterId = ? AND empId LIKE 'DCM%'
         `;
 
         collectionofficer.query(sql, [companyId, centerId], (err, results) => {
@@ -467,7 +467,7 @@ exports.getCCIDforCreateEmpIdDao = (employee) => {
           } else if (employee === "Collection Officer") {
             return resolve("COO00001");
           } else if (employee === "Distribution Manager") {
-            return resolve("DBM00001");
+            return resolve("DCM00001");
           }
             else if (employee === "Distribution Office") {
             return resolve("DIO00001");

@@ -14,6 +14,7 @@ exports.getAllOfficers = async (req, res) => {
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
 
     const centerId = req.user.distributedCenterId;
+    
 
     const { page, limit, status, role, searchText } = validatedQuery;
 
@@ -40,6 +41,8 @@ exports.getAllOfficersForDCH = async (req, res) => {
     // Validate query parameters      
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
     const companyId = req.user.companyId;
+
+    console.log('companyId', companyId)
     const { page, limit, status, role, searchText, center } = validatedQuery;
     const { items, total } = await ManageOfficerDAO.getAllOfficersForDCHDAO(companyId, page, limit, status, role, searchText, center);
     return res.status(200).json({ items, total });
