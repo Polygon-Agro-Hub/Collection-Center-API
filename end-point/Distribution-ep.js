@@ -103,4 +103,50 @@ exports.getDistributionCenterDetails = async (req, res) => {
       return res.status(500).json({ error: "An error occurred while fetching collection officers" });
     }
   };
+
+  exports.getDistributionCenteOfficers = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl)
+    try {
+      
+      const managerId = req.user.userId
+      const companyId = req.user.companyId
+      console.log('managerId', managerId)
+      const result = await DistributionDAO.getDistributionCenterOfficerDao(managerId, companyId);
+      console.log('result',result)
+      return res.status(200).json(result);
+    } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({ error: error.details[0].message });
+      }
+  
+      console.error("Error fetching collection officers:", error);
+      return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+    }
+  };
+
+  exports.getDistributionOrders = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl)
+    try {
+      
+      const managerId = req.user.userId
+      const companyId = req.user.companyId
+      console.log('managerId', managerId)
+      const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+      const deliveryLocationDataObj = deliveryLocationData[0]
+      console.log('result',deliveryLocationDataObj)
+
+      const orders = await DistributionDAO.getDistributionOrders(deliveryLocationDataObj);
+      console.log('orders',orders)
+      return res.status(200).json(orders);
+    } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({ error: error.details[0].message });
+      }
+  
+      console.error("Error fetching collection officers:", error);
+      return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+    }
+  };
   

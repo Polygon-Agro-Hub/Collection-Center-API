@@ -24,5 +24,17 @@ router.get(
     DistributionEp.getAllCenterOfficersForDCH
 )
 
+router.get(
+    "/get-distribution-center-officers",
+    authMiddleware,
+    DistributionEp.getDistributionCenteOfficers
+)
+
+
+router.get(
+    "/get-distribution-orders",
+    authMiddleware,
+    DistributionEp.getDistributionOrders
+)
 
 module.exports = router;

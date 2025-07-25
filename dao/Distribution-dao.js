@@ -309,3 +309,73 @@ exports.getAllOfficersForDCHDAO = (companyId, centerId, page, limit, status, rol
         });
     });
 };
+
+exports.getDistributionCenterOfficerDao = (managerId, companyId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        SELECT id, firstNameEnglish, lastNameEnglish, empId
+        FROM collectionofficer
+        WHERE irmId = ? AND companyId = ?
+        `;
+
+        collectionofficer.query(sql, [managerId, companyId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.getCenterName = (managerId, companyId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+        SELECT dc.city, dc.district
+        FROM collection_officer.collectionofficer co 
+        JOIN collection_officer.distributedcenter dc ON co.distributedCenterId = dc.id
+        WHERE co.id = ? AND co.companyId = ?
+        `;
+
+        collectionofficer.query(sql, [managerId, companyId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.getDistributionOrders = (deliveryLocationDataObj) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                po.id AS processOrderId,
+                o.id AS orderId
+                po.status,
+                po.isTargetAssigned,
+                oh.city AS ohCity,
+                oa.city AS oaCity,
+                o.sheduleDate
+            FROM market_place.processorders po
+            LEFT JOIN market_place.orders o ON o.id = po.orderId
+            LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+            LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+            WHERE 
+                (oh.city IN (?, ?) OR 
+                oa.city IN (?, ?))
+                AND o.sheduleDate >= CURDATE()
+  AND o.sheduleDate < DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND po.isTargetAssigned = 0 AND po.status = 'Processing';
+        `;
+
+        const { city, district } = deliveryLocationDataObj;
+
+        const params = [city, district, city, district];
+
+        collectionofficer.query(sql, params, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
