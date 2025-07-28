@@ -173,15 +173,17 @@ exports.getDistributionCenterDetails = async (req, res) => {
   
       for (const officer of assignments) {
         const { officerId, count } = officer;
-  
+      
+        if (count === 0) continue; // Skip if no orders assigned
+      
         const assignedOrderIds = processOrderIds.slice(currentIndex, currentIndex + count);
-  
+      
         formattedAssignments.push({
           officerId,
           count,
           assignedOrderIds
         });
-  
+      
         currentIndex += count;
       }
   
