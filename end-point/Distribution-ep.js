@@ -150,3 +150,95 @@ exports.getDistributionCenterDetails = async (req, res) => {
     }
   };
   
+  exports.assignOrdersToCenterOfficers = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('fullUrl', fullUrl);
+  
+    try {
+      const data = req.body;
+      console.log('data', data);
+      const managerId = req.user.userId;
+  
+      const companyCenterId = await DistributionDAO.getCompanyCenterId(managerId);
+  
+      const { assignments, processOrderIds } = data;
+  
+      if (!assignments || !processOrderIds) {
+        return res.status(400).json({ error: 'Missing assignments or processOrderIds in request body' });
+      }
+  
+      // Format assigned orders
+      const formattedAssignments = [];
+      let currentIndex = 0;
+  
+      for (const officer of assignments) {
+        const { officerId, count } = officer;
+  
+        const assignedOrderIds = processOrderIds.slice(currentIndex, currentIndex + count);
+  
+        formattedAssignments.push({
+          officerId,
+          count,
+          assignedOrderIds
+        });
+  
+        currentIndex += count;
+      }
+  
+      console.log('formattedAssignments', formattedAssignments);
+      console.log('processOrderIds', processOrderIds);
+  
+      // STEP 1: Insert distribution targets
+      const result = await DistributionDAO.assignDistributionTargetsDAO(companyCenterId, formattedAssignments);
+  
+      // result.insertId gives the first inserted ID in multi-row INSERT
+      if (result && result.insertId) {
+        const firstInsertId = result.insertId;
+  
+        // STEP 2: Create data for distributedtargetitems table
+        const itemsToInsert = [];
+  
+        for (let i = 0; i < formattedAssignments.length; i++) {
+          const assignment = formattedAssignments[i];
+          const targetId = firstInsertId + i; // Auto-increment continues from insertId
+          for (const orderId of assignment.assignedOrderIds) {
+            itemsToInsert.push([targetId, orderId]);
+          }
+        }
+  
+        // STEP 3: Insert distributedtargetitems in bulk
+        await DistributionDAO.insertDistributedTargetItems(itemsToInsert);
+
+        await DistributionDAO.markProcessOrdersAsAssigned(processOrderIds);
+  
+        return res.status(200).json({
+          status: true,
+          message: 'Orders assigned successfully',
+          assignedOrders: formattedAssignments
+        });
+      } else {
+        return res.status(500).json({ error: 'Failed to insert distribution targets' });
+      }
+  
+    } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({ error: error.details[0].message });
+      }
+  
+      console.error("Error assigning orders:", error);
+      return res.status(500).json({ error: "An error occurred while assigning orders" });
+    }
+  };
+  
+  
+
+  // let resultA
+      // let resultB
+      // let resultC
+      // for (let i = 0; i < cropsData.length; i++) {
+      //   resultA = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date);
+      //   resultB = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date);
+      //   resultC = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date);
+      // }
+
+    // res.status(200).json({ status: true, message: "Successfully Added New target quantity" });

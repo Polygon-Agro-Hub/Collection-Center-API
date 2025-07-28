@@ -350,7 +350,7 @@ exports.getDistributionOrders = (deliveryLocationDataObj) => {
         const sql = `
             SELECT 
                 po.id AS processOrderId,
-                o.id AS orderId
+                o.id AS orderId,
                 po.status,
                 po.isTargetAssigned,
                 oh.city AS ohCity,
@@ -376,6 +376,90 @@ exports.getDistributionOrders = (deliveryLocationDataObj) => {
                 return reject(err);
             }
             resolve(results);
+        });
+    });
+};
+
+
+exports.assignDistributionTargetsDAO = (companyCenterId, formattedAssignments) => {
+    console.log('dao', companyCenterId, formattedAssignments);
+    return new Promise((resolve, reject) => {
+      let dataSql = `
+        INSERT INTO distributedtarget (companycenterId, userId, target, complete)
+        VALUES ?
+      `;
+  
+      // Build values array
+      const values = formattedAssignments.map(assignment => [
+        companyCenterId,
+        assignment.officerId,
+        assignment.count,
+        0 // complete is always 0
+      ]);
+  
+      collectionofficer.query(dataSql, [values], (err, results) => {
+        if (err) {
+          console.error('Insert Error:', err);
+          return reject(err);
+        }
+        resolve(results);
+      });
+    });
+  };
+
+
+  exports.insertDistributedTargetItems = (itemsArray) => {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT INTO distributedtargetitems (targetId, orderId)
+        VALUES ?
+      `;
+  
+      collectionofficer.query(sql, [itemsArray], (err, results) => {
+        if (err) {
+          console.error("Error inserting distributed target items:", err);
+          return reject(err);
+        }
+        resolve(results);
+      });
+    });
+  };
+
+  exports.markProcessOrdersAsAssigned = (processOrderIds) => {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        UPDATE market_place.processorders
+        SET isTargetAssigned = 1
+        WHERE id IN (?)
+      `;
+      collectionofficer.query(sql, [processOrderIds], (err, result) => {
+        if (err) {
+          console.error("Error updating processorders:", err);
+          return reject(err);
+        }
+        resolve(result);
+      });
+    });
+  };
+  
+  
+
+exports.getCompanyCenterId = (manageId) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+        SELECT dcc.id
+        FROM collection_officer.company c
+        JOIN collection_officer.distributedcompanycenter dcc ON dcc.companyId = c.id
+        JOIN collection_officer.distributedcenter dc ON dc.id = dcc.centerId
+        JOIN collection_officer.collectionofficer coff ON coff.distributedCenterId = dc.id
+        WHERE coff.id = ? 
+        `;
+        const dataParams = [manageId];
+        collectionofficer.query(dataSql, dataParams, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results[0].id);
         });
     });
 };

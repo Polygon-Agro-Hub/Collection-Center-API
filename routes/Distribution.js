@@ -37,4 +37,10 @@ router.get(
     DistributionEp.getDistributionOrders
 )
 
+router.post(
+    "/assign-orders-to-center-officers",
+    authMiddleware,
+    DistributionEp.assignOrdersToCenterOfficers
+)
+
 module.exports = router;
