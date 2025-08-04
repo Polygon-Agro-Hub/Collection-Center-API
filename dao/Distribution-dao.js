@@ -315,10 +315,12 @@ exports.getDistributionCenterOfficerDao = (managerId, companyId) => {
         const sql = `
         SELECT id, firstNameEnglish, lastNameEnglish, empId
         FROM collectionofficer
-        WHERE irmId = ? AND companyId = ?
+        WHERE companyId = ?
+          AND (irmId = ? OR id = ?)
+        ORDER BY empId
         `;
 
-        collectionofficer.query(sql, [managerId, companyId], (err, results) => {
+        collectionofficer.query(sql, [companyId, managerId, managerId], (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -350,12 +352,15 @@ exports.getDistributionOrders = (deliveryLocationDataObj) => {
         const sql = `
             SELECT 
                 po.id AS processOrderId,
+                po.invNo,
                 o.id AS orderId,
                 po.status,
                 po.isTargetAssigned,
                 oh.city AS ohCity,
                 oa.city AS oaCity,
-                o.sheduleDate
+                o.sheduleDate,
+                o.sheduleTime
+                
             FROM market_place.processorders po
             LEFT JOIN market_place.orders o ON o.id = po.orderId
             LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
