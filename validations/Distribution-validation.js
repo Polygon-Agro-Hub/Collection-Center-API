@@ -19,3 +19,13 @@ exports.getAllCenterOfficersSchema = Joi.object({
     center: Joi.number().integer().optional()
     
 });
+
+exports.getRequestSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    date: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional()
+    
+    
+});

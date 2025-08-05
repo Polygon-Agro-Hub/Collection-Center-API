@@ -231,6 +231,115 @@ exports.getDistributionCenterDetails = async (req, res) => {
       return res.status(500).json({ error: "An error occurred while assigning orders" });
     }
   };
+
+  exports.getAllRequestEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl);
+    try {
+        const userId = req.user.userId;
+        const companyId = req.user.companyId;
+        const { page, limit, date, status, searchText } = await DistributionValidate.getRequestSchema.validateAsync(req.query);
+        
+        // Get the items and total count
+        const { items, total } = await DistributionDAO.getAllReplaceProductsDao(
+            userId, companyId, page, limit, date, status, searchText
+        );
+
+        // Enrich each item with additional data (direct field merge)
+        const enrichedItems = await Promise.all(
+            items.map(async (item) => {
+                const { rrId, ...additionalData } = await DistributionDAO.getReplaceRequestDetails(item.rrId);
+                return {
+                    ...item,
+                    ...additionalData  // Spread the additional fields directly
+                };
+            })
+        );
+
+        console.log('enrichedItems', enrichedItems)
+;
+        res.status(200).json({ 
+            items: enrichedItems, 
+            total 
+        });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+        console.error("Error retrieving requests:", error);
+        return res.status(500).json({ error: "An error occurred while fetching requests" });
+    }
+};
+
+exports.approveRequestEp = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('Endpoint:', fullUrl);
+
+  try {
+    const request = req.body;
+    console.log('Full Request:', request);
+
+    // Filter necessary fields
+    const approvedRequest = {
+      rrId: request.rrId,
+      replceId: request.replceId,
+      status: request.status,
+      orderPackageId: request.orderPackageId,
+      isLock: request.isLock,
+      replaceProductId: request.replaceProductId,
+      replaceQty: parseFloat(request.replaceQty),
+      replacePrice: parseFloat(request.replacePrice),
+      replaceProductType: request.replaceProductType
+    };
+
+    console.log('Filtered Request:', approvedRequest);
+
+    // Call the DB query function to update the row
+    const result = await DistributionDAO.replaceProduct(approvedRequest);
+
+    res.status(200).json({
+      message: "Request approved and product replaced successfully",
+      data: result
+    });
+
+  } catch (error) {
+    console.error("Error approving request:", error);
+    return res.status(500).json({ error: "An error occurred while approving the request" });
+  }
+};
+
+exports.rejectRequestEp = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('Endpoint:', fullUrl);
+
+  try {
+    const request = req.body;
+    console.log('Full Request:', request);
+
+    // Filter necessary fields
+    const approvedRequest = {
+      rrId: request.rrId,
+      status: request.status
+    };
+
+    console.log('Filtered Request:', approvedRequest);
+
+    // Call the DB query function to update the row
+    const result = await DistributionDAO.rejectRequestDao(approvedRequest);
+
+    res.status(200).json({
+      message: "Request Rejected successfully",
+      data: result
+    });
+
+    console.log('result', result)
+
+  } catch (error) {
+    console.error("Error Rejecting request:", error);
+    return res.status(500).json({ error: "An error occurred while rejecting the request" });
+  }
+};
+
   
   
 

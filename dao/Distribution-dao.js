@@ -468,3 +468,209 @@ exports.getCompanyCenterId = (manageId) => {
         });
     });
 };
+
+exports.getAllReplaceProductsDao = (userId, companyId, page, limit, date, status, searchText) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        let countSql = `
+            SELECT COUNT(*) AS total FROM market_place.replacerequest rr
+            JOIN market_place.orderpackage op ON rr.orderPackageId = op.id
+            JOIN market_place.producttypes pt ON rr.productType = pt.id
+            JOIN collection_officer.collectionofficer coff ON rr.userId = coff.id
+            JOIN market_place.orderpackageitems opi ON rr.replceId = opi.id
+            JOIN market_place.marketplaceitems mpi ON opi.productId = mpi.id
+            WHERE (coff.irmId = ? OR coff.empId = ?) AND coff.companyId = ?
+        `;
+
+        let dataSql = `
+        SELECT rr.id AS rrId,
+        coff.id AS officerId,
+        coff.empId,
+        coff.firstNameEnglish,
+        rr.replceId,
+        rr.status,
+        op.id AS orderPackageId,
+        opi.productType AS currentProductTypeId,
+        CAST(opi.qty AS DECIMAL(10,2)) AS currentProductQty,
+        CAST(opi.price AS DECIMAL(10,2)) AS currentProductPrice,
+        opi.isPacked,
+        pt.shortCode AS currentprodcutType,
+        pt.typeName AS currentProductTypeName,
+        op.isLock,
+        mpi.displayName AS currentProduct,
+        rr.createdAt
+ FROM market_place.replacerequest rr
+ JOIN market_place.orderpackage op ON rr.orderPackageId = op.id
+ JOIN collection_officer.collectionofficer coff ON rr.userId = coff.id
+ JOIN market_place.orderpackageitems opi ON rr.replceId = opi.id
+ JOIN market_place.producttypes pt ON opi.productType = pt.id
+ JOIN market_place.marketplaceitems mpi ON opi.productId = mpi.id
+ WHERE (coff.irmId = ? OR coff.empId = ?) AND coff.companyId = ?
+ 
+        `;
+
+        const countParams = [userId, userId, companyId];
+        const dataParams = [userId, userId, companyId];
+
+        if (date) {
+            countSql += " AND DATE(rr.createdAt) = ?";
+            dataSql += " AND DATE(rr.createdAt) = ?";
+            countParams.push(date);
+            dataParams.push(date);
+        }
+
+        if (status) {
+            countSql += " AND rr.status = ?";
+            dataSql += " AND rr.status = ?";
+            countParams.push(status);
+            dataParams.push(status);
+        }
+
+        if (searchText) {
+            countSql += " AND mpi.displayName LIKE ?";
+            dataSql += " AND mpi.displayName LIKE ?";
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue);
+            dataParams.push(searchValue);
+        }
+
+        dataSql += " ORDER BY rr.createdAt LIMIT ? OFFSET ?";
+        dataParams.push(parseInt(limit), parseInt(offset));
+
+        // Execute queries
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Count query error:', countErr);
+                return reject(new Error('Database error in count query'));
+            }
+
+            const total = countResults[0]?.total || 0;
+
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Data query error:', dataErr);
+                    return reject(new Error('Database error in data query'));
+                }
+
+                resolve({ 
+                    items: dataResults, 
+                    total: total
+                });
+            });
+        });
+    });
+};
+
+exports.getReplaceRequestDetails = (rrId) => {
+    return new Promise((resolve, reject) => {
+        const dataSql = `
+            SELECT 
+                opi.id AS replaceId,  
+                rr.productId AS replaceProductId,
+                mpi.displayName AS replaceProduct, 
+                CAST(rr.qty AS DECIMAL(10,2)) AS replaceQty, 
+                CAST(rr.price AS DECIMAL(10,2)) AS replacePrice, 
+                rr.productType AS replaceProductType,
+                CAST(mpi.discountedPrice AS DECIMAL(10,2)) AS replaceUnitPrice 
+            FROM market_place.replacerequest rr
+            JOIN market_place.orderpackageitems opi ON rr.replceId = opi.id
+            JOIN market_place.marketplaceitems mpi ON rr.productId = mpi.id
+            WHERE rr.id = ?
+        `;
+        
+        collectionofficer.query(dataSql, [rrId], (err, results) => {
+            if (err) {
+                console.error('SQL Error:', err);
+                return reject(err);
+            }
+            resolve(results.length > 0 ? results[0] : {});
+        });
+    });
+};
+
+exports.replaceProduct = (approvedRequest) => {
+    console.log('approvedRequest', approvedRequest)
+    return new Promise((resolve, reject) => {
+      // SQL query to update both tables
+      const dataSql1 = `
+        UPDATE orderpackageitems
+        SET
+          productId = ?,
+          productType = ?,
+          qty = ?,
+          price = ?
+        WHERE
+          id = ?
+      `;
+  
+      const values1 = [
+        approvedRequest.replaceProductId,
+        approvedRequest.replaceProductType,
+        approvedRequest.replaceQty,
+        approvedRequest.replacePrice,
+        approvedRequest.replceId
+      ];
+  
+      // First update orderpackageitems
+      marketPlace.query(dataSql1, values1, (err1, results1) => {
+        if (err1) {
+          console.error('SQL Error (orderpackageitems):', err1);
+          return reject(err1);
+        }
+  
+        // Then update replacerequest
+        const dataSql2 = `
+          UPDATE replacerequest
+          SET status = ?
+          WHERE id = ?
+        `;
+  
+        const values2 = [
+          approvedRequest.status,
+          approvedRequest.rrId
+        ];
+  
+        marketPlace.query(dataSql2, values2, (err2, results2) => {
+          if (err2) {
+            console.error('SQL Error (replacerequest):', err2);
+            return reject(err2);
+          }
+  
+          resolve({
+            success: true,
+            updatedOrderPackageItems: results1.affectedRows,
+            updatedReplaceRequest: results2.affectedRows
+          });
+        });
+      });
+    });
+  };
+
+  exports.rejectRequestDao = (approvedRequest) => {
+    return new Promise((resolve, reject) => {
+      const dataSql = `
+        UPDATE replacerequest
+        SET
+          status = ?
+        WHERE
+          id = ?
+      `;
+  
+      const values = [
+        approvedRequest.status,
+        approvedRequest.rrId
+      ];
+  
+      marketPlace.query(dataSql, values, (err, results) => {
+        if (err) {
+          console.error('SQL Error:', err);
+          return reject(err);
+        }
+  
+        resolve({ success: true, updatedRows: results.affectedRows });
+      });
+    });
+  };
+  
+

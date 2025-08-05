@@ -43,4 +43,22 @@ router.post(
     DistributionEp.assignOrdersToCenterOfficers
 )
 
+router.get(
+    '/get-all-request',
+    authMiddleware,
+    DistributionEp.getAllRequestEp
+)
+
+router.post(
+    '/approve-request',
+    authMiddleware,
+    DistributionEp.approveRequestEp
+)
+
+router.post(
+    '/reject-request',
+    authMiddleware,
+    DistributionEp.rejectRequestEp
+)
+
 module.exports = router;
