@@ -50,11 +50,12 @@ exports.dcmReplyComplaint = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     try {
         console.log('body', req.body)
+        const userId = req.user.userId
         const complain = await DistributionComplaintsValidate.dcmReplyComplainSchema.validateAsync(req.body)
 
         console.log('complain', complain)
 
-        const result = await DistributionComplaintsDAO.dcmReplyComplainDao(complain)
+        const result = await DistributionComplaintsDAO.dcmReplyComplainDao(complain, userId)
 
         if (result.affectedRows === 0) {
             return res.json({ message: "Reply Does not send!", status: false })
@@ -118,3 +119,51 @@ exports.dcmAddComplaint = async (req, res) => {
         return res.status(500).json({ error: "An error occurred while adding the complaint" });
     }
 };
+
+exports.dcmGetAllSentComplaint = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    try {
+        const userId = req.user.userId
+        const companyId = req.user.companyId
+
+        const { page, limit, searchText, status, emptype } = await DistributionComplaintsValidate.dcmGetAllSentComplaintsSchema.validateAsync(req.query);
+
+        const { items, total } = await DistributionComplaintsDAO.dcmGetAllSendComplainDao(userId, companyId, page, limit, status, emptype, searchText)
+
+        return res.status(200).json({ items, total, userId });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error fetching recived complaind:", error);
+        return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+    }
+}
+
+exports.dcmGetRecivedReplyByComplaintId = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    try {
+        const userId = req.user.userId
+        const companyId = req.user.companyId
+        const { id } = await DistributionComplaintsValidate.dcmGetparmasIdSchema.validateAsync(req.params);
+        const result = await DistributionComplaintsDAO.dcmGetReciveReplyByComplaintIdDao(id, )
+        const templateData = await DistributionComplaintsDAO.dcmGetComplainTemplateDataDao(userId)
+        const managerData = await DistributionComplaintsDAO.getDCMDetailsDao(userId)
+        console.log('managerData', managerData)
+
+
+        if (result.length === 0) {
+            return res.json({ message: "no data found!", status: false, data: result[0], dcmData: managerData[0], template: templateData });
+        }
+
+        res.status(200).json({ message: "Data found!", status: true, data: result[0], dcmData: managerData[0],  template: templateData });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error fetching recived complaind:", error);
+        return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+    }
+}

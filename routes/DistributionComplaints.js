@@ -29,4 +29,14 @@ router.post('/dcm-add-complain',
     DistributionComplaintsEp.dcmAddComplaint
 );
 
+router.get('/dcm-get-all-sent-complaint',
+    authMiddleware,
+    DistributionComplaintsEp.dcmGetAllSentComplaint
+);
+
+router.get('/dcm-get-reply-by-complaint-id/:id', 
+    authMiddleware,
+    DistributionComplaintsEp.dcmGetRecivedReplyByComplaintId
+);
+
 module.exports = router;

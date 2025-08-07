@@ -115,14 +115,14 @@ exports.dcmGetComplainTemplateDataDao = (id) => {
     });
 };
 
-exports.dcmReplyComplainDao = (data) => {
+exports.dcmReplyComplainDao = (data, userId) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed'
+           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed', replyBy = ?
            WHERE id = ?
         `;
-        collectionofficer.query(sql, [data.reply, data.id], (err, results) => {
+        collectionofficer.query(sql, [data.reply, userId, data.id ], (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -179,7 +179,7 @@ exports.dcmAddComplaintDao = (officerId, category, complaint) => {
 
             const sqlInsert = `
                 INSERT INTO officercomplains (officerId, refNo, language, complainCategory, complain, reply, CCHStatus, CCMStatus, complainAssign)
-                VALUES (?, ?, ?, ?, ?, NULL, 'Assigned', 'Opened', 'CCH');
+                VALUES (?, ?, ?, ?, ?, NULL, 'Assigned', 'Opened', 'DCH');
             `;
 
             collectionofficer.query(sqlInsert, [officerId, refNo, language, category, complaint], (err, results) => {
@@ -191,3 +191,124 @@ exports.dcmAddComplaintDao = (officerId, category, complaint) => {
         });
     });
 };
+
+exports.dcmGetAllSendComplainDao = (userId, companyId, page, limit, status, emptype, searchText) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        const countParams = [];
+        const dataParams = [];
+
+
+        let countSql = `
+            SELECT COUNT(*) AS total
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "DCH"
+        `;
+
+        let dataSql = `
+            SELECT OC.id, OC.refNo,  CC.categoryEnglish AS complainCategory, OC.complain, OC.CCMStatus AS status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "DCH" 
+        `;
+
+
+        countSql += ` AND (COF.irmId = ? OR COF.id = ?) `;
+        dataSql += ` AND (COF.irmId = ? OR COF.id = ?) `;
+        countParams.push(userId, userId);
+        dataParams.push(userId, userId);
+
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    OC.refNo LIKE ?
+                    OR COF.empId LIKE ?
+                )
+            `;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            dataParams.push(searchValue, searchValue);
+        }
+
+        if (status) {
+            countSql += ` AND OC.CCMStatus = ? `;
+            dataSql += ` AND OC.CCMStatus = ? `;
+            countParams.push(status);
+            dataParams.push(status);
+
+        }
+
+        if (emptype) {
+            if (emptype === 'Own') {
+                countSql += ` AND OC.officerId = ? `;
+                dataSql += ` AND OC.officerId = ? `;
+                countParams.push(userId);
+                dataParams.push(userId);
+            } else if (emptype === 'Other') {
+                countSql += ` AND COF.id != ? `;
+                dataSql += ` AND COF.id != ? `;
+                countParams.push(userId);
+                dataParams.push(userId);
+            }
+
+        }
+
+
+        dataSql += " LIMIT ? OFFSET ? ";
+        dataParams.push(limit, offset);
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
+
+exports.dcmGetReciveReplyByComplaintIdDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.createdAt, OC.reply, OC.language, COF.empId, COF.firstNameEnglish, COF.firstNameSinhala, COF.firstNameTamil, COF.lastNameEnglish, COF.lastNameSinhala, COF.lastNameTamil, COF.phoneCode01, COF.phoneNumber01, COF.phoneCode02, COF.phoneNumber02
+            FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
+            WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND OC.id = ?
+        `;
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.getDCMDetailsDao = (userId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+             
+        SELECT coff.firstNameEnglish AS manageFirstNameEnglish, coff.firstNameSinhala AS manageFirstNameSinhala, coff.firstNameTamil AS manageFirstNameTamil, coff.lastNameEnglish AS manageLastNameEnglish, coff.lastNameSinhala AS manageLastNameSinhala, coff.lastNameTamil AS manageLastNameTamil, c.companyNameEnglish, c.companyNameSinhala, c.companyNameTamil,
+        dc.centerName FROM collection_officer.collectionofficer coff
+JOIN collection_officer.company c ON coff.companyId = c.id
+JOIN collection_officer.distributedcenter dc ON coff.distributedCenterId = dc.id
+WHERE coff.id = ?
+        `;
+        collectionofficer.query(sql, [userId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+}
