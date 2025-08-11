@@ -340,6 +340,99 @@ exports.rejectRequestEp = async (req, res) => {
   }
 };
 
+exports.dcmGetAllAssignOrders = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+      const managerId = req.user.userId
+      const companyId = req.user.companyId
+      console.log('managerId', managerId)
+      const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+      const deliveryLocationDataObj = deliveryLocationData[0]
+      console.log('result',deliveryLocationDataObj)
+
+      // const orders = await DistributionDAO.getDistributionOrders(deliveryLocationDataObj);
+
+      const userId = req.user.userId
+      console.log(userId);
+      const { page, limit, searchText, status, date } = await DistributionValidate.dcmGetAllAssignOrdersSchema.validateAsync(req.query);
+
+      const { items, total } = await DistributionDAO.dcmGetAllAssignOrdersDao(managerId, page, limit, status, searchText, deliveryLocationDataObj, date)
+      console.log('items', items)
+      return res.status(200).json({ items, total });
+  } catch (error) {
+      if (error.isJoi) {
+          return res.status(400).json({ error: error.details[0].message });
+      }
+
+      console.error("Error fetching recived complaind:", error);
+      return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+  }
+}
+
+
+exports.dcmToDoAssignOrders = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+      const managerId = req.user.userId
+      const companyId = req.user.companyId
+      console.log('managerId', managerId)
+      const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+      const deliveryLocationDataObj = deliveryLocationData[0]
+      console.log('result',deliveryLocationDataObj)
+
+      // const orders = await DistributionDAO.getDistributionOrders(deliveryLocationDataObj);
+
+      const userId = req.user.userId
+      console.log(userId);
+      const { page, limit, searchText, status, date } = await DistributionValidate.dcmGetAllAssignOrdersSchema.validateAsync(req.query);
+
+      const { items, total } = await DistributionDAO.dcmGetToDoAssignOrdersDao(managerId, page, limit, status, searchText, deliveryLocationDataObj, date)
+      console.log('items', items)
+      return res.status(200).json({ items, total });
+  } catch (error) {
+      if (error.isJoi) {
+          return res.status(400).json({ error: error.details[0].message });
+      }
+
+      console.error("Error fetching recived complaind:", error);
+      return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+  }
+}
+
+exports.dcmCompletedAssignOrders = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+      const managerId = req.user.userId
+      const companyId = req.user.companyId
+      console.log('managerId', managerId)
+      const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+      const deliveryLocationDataObj = deliveryLocationData[0]
+      console.log('result',deliveryLocationDataObj)
+
+      // const orders = await DistributionDAO.getDistributionOrders(deliveryLocationDataObj);
+
+      const userId = req.user.userId
+      console.log(userId);
+      const { page, limit, searchText, date } = await DistributionValidate.dcmGetCompletedAssignOrdersSchema.validateAsync(req.query);
+
+      const { items, total } = await DistributionDAO.dcmGetCompletedAssignOrdersDao(managerId, page, limit, searchText, deliveryLocationDataObj, date)
+      console.log('items', items)
+      return res.status(200).json({ items, total });
+  } catch (error) {
+      if (error.isJoi) {
+          return res.status(400).json({ error: error.details[0].message });
+      }
+
+      console.error("Error fetching recived complaind:", error);
+      return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+  }
+}
   
   
 

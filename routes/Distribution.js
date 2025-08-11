@@ -61,4 +61,18 @@ router.post(
     DistributionEp.rejectRequestEp
 )
 
+router.get('/get-all-assign-orders', 
+    authMiddleware,
+    DistributionEp.dcmGetAllAssignOrders
+);
+router.get('/get-todo-assign-orders', 
+    authMiddleware,
+    DistributionEp.dcmToDoAssignOrders
+);
+
+router.get('/get-completed-assign-orders', 
+    authMiddleware,
+    DistributionEp.dcmCompletedAssignOrders
+);
+
 module.exports = router;
