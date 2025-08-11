@@ -453,8 +453,7 @@ exports.getReseantCollectionDao = (centerId) => {
             JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
             JOIN plant_care.cropvariety CV ON FPC.cropId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-            WHERE DATE(RFP.createdAt) = '2024-12-31' 
-            AND COF.centerId = ?
+            WHERE COF.centerId = ?
             GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish, DATE(RFP.createdAt)
             ORDER BY DATE(RFP.createdAt)
             LIMIT 5
