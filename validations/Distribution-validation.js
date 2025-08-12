@@ -37,7 +37,6 @@ exports.dcmGetAllAssignOrdersSchema = Joi.object({
     status: Joi.string().allow('').optional(),
     date: Joi.string().allow('').optional(),
 
-    
 });
 
 exports.dcmGetCompletedAssignOrdersSchema = Joi.object({
@@ -46,5 +45,12 @@ exports.dcmGetCompletedAssignOrdersSchema = Joi.object({
     searchText: Joi.string().allow('').optional(),
     date: Joi.string().allow('').optional(),
 
-    
+});
+
+exports.dcmGetOutForDeliveryOrdersSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+
 });

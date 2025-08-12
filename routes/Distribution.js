@@ -75,4 +75,14 @@ router.get('/get-completed-assign-orders',
     DistributionEp.dcmCompletedAssignOrders
 );
 
+router.get('/get-out-for-delivery-orders', 
+    authMiddleware,
+    DistributionEp.dcmOutForDeliveryOrders
+);
+
+router.get('/set-status-and-time', 
+    authMiddleware,
+    DistributionEp.dcmSetStatusAndTime
+);
+
 module.exports = router;

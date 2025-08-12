@@ -936,5 +936,94 @@ exports.dcmGetCompletedAssignOrdersDao = (userId, page, limit, searchText, deliv
         });
     });
 };
+
+exports.dcmGetOutForDeliveryOrdersDao = (userId, page, limit, status, searchText, deliveryLocationDataObj) => {
+    return new Promise((resolve, reject) => {
+        const offset = (page - 1) * limit;
+
+        const { city, district } = deliveryLocationDataObj;
+
+        const countParams = [city, district, city, district];
+        const dataParams = [city, district, city, district];
+
+        let countSql = `
+            SELECT COUNT(*) AS total FROM market_place.processorders po
+            LEFT JOIN market_place.orders o ON o.id = po.orderId
+            LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+            LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+            LEFT JOIN collection_officer.distributedtargetitems dti ON dti.orderId = po.id
+            LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
+            LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
+            WHERE po.status = 'Processing' AND po.isTargetAssigned = 1
+            AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+            AND po.packagePackStatus != 'Completed'
+        `;
+
+        let dataSql = `
+        SELECT po.id AS processOrderId, o.id AS orderId, po.invNo, po.status, po.isTargetAssigned, o.delivaryMethod, o.sheduleTime, o.sheduleDate,
+        po.packagePackStatus, coff.id AS officerId, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish FROM market_place.processorders po
+        LEFT JOIN market_place.orders o ON o.id = po.orderId
+        LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+        LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+        LEFT JOIN collection_officer.distributedtargetitems dti ON dti.orderId = po.id
+        LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
+        LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
+        WHERE po.status = 'Processing' AND po.isTargetAssigned = 1
+        AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+        AND po.packagePackStatus != 'Completed'
+        `;
+
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    po.invNo LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue);
+            dataParams.push(searchValue);
+        }
+
+        if (status) {
+            countSql += ` AND po.packagePackStatus = ? `;
+            dataSql += ` AND po.packagePackStatus = ? `;
+            countParams.push(status);
+            dataParams.push(status);
+
+        }
+
+        if (date) {
+            countSql += ` AND DATE(o.sheduleDate) = ? `;
+            dataSql  += ` AND DATE(o.sheduleDate) = ? `;
+            countParams.push(date);
+            dataParams.push(date);
+        }
+
+
+        dataSql += " LIMIT ? OFFSET ? ";
+        dataParams.push(limit, offset);
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
   
 
