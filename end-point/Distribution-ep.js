@@ -470,14 +470,17 @@ exports.dcmSetStatusAndTime = async (req, res) => {
   console.log('fullUrl', fullUrl)
   try {
 
-      const data = req.body;
+      // const data = await DistributionValidate.dcmSetTimeAndStatusSchema.validateAsync(req.body);
+      const data = req.body.data
       console.log('data', data);
-      
-      // const { page, limit, searchText, status } = await DistributionValidate.dcmGetOutForDeliveryOrdersSchema.validateAsync(req.query);
 
-      // const { items, total } = await DistributionDAO.dcmGetOutForDeliveryOrdersDao(managerId, page, limit, status, searchText, deliveryLocationDataObj)
-      // console.log('items', items)
-      return res.status(200).json({ items, total });
+      const result = await DistributionDAO.dcmSetStatusAndTimeDao(data)
+
+      return res.status(200).json({ 
+        success: true,
+        message: 'Update successful',
+        result
+      });
   } catch (error) {
       if (error.isJoi) {
           return res.status(400).json({ error: error.details[0].message });

@@ -54,3 +54,15 @@ exports.dcmGetOutForDeliveryOrdersSchema = Joi.object({
     status: Joi.string().allow('').optional(),
 
 });
+
+// exports.dcmSetTimeAndStatusSchema = Joi.object({
+//     data: Joi.object({
+//       orderIds: Joi.array()
+//         .items(Joi.number().integer().positive())
+//         .min(1)
+//         .required(),
+//       time: Joi.string()
+//         .isoDate()
+//         .required()
+//     }).required()
+//   });

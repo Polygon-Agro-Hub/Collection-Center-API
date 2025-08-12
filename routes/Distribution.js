@@ -80,7 +80,7 @@ router.get('/get-out-for-delivery-orders',
     DistributionEp.dcmOutForDeliveryOrders
 );
 
-router.get('/set-status-and-time', 
+router.post('/set-status-and-time', 
     authMiddleware,
     DistributionEp.dcmSetStatusAndTime
 );
