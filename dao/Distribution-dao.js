@@ -1078,6 +1078,146 @@ exports.dcmSetStatusAndTimeDao = (data) => {
         .catch(err => reject(err));
     });
   };
+
+  exports.dcmGetOfficerTargetsDao = (managerId, deliveryLocationDataObj) => {
+    return new Promise((resolve, reject) => {
+
+        const { city, district } = deliveryLocationDataObj;
+
+        const countParams = [managerId, managerId, city, district, city, district];
+        const dataParams = [managerId, managerId, city, district, city, district];
+
+        let countSql = `
+        SELECT COUNT(*) AS total
+        FROM collection_officer.distributedtarget dt  
+        JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+        JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+        JOIN market_place.processorders po ON dti.orderId = po.id
+        LEFT JOIN market_place.orders o ON o.id = po.orderId
+        LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+        LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+        WHERE coff.id = ? OR coff.irmId = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isTargetAssigned = 1
+                AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+        `;
+
+        let dataSql = `
+        SELECT dti.id AS distributedTargetItemId, dt.id AS distributedTargetId, po.id AS processOrderId, dti.isComplete, dt.userId, 
+po.status, po.isTargetAssigned , po.packagePackStatus, po.outDlvrDate, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish
+FROM collection_officer.distributedtarget dt  
+JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+JOIN market_place.processorders po ON dti.orderId = po.id
+LEFT JOIN market_place.orders o ON o.id = po.orderId
+LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+WHERE coff.id = ? OR coff.irmId = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isTargetAssigned = 1
+        AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+        `;
+
+        // dataSql += " ORDER BY po.outDlvrDate DESC LIMIT ? OFFSET ? ";
+
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
+
+
+exports.dcmGetSelectedOfficerTargetsDao = (officerId, searchText, status, deliveryLocationDataObj) => {
+    return new Promise((resolve, reject) => {
+
+        const { city, district } = deliveryLocationDataObj;
+
+        const countParams = [officerId, city, district, city, district];
+        const dataParams = [officerId, city, district, city, district];
+
+        let countSql = `
+        SELECT COUNT(*) AS total
+        FROM collection_officer.distributedtarget dt  
+        JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+        JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+        JOIN market_place.processorders po ON dti.orderId = po.id
+        LEFT JOIN market_place.orders o ON o.id = po.orderId
+        LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+        LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+        WHERE coff.id = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isTargetAssigned = 1
+                AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+        `;
+
+        let dataSql = `
+        SELECT dti.id AS distributedTargetItemId, dt.id AS distributedTargetId, po.id AS processOrderId, dti.isComplete, dt.userId, 
+po.status, po.isTargetAssigned , po.packagePackStatus, po.outDlvrDate, po.invNo, o.sheduleDate, o.sheduleTime, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish
+FROM collection_officer.distributedtarget dt  
+JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+JOIN market_place.processorders po ON dti.orderId = po.id
+LEFT JOIN market_place.orders o ON o.id = po.orderId
+LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+WHERE coff.id = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isTargetAssigned = 1
+        AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+        `;
+
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    po.invNo LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue);
+            dataParams.push(searchValue);
+        }
+
+        if (status) {
+            countSql += ` AND po.packagePackStatus = ? `;
+            dataSql += ` AND po.packagePackStatus = ? `;
+            countParams.push(status);
+            dataParams.push(status);
+
+        }
+
+        // dataSql += " ORDER BY po.outDlvrDate DESC LIMIT ? OFFSET ? ";
+
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
   
 
   

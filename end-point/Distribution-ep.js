@@ -490,6 +490,124 @@ exports.dcmSetStatusAndTime = async (req, res) => {
       return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
   }
 }
+
+exports.dcmGetOfficerTargets = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl);
+
+  try {
+    const managerId = req.user.userId;
+    const companyId = req.user.companyId;
+    console.log('managerId', managerId);
+
+    const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+    const deliveryLocationDataObj = deliveryLocationData[0];
+    console.log('result', deliveryLocationDataObj);
+
+    const { items, total } = await DistributionDAO.dcmGetOfficerTargetsDao(managerId, deliveryLocationDataObj);
+    console.log('items', items);
+
+    // Group by officerId (userId) and count orders
+    const groupedData = items.reduce((acc, item) => {
+      const officerId = item.userId;
+      if (!acc[officerId]) {
+        acc[officerId] = {
+          officerId,
+          empId: item.empId,
+          firstNameEnglish: item.firstNameEnglish,
+          lastNameEnglish: item.lastNameEnglish,
+          allOrders: 0,
+          pending: 0,
+          completed: 0,
+          opened: 0
+        };
+      }
+
+      acc[officerId].allOrders++;
+
+      if (item.packagePackStatus === "Pending") acc[officerId].pending++;
+      if (item.packagePackStatus === "Completed") acc[officerId].completed++;
+      if (item.packagePackStatus === "Opened") acc[officerId].opened++;
+
+      return acc;
+    }, {});
+
+    // Convert to sorted array by officerId
+    const sortedResult = Object.values(groupedData).sort((a, b) => a.officerId - b.officerId);
+
+    console.log('sortedResult', sortedResult);
+
+    return res.status(200).json({ officers: sortedResult, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching officer targets:", error);
+    return res.status(500).json({ error: "An error occurred while fetching officer targets" });
+  }
+};
+
+exports.dcmGetSelectedOfficerTargets = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl);
+
+  try {
+
+    const { officerId, searchText, status } = await DistributionValidate.dcmGetparmasIdSchema.validateAsync(req.query);
+    const managerId = req.user.userId;
+    const companyId = req.user.companyId;
+    console.log('managerId', managerId);
+
+    const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+    const deliveryLocationDataObj = deliveryLocationData[0];
+    console.log('result', deliveryLocationDataObj);
+
+    const { items, total } = await DistributionDAO.dcmGetSelectedOfficerTargetsDao(officerId, searchText, status, deliveryLocationDataObj);
+    console.log('items', items);
+
+    // // Group by officerId (userId) and count orders
+    // const groupedData = items.reduce((acc, item) => {
+    //   const officerId = item.userId;
+    //   if (!acc[officerId]) {
+    //     acc[officerId] = {
+    //       officerId,
+    //       empId: item.empId,
+    //       firstNameEnglish: item.firstNameEnglish,
+    //       lastNameEnglish: item.lastNameEnglish,
+    //       allOrders: 0,
+    //       pending: 0,
+    //       completed: 0,
+    //       opened: 0
+    //     };
+    //   }
+
+    //   acc[officerId].allOrders++;
+
+    //   if (item.packagePackStatus === "Pending") acc[officerId].pending++;
+    //   if (item.packagePackStatus === "Completed") acc[officerId].completed++;
+    //   if (item.packagePackStatus === "Opened") acc[officerId].opened++;
+
+    //   return acc;
+    // }, {});
+
+    // Convert to sorted array by officerId
+    // const sortedResult = Object.values(groupedData).sort((a, b) => a.officerId - b.officerId);
+
+    // console.log('sortedResult', sortedResult);
+
+    return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching officer targets:", error);
+    return res.status(500).json({ error: "An error occurred while fetching officer targets" });
+  }
+};
+
+
   
   
 

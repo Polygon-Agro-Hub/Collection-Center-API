@@ -55,6 +55,12 @@ exports.dcmGetOutForDeliveryOrdersSchema = Joi.object({
 
 });
 
+exports.dcmGetparmasIdSchema = Joi.object({
+    officerId: Joi.number().integer().required(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+});
+
 // exports.dcmSetTimeAndStatusSchema = Joi.object({
 //     data: Joi.object({
 //       orderIds: Joi.array()

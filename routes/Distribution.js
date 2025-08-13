@@ -85,4 +85,14 @@ router.post('/set-status-and-time',
     DistributionEp.dcmSetStatusAndTime
 );
 
+router.get('/get-officer-targets', 
+    authMiddleware,
+    DistributionEp.dcmGetOfficerTargets
+);
+
+router.get('/get-selected-officer-targets', 
+    authMiddleware,
+    DistributionEp.dcmGetSelectedOfficerTargets
+);
+
 module.exports = router;
