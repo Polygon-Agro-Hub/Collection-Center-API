@@ -105,4 +105,9 @@ router.post('/pass-target',
     DistributionEp.dcmPassTarget
 );
 
+router.get('/get-all-products', 
+    authMiddleware,
+    DistributionEp.dcmGetAllProducts
+);
+
 module.exports = router;

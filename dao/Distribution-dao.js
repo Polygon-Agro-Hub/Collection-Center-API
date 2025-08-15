@@ -572,7 +572,8 @@ exports.getReplaceRequestDetails = (rrId) => {
                 CAST(rr.qty AS DECIMAL(10,2)) AS replaceQty, 
                 CAST(rr.price AS DECIMAL(10,2)) AS replacePrice, 
                 rr.productType AS replaceProductType,
-                CAST(mpi.discountedPrice AS DECIMAL(10,2)) AS replaceUnitPrice 
+                CAST(mpi.discountedPrice AS DECIMAL(10,2)) AS replaceUnitPrice,
+                mpi.unitType AS replaceUnitType
             FROM market_place.replacerequest rr
             JOIN market_place.orderpackageitems opi ON rr.replceId = opi.id
             JOIN market_place.marketplaceitems mpi ON rr.productId = mpi.id
@@ -597,7 +598,6 @@ exports.replaceProduct = (approvedRequest) => {
         UPDATE orderpackageitems
         SET
           productId = ?,
-          productType = ?,
           qty = ?,
           price = ?
         WHERE
@@ -606,7 +606,6 @@ exports.replaceProduct = (approvedRequest) => {
   
       const values1 = [
         approvedRequest.replaceProductId,
-        approvedRequest.replaceProductType,
         approvedRequest.replaceQty,
         approvedRequest.replacePrice,
         approvedRequest.replceId
@@ -622,12 +621,11 @@ exports.replaceProduct = (approvedRequest) => {
         // Then update replacerequest
         const dataSql2 = `
           UPDATE replacerequest
-          SET status = ?
+          SET status = 'Approved'
           WHERE id = ?
         `;
   
         const values2 = [
-          approvedRequest.status,
           approvedRequest.rrId
         ];
   
@@ -652,13 +650,12 @@ exports.replaceProduct = (approvedRequest) => {
       const dataSql = `
         UPDATE replacerequest
         SET
-          status = ?
+          status = 'Rejected'
         WHERE
           id = ?
       `;
   
       const values = [
-        approvedRequest.status,
         approvedRequest.rrId
       ];
   
@@ -1343,6 +1340,24 @@ exports.PassTargetOrdersDao = (id, data) => {
             }
             resolve(results);
             console.log('results', results);
+        });
+    });
+};
+
+
+exports.getDcmAllProducts = () => {
+    return new Promise((resolve, reject) => {
+        const dataSql = `
+        SELECT m.id, m.displayName, CAST(m.discountedPrice AS DECIMAL(10,2)) AS discountedPrice, m.unitType  FROM market_place.marketplaceitems m 
+        `;
+        
+        collectionofficer.query(dataSql, (err, results) => {
+            if (err) {
+                console.error('SQL Error:', err);
+                return reject(err);
+            }
+            resolve(results);
+            console.log('results', results)
         });
     });
 };
