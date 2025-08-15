@@ -61,6 +61,16 @@ exports.dcmGetparmasIdSchema = Joi.object({
     status: Joi.string().allow('').optional(),
 });
 
+exports.dcmPassTargetSchema = Joi.object({
+    processOrderIds: Joi.array()
+        .items(Joi.number().integer().required())
+        .min(1)
+        .required(),
+    distributedTargetId: Joi.number().integer().required(),
+    officerId: Joi.number().integer().required(),
+    previousOfficerId: Joi.number().integer().required(),
+});
+
 // exports.dcmSetTimeAndStatusSchema = Joi.object({
 //     data: Joi.object({
 //       orderIds: Joi.array()

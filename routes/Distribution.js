@@ -95,4 +95,14 @@ router.get('/get-selected-officer-targets',
     DistributionEp.dcmGetSelectedOfficerTargets
 );
 
+router.get('/get-officers', 
+    authMiddleware,
+    DistributionEp.dcmGetOfficers
+);
+
+router.post('/pass-target', 
+    authMiddleware,
+    DistributionEp.dcmPassTarget
+);
+
 module.exports = router;

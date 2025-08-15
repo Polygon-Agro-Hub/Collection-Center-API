@@ -607,6 +607,66 @@ exports.dcmGetSelectedOfficerTargets = async (req, res) => {
   }
 };
 
+exports.dcmGetOfficers = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+      const userId = req.user.userId;
+      const companyId = req.user.companyId;
+      
+      const results = await DistributionDAO.getAllOfficersDao(userId, companyId );
+
+      console.log('results', results)
+;
+      res.status(200).json(results);
+  } catch (error) {
+      if (error.isJoi) {
+          return res.status(400).json({ error: error.details[0].message });
+      }
+      console.error("Error retrieving requests:", error);
+      return res.status(500).json({ error: "An error occurred while fetching requests" });
+  }
+};
+
+exports.dcmPassTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl);
+  try {
+
+      console.log('body', req.body)
+
+      const data = await DistributionValidate.dcmPassTargetSchema.validateAsync(req.body);
+      console.log('data', data)
+      
+      const results = await DistributionDAO.PassTargetDao(data);
+      const id = results.distributedTargetId
+      console.log('id', results.distributedTargetId)
+
+      const updateResult = await DistributionDAO.PassTargetOrdersDao(id, data);
+
+      console.log('results', updateResult)
+;
+if (updateResult) {
+  return res.status(201).json({
+    message: "orders passed",
+    status: true,
+    data: updateResult,
+  });
+} else {
+  return res.status(400).json({
+    message: "failed to pass orders",
+    status: false,
+  });
+}
+  } catch (error) {
+      if (error.isJoi) {
+          return res.status(400).json({ error: error.details[0].message });
+      }
+      console.error("Error retrieving requests:", error);
+      return res.status(500).json({ error: "An error occurred while fetching requests" });
+  }
+};
+
 
   
   

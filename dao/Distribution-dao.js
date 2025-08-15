@@ -1218,7 +1218,149 @@ WHERE coff.id = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isT
         });
     });
 };
-  
+
+
+exports.getAllOfficersDao = (userId, companyId) => {
+    return new Promise((resolve, reject) => {
+        const dataSql = `
+        SELECT id, firstNameEnglish, lastNameEnglish, empId
+        FROM collectionofficer
+        WHERE companyId = ? AND (id = ? OR irmId = ?)
+        `;
+        
+        collectionofficer.query(dataSql, [companyId, userId, userId], (err, results) => {
+            if (err) {
+                console.error('SQL Error:', err);
+                return reject(err);
+            }
+            resolve(results);
+            console.log('results', results)
+        });
+    });
+};
+
+
+exports.PassTargetDao = (data) => {
+    return new Promise((resolve, reject) => {
+        const { processOrderIds, distributedTargetId, officerId } = data;
+
+        const queries = [
+            {
+                sql: `UPDATE distributedtarget SET target = target - ? WHERE id = ?`,
+                params: [processOrderIds.length, distributedTargetId]
+            },
+            {
+                sql: `INSERT INTO distributedtarget (userId, target, createdAt)
+                      SELECT ?, 0, NOW()
+                      WHERE NOT EXISTS (
+                          SELECT 1
+                          FROM distributedtarget
+                          WHERE userId = ?
+                            AND DATE(createdAt) = CURDATE()
+                      )`,
+                params: [officerId, officerId]
+            },
+            {
+                sql: `UPDATE distributedtarget
+                      SET target = target + ?
+                      WHERE userId = ?
+                        AND DATE(createdAt) = CURDATE()`,
+                params: [processOrderIds.length, officerId]
+            },
+            {
+                sql: `SELECT id
+                      FROM distributedtarget
+                      WHERE userId = ?
+                        AND DATE(createdAt) = CURDATE()
+                      LIMIT 1`,
+                params: [officerId]
+            }
+        ];
+
+        collectionofficer.getConnection((err, connection) => {
+            if (err) return reject(err);
+
+            connection.beginTransaction((err) => {
+                if (err) {
+                    connection.release();
+                    return reject(err);
+                }
+
+                // Execute queries sequentially
+                const executeQueries = async () => {
+                    try {
+                        const results = [];
+                        for (const query of queries) {
+                            const [result] = await connection.promise().query(query.sql, query.params);
+                            results.push(result);
+                        }
+                        
+                        await connection.promise().commit();
+                        connection.release();
+                        
+                        const insertedOrExistingId = results[3] && results[3][0] ? results[3][0].id : null;
+                        resolve({ results, distributedTargetId: insertedOrExistingId });
+                    } catch (err) {
+                        await connection.promise().rollback();
+                        connection.release();
+                        reject(err);
+                    }
+                };
+
+                executeQueries();
+            });
+        });
+    });
+};
+
+
+
+
+exports.PassTargetOrdersDao = (id, data) => {
+    return new Promise((resolve, reject) => {
+        const { processOrderIds } = data;
+
+        if (!Array.isArray(processOrderIds) || processOrderIds.length === 0) {
+            return reject(new Error('No processOrderIds provided'));
+        }
+
+        // Create placeholders for the IN clause based on array length
+        const placeholders = processOrderIds.map(() => '?').join(',');
+
+        const dataSql = `
+            UPDATE distributedtargetitems
+            SET targetId = ?
+            WHERE orderId IN (${placeholders});
+        `;
+
+        // First param is targetId, then spread the orderId array
+        const params = [id, ...processOrderIds];
+
+        collectionofficer.query(dataSql, params, (err, results) => {
+            if (err) {
+                console.error('SQL Error:', err);
+                return reject(err);
+            }
+            resolve(results);
+            console.log('results', results);
+        });
+    });
+};
+
+
+// UPDATE distributedtarget dt JOIN distributedtargetitems dti ON dt.id = dti.targetId
+//         SET target = target + ?
+//         WHERE userId = ?
+//         AND CurrentDate = CURDATE();
+
+//         SELECT id 
+//         FROM distributedtarget
+//         WHERE userId = ? 
+//         AND CurrentDate = CURDATE();
+
+
+
+
 
   
 
