@@ -71,6 +71,20 @@ exports.dcmPassTargetSchema = Joi.object({
     previousOfficerId: Joi.number().integer().required(),
 });
 
+exports.dchGetcenterTargetSchema = Joi.object({
+    centerId: Joi.number().integer().required(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+});
+
+exports.dchGetcenterTargetOutForDeliverySchema = Joi.object({
+    centerId: Joi.number().integer().required(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+});
+
 // exports.dcmSetTimeAndStatusSchema = Joi.object({
 //     data: Joi.object({
 //       orderIds: Joi.array()

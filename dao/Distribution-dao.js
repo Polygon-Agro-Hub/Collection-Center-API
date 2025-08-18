@@ -952,21 +952,36 @@ exports.dcmGetOutForDeliveryOrdersDao = (userId, page, limit, status, searchText
             LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
             LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
             WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1
-            AND (oh.city IN (?, ?) OR oa.city IN (?, ?)) AND DATE(o.sheduleDate) = CURDATE()
+            AND (oh.city IN (?, ?) OR oa.city IN (?, ?)) 
         `;
 
         let dataSql = `
-        SELECT po.id AS processOrderId, o.id AS orderId, po.invNo, po.status, po.isTargetAssigned, o.delivaryMethod, o.sheduleTime, o.sheduleDate,
+        SELECT po.id AS processOrderId, o.id AS orderId, po.invNo, po.status, po.isTargetAssigned, o.delivaryMethod, o.sheduleTime, o.sheduleDate, CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo') AS sheduleDateLocal,
         po.packagePackStatus, coff.id AS officerId, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish, po.outDlvrDate, CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') AS outDlvrDateLocal,
         CASE 
-            WHEN (o.sheduleTime = 'Within 8-12 PM' AND TIME(po.outDlvrDate) > '12:00:00') OR
-                 (o.sheduleTime = 'Within 12-4 PM' AND TIME(po.outDlvrDate) > '16:00:00') OR
-                 (o.sheduleTime = 'Within 4-8 PM' AND TIME(po.outDlvrDate) > '20:00:00') THEN 'Late'
-            WHEN (o.sheduleTime = 'Within 8-12 PM' AND TIME(po.outDlvrDate) >= '08:00:00' AND TIME(po.outDlvrDate) <= '12:00:00') OR
-                 (o.sheduleTime = 'Within 12-4 PM' AND TIME(po.outDlvrDate) >= '12:00:00' AND TIME(po.outDlvrDate) <= '16:00:00') OR
-                 (o.sheduleTime = 'Within 4-8 PM' AND TIME(po.outDlvrDate) >= '16:00:00' AND TIME(po.outDlvrDate) <= '20:00:00') THEN 'On Time'
-            ELSE 'Unknown'
-        END AS deliveryPeriod
+   
+    WHEN (
+        (o.sheduleTime = 'Within 8-12 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') > TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '12:00:00'))
+        OR
+        (o.sheduleTime = 'Within 12-4 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') > TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '16:00:00'))
+        OR
+        (o.sheduleTime = 'Within 4-8 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') > TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '20:00:00'))
+    )
+    THEN 'Late'
+
+
+    WHEN (
+        (o.sheduleTime = 'Within 8-12 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') <= TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '12:00:00'))
+        OR
+        (o.sheduleTime = 'Within 12-4 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') <= TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '16:00:00'))
+        OR
+        (o.sheduleTime = 'Within 4-8 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') <= TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '20:00:00'))
+    )
+    THEN 'On Time'
+
+    ELSE 'Unknown'
+END AS deliveryPeriod
+
         FROM market_place.processorders po
         LEFT JOIN market_place.orders o ON o.id = po.orderId
         LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
@@ -975,7 +990,7 @@ exports.dcmGetOutForDeliveryOrdersDao = (userId, page, limit, status, searchText
         LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
         LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
         WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1
-        AND (oh.city IN (?, ?) OR oa.city IN (?, ?)) AND DATE(o.sheduleDate) = CURDATE()
+        AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
         `;
 
         if (searchText) {
@@ -993,23 +1008,32 @@ exports.dcmGetOutForDeliveryOrdersDao = (userId, page, limit, status, searchText
 
         if (status === 'Late' || status === 'On Time') {
             const lateOrOnTimeCondition = `
-              AND (
+            AND (
                 (
                   ? = 'Late' AND (
-                    (o.sheduleTime = 'Within 8-12 PM' AND TIME(po.outDlvrDate) > '12:00:00') OR
-                    (o.sheduleTime = 'Within 12-4 PM' AND TIME(po.outDlvrDate) > '16:00:00') OR
-                    (o.sheduleTime = 'Within 4-8 PM' AND TIME(po.outDlvrDate) > '20:00:00')
+                    (o.sheduleTime = 'Within 8-12 PM'  AND (DATE(po.outDlvrDate) > DATE(o.sheduleDate) OR (DATE(po.outDlvrDate) = DATE(o.sheduleDate) AND TIME(po.outDlvrDate) > '12:00:00'))) OR
+                    (o.sheduleTime = 'Within 12-4 PM'  AND (DATE(po.outDlvrDate) > DATE(o.sheduleDate) OR (DATE(po.outDlvrDate) = DATE(o.sheduleDate) AND TIME(po.outDlvrDate) > '16:00:00'))) OR
+                    (o.sheduleTime = 'Within 4-8 PM'   AND (DATE(po.outDlvrDate) > DATE(o.sheduleDate) OR (DATE(po.outDlvrDate) = DATE(o.sheduleDate) AND TIME(po.outDlvrDate) > '20:00:00')))
                   )
                 )
                 OR
                 (
                   ? = 'On Time' AND (
-                    (o.sheduleTime = 'Within 8-12 PM' AND TIME(po.outDlvrDate) >= '08:00:00' AND TIME(po.outDlvrDate) <= '12:00:00') OR
-                    (o.sheduleTime = 'Within 12-4 PM' AND TIME(po.outDlvrDate) >= '12:00:00' AND TIME(po.outDlvrDate) <= '16:00:00') OR
-                    (o.sheduleTime = 'Within 4-8 PM' AND TIME(po.outDlvrDate) >= '16:00:00' AND TIME(po.outDlvrDate) <= '20:00:00')
+                    -- Delivery date is before schedule date (early but counted as on time)
+                    DATE(po.outDlvrDate) < DATE(o.sheduleDate)
+                    OR
+                    -- Or delivery is on the schedule date within slot
+                    (
+                      DATE(po.outDlvrDate) = DATE(o.sheduleDate) AND (
+                        (o.sheduleTime = 'Within 8-12 PM' AND TIME(po.outDlvrDate) <= '12:00:00') OR
+                        (o.sheduleTime = 'Within 12-4 PM' AND TIME(po.outDlvrDate) <= '16:00:00') OR
+                        (o.sheduleTime = 'Within 4-8 PM'  AND TIME(po.outDlvrDate) <= '20:00:00')
+                      )
+                    )
                   )
                 )
-              )
+            )
+            
             `;
           
             countSql += lateOrOnTimeCondition;
@@ -1358,6 +1382,225 @@ exports.getDcmAllProducts = () => {
             }
             resolve(results);
             console.log('results', results)
+        });
+    });
+};
+
+exports.dchGetCenterTarget = (companyHeadId, searchText, status, date, companyId, centerId) => {
+    return new Promise((resolve, reject) => {
+        const countParams = [companyId, centerId];
+        const dataParams = [companyId, centerId];
+
+        let countSql = `
+        SELECT COUNT(*) AS total
+        FROM collection_officer.distributedtarget dt  
+        JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+        JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+        JOIN market_place.processorders po ON dti.orderId = po.id
+        LEFT JOIN market_place.orders o ON o.id = po.orderId
+        LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+        LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+        WHERE po.status = 'Processing' AND po.isTargetAssigned = 1 AND coff.companyId = ? AND coff.distributedCenterId = ?
+
+        `;
+
+        let dataSql = `
+        SELECT dti.id AS distributedTargetItemId, dt.id AS distributedTargetId, po.id AS processOrderId, dti.isComplete, dt.userId, 
+po.status, po.isTargetAssigned , po.packagePackStatus, po.outDlvrDate, po.invNo, o.sheduleDate, o.sheduleTime, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish,
+coff.distributedCenterId, coff.companyId 
+FROM collection_officer.distributedtarget dt  
+JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+JOIN market_place.processorders po ON dti.orderId = po.id
+LEFT JOIN market_place.orders o ON o.id = po.orderId
+LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+WHERE po.status = 'Processing' AND po.isTargetAssigned = 1 AND coff.companyId = ? AND coff.distributedCenterId = ?
+        `;
+
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    po.invNo LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue);
+            dataParams.push(searchValue);
+        }
+
+        if (status) {
+            countSql += ` AND po.packagePackStatus = ? `;
+            dataSql += ` AND po.packagePackStatus = ? `;
+            countParams.push(status);
+            dataParams.push(status);
+
+        }
+
+        if (date) {
+            countSql += ` AND DATE(o.sheduleDate) = ? `;
+            dataSql  += ` AND DATE(o.sheduleDate) = ? `;
+            countParams.push(date);
+            dataParams.push(date);
+        }
+
+        // dataSql += " ORDER BY po.outDlvrDate DESC LIMIT ? OFFSET ? ";
+
+
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
+        });
+    });
+};
+
+
+
+exports.dchGetCenterTargetOutForDelivery = (companyHeadId, searchText, status, date, companyId, centerId) => {
+    return new Promise((resolve, reject) => {
+        const countParams = [companyId, centerId];
+        const dataParams = [companyId, centerId];
+
+        let countSql = `
+            SELECT COUNT(*) AS total FROM market_place.processorders po
+            LEFT JOIN market_place.orders o ON o.id = po.orderId
+            LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+            LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+            LEFT JOIN collection_officer.distributedtargetitems dti ON dti.orderId = po.id
+            LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
+            LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
+            WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1 AND coff.companyId = ? AND coff.distributedCenterId = ?
+        `;
+
+        let dataSql = `
+        SELECT po.id AS processOrderId, o.id AS orderId, po.invNo, po.status, po.isTargetAssigned, o.delivaryMethod, o.sheduleTime, o.sheduleDate, CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo') AS sheduleDateLocal,
+        po.packagePackStatus, coff.id AS officerId, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish, po.outDlvrDate, CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') AS outDlvrDateLocal,
+        CASE 
+   
+    WHEN (
+        (o.sheduleTime = 'Within 8-12 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') > TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '12:00:00'))
+        OR
+        (o.sheduleTime = 'Within 12-4 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') > TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '16:00:00'))
+        OR
+        (o.sheduleTime = 'Within 4-8 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') > TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '20:00:00'))
+    )
+    THEN 'Late'
+
+
+    WHEN (
+        (o.sheduleTime = 'Within 8-12 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') <= TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '12:00:00'))
+        OR
+        (o.sheduleTime = 'Within 12-4 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') <= TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '16:00:00'))
+        OR
+        (o.sheduleTime = 'Within 4-8 PM' AND CONVERT_TZ(po.outDlvrDate, 'UTC', 'Asia/Colombo') <= TIMESTAMP(DATE(CONVERT_TZ(o.sheduleDate, 'UTC', 'Asia/Colombo')), '20:00:00'))
+    )
+    THEN 'On Time'
+
+    ELSE 'Unknown'
+END AS deliveryPeriod
+
+        FROM market_place.processorders po
+        LEFT JOIN market_place.orders o ON o.id = po.orderId
+        LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+        LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+        LEFT JOIN collection_officer.distributedtargetitems dti ON dti.orderId = po.id
+        LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
+        LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
+        WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1 AND coff.companyId = ? AND coff.distributedCenterId = ?
+        `;
+
+        if (searchText) {
+            const searchCondition = `
+                AND (
+                    po.invNo LIKE ?
+                )
+            `;
+            countSql += searchCondition;
+            dataSql += searchCondition;
+            const searchValue = `%${searchText}%`;
+            countParams.push(searchValue);
+            dataParams.push(searchValue);
+        }
+
+        if (date) {
+            countSql += ` AND DATE(o.sheduleDate) = ? `;
+            dataSql  += ` AND DATE(o.sheduleDate) = ? `;
+            countParams.push(date);
+            dataParams.push(date);
+        }
+
+        if (status === 'Late' || status === 'On Time') {
+            const lateOrOnTimeCondition = `
+            AND (
+                (
+                  ? = 'Late' AND (
+                    (o.sheduleTime = 'Within 8-12 PM'  AND (DATE(po.outDlvrDate) > DATE(o.sheduleDate) OR (DATE(po.outDlvrDate) = DATE(o.sheduleDate) AND TIME(po.outDlvrDate) > '12:00:00'))) OR
+                    (o.sheduleTime = 'Within 12-4 PM'  AND (DATE(po.outDlvrDate) > DATE(o.sheduleDate) OR (DATE(po.outDlvrDate) = DATE(o.sheduleDate) AND TIME(po.outDlvrDate) > '16:00:00'))) OR
+                    (o.sheduleTime = 'Within 4-8 PM'   AND (DATE(po.outDlvrDate) > DATE(o.sheduleDate) OR (DATE(po.outDlvrDate) = DATE(o.sheduleDate) AND TIME(po.outDlvrDate) > '20:00:00')))
+                  )
+                )
+                OR
+                (
+                  ? = 'On Time' AND (
+                    -- Delivery date is before schedule date (early but counted as on time)
+                    DATE(po.outDlvrDate) < DATE(o.sheduleDate)
+                    OR
+                    -- Or delivery is on the schedule date within slot
+                    (
+                      DATE(po.outDlvrDate) = DATE(o.sheduleDate) AND (
+                        (o.sheduleTime = 'Within 8-12 PM' AND TIME(po.outDlvrDate) <= '12:00:00') OR
+                        (o.sheduleTime = 'Within 12-4 PM' AND TIME(po.outDlvrDate) <= '16:00:00') OR
+                        (o.sheduleTime = 'Within 4-8 PM'  AND TIME(po.outDlvrDate) <= '20:00:00')
+                      )
+                    )
+                  )
+                )
+            )
+            
+            `;
+          
+            countSql += lateOrOnTimeCondition;
+            dataSql += lateOrOnTimeCondition;
+          
+            countParams.push(status, status);
+            dataParams.push(status, status);
+        }
+
+        dataSql += " ORDER BY po.outDlvrDate DESC ";
+    
+        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+            if (countErr) {
+                console.error('Error in count query:', countErr);
+                return reject(countErr);
+            }
+
+            const total = countResults[0].total;
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults, total });
+            });
         });
     });
 };

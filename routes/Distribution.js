@@ -110,4 +110,14 @@ router.get('/get-all-products',
     DistributionEp.dcmGetAllProducts
 );
 
+router.get('/get-center-target', 
+    authMiddleware,
+    DistributionEp.dchGetCenterTarget
+);
+
+router.get('/get-center-target-out-for-delivery', 
+    authMiddleware,
+    DistributionEp.dchGetCenterTargetOutForDelivery
+);
+
 module.exports = router;
