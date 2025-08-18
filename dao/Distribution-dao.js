@@ -369,7 +369,7 @@ exports.getDistributionOrders = (deliveryLocationDataObj) => {
                 (oh.city IN (?, ?) OR 
                 oa.city IN (?, ?))
                 AND o.sheduleDate >= CURDATE()
-  AND o.sheduleDate < DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND po.isTargetAssigned = 0 AND po.status = 'Processing';
+  AND o.sheduleDate < DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND (po.isTargetAssigned IS NULL OR po.isTargetAssigned != 1) AND po.status = 'Processing';
         `;
 
         const { city, district } = deliveryLocationDataObj;

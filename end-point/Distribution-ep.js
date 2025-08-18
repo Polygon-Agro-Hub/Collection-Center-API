@@ -344,7 +344,7 @@ exports.dcmGetAllAssignOrders = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log('fullUrl', fullUrl)
   try {
-
+      console.log('user', req.user)
       const managerId = req.user.userId
       const companyId = req.user.companyId
       console.log('managerId', managerId)
