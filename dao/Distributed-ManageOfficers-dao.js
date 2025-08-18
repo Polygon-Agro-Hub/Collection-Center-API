@@ -7,14 +7,14 @@ const uploadFileToS3 = require('../middlewares/s3upload');
 const deleteFromS3 = require('../middlewares/s3delete');
 const path = require("path");
 
-exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) => {
+exports.getAllOfficersDAO = (centerId, companyId, page, limit, status, role, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
         let countSql = `
             SELECT COUNT(*) AS total
             FROM collectionofficer Coff
-            WHERE (Coff.empId LIKE 'DCM%' OR Coff.empId LIKE 'DIO%') AND Coff.distributedCenterId = ?
+            WHERE (Coff.empId LIKE 'DCM%' OR Coff.empId LIKE 'DIO%') AND Coff.distributedCenterId = ? AND Coff.companyId = ?
         `;
 
         let dataSql = `
@@ -33,12 +33,12 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff
-                     WHERE (Coff.empId LIKE 'DCM%' OR Coff.empId LIKE 'DIO%') AND Coff.distributedCenterId = ?
+                     WHERE (Coff.empId LIKE 'DCM%' OR Coff.empId LIKE 'DIO%') AND Coff.distributedCenterId = ? AND Coff.companyId = ?
 
                  `;
 
-        const countParams = [centerId];
-        const dataParams = [centerId];
+        const countParams = [centerId, companyId];
+        const dataParams = [centerId, companyId];
 
         // Apply filters for company ID
         if (status) {
@@ -359,6 +359,7 @@ exports.checkExistPhone2Dao = (phone2) => {
 };
 
 exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image, lastId) => {
+    console.log('centerId', centerId, 'companyId', companyId, 'managerID', managerID, 'officerData', officerData)
     return new Promise(async (resolve, reject) => {
         try {
             // Debugging: Check if officerData exists
@@ -395,7 +396,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
                 [
                     officerData.centerId,
                     companyId,
-                    officerData.jobRole === 'Distribution Manager' ? null : officerData.irmId,
+                    officerData.jobRole === 'Distribution Center Manager' ? null : officerData.irmId,
                     officerData.firstNameEnglish,
                     officerData.firstNameSinhala,
                     officerData.firstNameTamil,

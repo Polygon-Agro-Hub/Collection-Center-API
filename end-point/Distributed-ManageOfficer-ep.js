@@ -14,12 +14,13 @@ exports.getAllOfficers = async (req, res) => {
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
 
     const centerId = req.user.distributedCenterId;
+    const companyId = req.user.companyId
     
 
     const { page, limit, status, role, searchText } = validatedQuery;
 
     // Call the DAO to get all collection officers
-    const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(centerId, page, limit, status, role, searchText);
+    const { items, total } = await ManageOfficerDAO.getAllOfficersDAO(centerId, companyId, page, limit, status, role, searchText);
 
     return res.status(200).json({ items, total });
   } catch (error) {
