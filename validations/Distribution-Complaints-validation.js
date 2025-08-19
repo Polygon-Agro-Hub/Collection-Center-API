@@ -31,3 +31,35 @@ exports.dcmGetAllSentComplaintsSchema = Joi.object({
     emptype: Joi.string().allow('').optional()
     
 });
+
+exports.getAllDCHRecievedComplaintsSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional()
+    
+});
+
+exports.dchGetparmasIdSchema = Joi.object({
+    id: Joi.number().integer().required()
+});
+
+exports.dchReplyComplainSchema = Joi.object({
+    id: Joi.number().integer().required(),
+    reply: Joi.string().required()
+});
+
+exports.getAllDCHSentComplaintsSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    emptype: Joi.string().allow('').optional()
+    
+});
+
+
+exports.DCHAddComplaintSchema = Joi.object({
+    category: Joi.string().required(),
+    complaint: Joi.string().required(),
+});

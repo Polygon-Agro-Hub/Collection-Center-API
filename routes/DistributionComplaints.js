@@ -39,4 +39,35 @@ router.get('/dcm-get-reply-by-complaint-id/:id',
     DistributionComplaintsEp.dcmGetRecivedReplyByComplaintId
 );
 
+router.get('/get-recived-dch-complaints', 
+    authMiddleware,
+    DistributionComplaintsEp.getAllRecivedDCHComplain
+);
+
+router.get('/dch-get-recived-complaints-by-id/:id', 
+    authMiddleware,
+    DistributionComplaintsEp.dchGetRecivedComplainById
+);
+
+router.patch('/dch-reply-complain',
+    authMiddleware,
+    DistributionComplaintsEp.DCHReplyComplain
+);
+
+router.patch('/forword-dch-complain-admin/:id',
+    authMiddleware,
+    DistributionComplaintsEp.DCHForwordComplaintToAdmin
+);
+
+router.get('/get-all-sent-dch-complaint',
+    authMiddleware,
+    DistributionComplaintsEp.getAllSentDCHComplaint
+)
+
+router.post('/add-complain-dch',
+    authMiddleware,
+    DistributionComplaintsEp.addComplaintDCH
+);
+
+
 module.exports = router;
