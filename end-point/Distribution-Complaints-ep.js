@@ -212,8 +212,10 @@ exports.dchGetRecivedComplainById = async (req, res) => {
 exports.DCHReplyComplain = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     try {
+
+        const userId = req.user.userId
         const complain = await DistributionComplaintsValidate.dchReplyComplainSchema.validateAsync(req.body)
-        const result = await DistributionComplaintsDAO.DCHReplyComplainDao(complain)
+        const result = await DistributionComplaintsDAO.DCHReplyComplainDao(complain, userId)
         if (result.affectedRows === 0) {
             return res.json({ message: "Reply Does not send!", status: false })
         }

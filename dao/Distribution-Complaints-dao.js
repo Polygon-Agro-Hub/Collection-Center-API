@@ -435,11 +435,12 @@ exports.dchGetComplainTemplateDataDao = (id) => {
 };
 
 
-exports.DCHReplyComplainDao = (data) => {
+exports.DCHReplyComplainDao = (data, userId) => {
     return new Promise((resolve, reject) => {
         const sql = `
         UPDATE distributedcomplains
         SET reply = ?,
+            replyBy = ?,
             DCMStatus = 'Closed',
             DCHStatus = 'Closed',
             DIOStatus = CASE 
@@ -448,7 +449,7 @@ exports.DCHReplyComplainDao = (data) => {
             END
         WHERE id = ?
         `;
-        collectionofficer.query(sql, [data.reply, data.id], (err, results) => {
+        collectionofficer.query(sql, [data.reply, userId, data.id, ], (err, results) => {
             if (err) {
                 return reject(err);
             }
