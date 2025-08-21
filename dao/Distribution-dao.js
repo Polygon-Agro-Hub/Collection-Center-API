@@ -1159,88 +1159,6 @@ WHERE coff.id = ? OR coff.irmId = ? AND po.status IN ('Processing', 'Out For Del
     });
 };
 
-
-exports.dcmGetSelectedOfficerTargetsDao = (officerId, searchText, status, deliveryLocationDataObj) => {
-    return new Promise((resolve, reject) => {
-
-        const { city, district } = deliveryLocationDataObj;
-
-        const countParams = [officerId, city, district, city, district];
-        const dataParams = [officerId, city, district, city, district];
-
-        let countSql = `
-        SELECT COUNT(*) AS total
-        FROM collection_officer.distributedtarget dt  
-        JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
-        JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
-        JOIN market_place.processorders po ON dti.orderId = po.id
-        LEFT JOIN market_place.orders o ON o.id = po.orderId
-        LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
-        LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
-        WHERE coff.id = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isTargetAssigned = 1
-                AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
-        `;
-
-        let dataSql = `
-        SELECT dti.id AS distributedTargetItemId, dt.id AS distributedTargetId, po.id AS processOrderId, dti.isComplete, dt.userId, 
-po.status, po.isTargetAssigned , po.packagePackStatus, po.outDlvrDate, po.invNo, o.sheduleDate, o.sheduleTime, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish
-FROM collection_officer.distributedtarget dt  
-JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
-JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
-JOIN market_place.processorders po ON dti.orderId = po.id
-LEFT JOIN market_place.orders o ON o.id = po.orderId
-LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
-LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
-WHERE coff.id = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isTargetAssigned = 1
-        AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
-        `;
-
-        if (searchText) {
-            const searchCondition = `
-                AND (
-                    po.invNo LIKE ?
-                )
-            `;
-            countSql += searchCondition;
-            dataSql += searchCondition;
-            const searchValue = `%${searchText}%`;
-            countParams.push(searchValue);
-            dataParams.push(searchValue);
-        }
-
-        if (status) {
-            countSql += ` AND po.packagePackStatus = ? `;
-            dataSql += ` AND po.packagePackStatus = ? `;
-            countParams.push(status);
-            dataParams.push(status);
-
-        }
-
-        // dataSql += " ORDER BY po.outDlvrDate DESC LIMIT ? OFFSET ? ";
-
-
-        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
-            if (countErr) {
-                console.error('Error in count query:', countErr);
-                return reject(countErr);
-            }
-
-            const total = countResults[0].total;
-
-            // Execute data query
-            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
-                if (dataErr) {
-                    console.error('Error in data query:', dataErr);
-                    return reject(dataErr);
-                }
-
-                resolve({ items: dataResults, total });
-            });
-        });
-    });
-};
-
-
 exports.getAllOfficersDao = (userId, companyId) => {
     return new Promise((resolve, reject) => {
         const dataSql = `
@@ -1605,16 +1523,291 @@ END AS deliveryPeriod
     });
 };
 
+// exports.dcmGetSelectedOfficerTargetsDao = (officerId, searchText, status, deliveryLocationDataObj) => {
+//     return new Promise((resolve, reject) => {
 
-// UPDATE distributedtarget dt JOIN distributedtargetitems dti ON dt.id = dti.targetId
-//         SET target = target + ?
-//         WHERE userId = ?
-//         AND CurrentDate = CURDATE();
+//         const { city, district } = deliveryLocationDataObj;
 
-//         SELECT id 
-//         FROM distributedtarget
-//         WHERE userId = ? 
-//         AND CurrentDate = CURDATE();
+//         const countParams = [officerId, city, district, city, district];
+//         const dataParams = [officerId, city, district, city, district];
+
+//         let countSql = `
+//         SELECT COUNT(*) AS total
+//         FROM collection_officer.distributedtarget dt  
+//         JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+//         JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+//         JOIN market_place.processorders po ON dti.orderId = po.id
+//         LEFT JOIN market_place.orders o ON o.id = po.orderId
+//         LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+//         LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+//         WHERE coff.id = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isTargetAssigned = 1
+//                 AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+//         `;
+
+//         let dataSql = `
+//         SELECT dti.id AS distributedTargetItemId, dt.id AS distributedTargetId, po.id AS processOrderId, dti.isComplete, dt.userId, 
+// po.status, po.isTargetAssigned , po.packagePackStatus, po.outDlvrDate, po.invNo, o.sheduleDate, o.sheduleTime, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish
+// FROM collection_officer.distributedtarget dt  
+// JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+// JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+// JOIN market_place.processorders po ON dti.orderId = po.id
+// LEFT JOIN market_place.orders o ON o.id = po.orderId
+// LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+// LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+// WHERE coff.id = ? AND po.status IN ('Processing', 'Out For Delivery') AND po.isTargetAssigned = 1
+//         AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+//         `;
+
+//         if (searchText) {
+//             const searchCondition = `
+//                 AND (
+//                     po.invNo LIKE ?
+//                 )
+//             `;
+//             countSql += searchCondition;
+//             dataSql += searchCondition;
+//             const searchValue = `%${searchText}%`;
+//             countParams.push(searchValue);
+//             dataParams.push(searchValue);
+//         }
+
+//         if (status) {
+//             countSql += ` AND po.packagePackStatus = ? `;
+//             dataSql += ` AND po.packagePackStatus = ? `;
+//             countParams.push(status);
+//             dataParams.push(status);
+
+//         }
+
+//         // dataSql += " ORDER BY po.outDlvrDate DESC LIMIT ? OFFSET ? ";
+
+
+//         collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+//             if (countErr) {
+//                 console.error('Error in count query:', countErr);
+//                 return reject(countErr);
+//             }
+
+//             const total = countResults[0].total;
+
+//             // Execute data query
+//             collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+//                 if (dataErr) {
+//                     console.error('Error in data query:', dataErr);
+//                     return reject(dataErr);
+//                 }
+
+//                 resolve({ items: dataResults, total });
+//             });
+//         });
+//     });
+// };
+
+
+// exports.dcmGetSelectedOfficerTargetsDao = (deliveryLocationDataObj) => {
+//       console.log('hdshf', deliveryLocationDataObj)
+// }
+
+ // if (packageStatus) {
+      //   if (packageStatus === 'Pending') {
+      //     whereClause += ` 
+      //   AND (
+      //     (pc.packedItems = 0 AND pc.totalItems > 0) 
+      //     OR 
+      //     (COALESCE(aic.packedAdditionalItems, 0) = 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0)
+      //   )
+      // `;
+      //   } else if (packageStatus === 'Completed') {
+      //     whereClause += ` 
+      //   AND (
+      //     (pc.totalItems > 0 AND pc.packedItems = pc.totalItems) 
+      //     OR 
+      //     (COALESCE(aic.totalAdditionalItems, 0) > 0 AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0))
+      //   )
+      // `;
+      //   } else if (packageStatus === 'Opened') {
+      //     whereClause += ` 
+      //   AND (
+      //     (pc.packedItems > 0 AND pc.totalItems > pc.packedItems) 
+      //     OR 
+      //     (COALESCE(aic.packedAdditionalItems, 0) > 0 AND COALESCE(aic.totalAdditionalItems, 0) > COALESCE(aic.packedAdditionalItems, 0))
+      //   )
+      // `;
+      //   }
+      // }
+  
+      // if (date) {
+      //   whereClause += " AND DATE(o.sheduleDate) = ?";
+      //   params.push(date);
+      //   countParams.push(date);
+      // }
+
+exports.dcmGetSelectedOfficerTargetsDao = (officerId, deliveryLocationDataObj, search, packageStatus ) => {
+    console.log('fetching')
+    console.log('hdshf', deliveryLocationDataObj)
+    return new Promise((resolve, reject) => {
+
+        const { city, district } = deliveryLocationDataObj;
+
+        const params = [officerId, city, district, city, district];
+  
+      let whereClause = ` 
+      WHERE 
+      o.orderApp = 'Marketplace' 
+      AND coff.id = ? 
+      AND po.status IN ('Processing', 'Out For Delivery') 
+      AND po.isTargetAssigned = 1 
+      AND op.packingStatus != 'Todo'
+      AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+       `;
+  
+     
+  
+      if (search) {
+        whereClause += ` AND (po.invNo LIKE ?)`;
+        const searchPattern = `%${search}%`;
+        params.push(searchPattern);
+        countParams.push(searchPattern);
+      }
+
+      if (packageStatus) {
+          if (packageStatus === 'Pending') {
+            whereClause += ` 
+          AND (
+            (pic.packedItems = 0 AND pic.totalItems > 0) 
+            OR 
+            (COALESCE(aic.packedAdditionalItems, 0) = 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0)
+          )
+        `;
+          } else if (packageStatus === 'Completed') {
+            whereClause += ` 
+          AND (
+            (pic.totalItems > 0 AND pic.packedItems = pic.totalItems) 
+            OR 
+            (COALESCE(aic.totalAdditionalItems, 0) > 0 AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0))
+          )
+        `;
+          } else if (packageStatus === 'Opened') {
+            whereClause += ` 
+          AND (
+            (pic.packedItems > 0 AND pic.totalItems > pic.packedItems) 
+            OR 
+            (COALESCE(aic.packedAdditionalItems, 0) > 0 AND COALESCE(aic.totalAdditionalItems, 0) > COALESCE(aic.packedAdditionalItems, 0))
+          )
+        `;
+          }
+        }
+    
+        // if (date) {
+        //   whereClause += " AND DATE(o.sheduleDate) = ?";
+        //   params.push(date);
+        //   countParams.push(date);
+        // }
+  
+      const dataSql = `
+      WITH package_item_counts AS (
+        SELECT 
+            op.orderId,
+            COUNT(*) AS totalItems,
+            SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) AS packedItems,
+            CASE
+                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) = 0 AND COUNT(*) > 0 THEN 'Pending'
+                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) > 0 
+                    AND SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) < COUNT(*) THEN 'Opened'
+                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) = COUNT(*) AND COUNT(*) > 0 THEN 'Completed'
+                ELSE 'Unknown'
+            END AS packageStatus
+        FROM orderpackageitems opi
+        JOIN orderpackage op ON opi.orderPackageId = op.id
+        GROUP BY op.orderId
+    ),
+    additional_items_counts AS (
+        SELECT 
+            orderId,
+            COUNT(*) AS totalAdditionalItems,
+            SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) AS packedAdditionalItems,
+            CASE
+                WHEN COUNT(*) = 0 THEN 'Unknown'
+                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) = 0 THEN 'Pending'
+                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) > 0 
+                     AND SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) < COUNT(*) THEN 'Opened'
+                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) = COUNT(*) THEN 'Completed'
+                ELSE 'Unknown'
+            END AS additionalItemsStatus
+        FROM orderadditionalitems
+        GROUP BY orderId
+    )
+          
+    SELECT 
+    o.id,
+    po.id AS processOrderId,
+    po.invNo,
+    o.sheduleDate,
+    o.sheduleTime,
+    dti.id AS distributedTargetItemId, 
+    dt.id AS distributedTargetId, 
+    dti.isComplete,
+    dt.userId,
+    coff.empId, 
+    coff.firstNameEnglish, 
+    coff.lastNameEnglish,
+    po.outDlvrDate,
+    COUNT(DISTINCT op.id) AS packageCount,
+    SUM(DISTINCT mpi.productPrice) AS packagePrice,
+    COALESCE(pic.totalItems, 0) AS totPackageItems,
+    COALESCE(pic.packedItems, 0) AS packPackageItems,
+    COALESCE(aic.totalAdditionalItems, 0) AS totalAdditionalItems,
+    COALESCE(aic.packedAdditionalItems, 0) AS packedAdditionalItems,
+    pic.packageStatus,
+    COALESCE(aic.additionalItemsStatus, 'Unknown') AS additionalItemsStatus
+FROM collection_officer.distributedtarget dt  
+JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+JOIN market_place.processorders po ON dti.orderId = po.id
+LEFT JOIN orders o ON po.orderId = o.id
+LEFT JOIN orderpackage op ON op.orderId = po.id 
+LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+LEFT JOIN marketplacepackages mpi ON op.packageId = mpi.id
+LEFT JOIN package_item_counts pic ON pic.orderId = po.id
+LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
+        ${whereClause}
+        GROUP BY
+    o.id,
+    po.id,
+    po.invNo,
+    o.sheduleDate,
+    dti.id,
+    dt.id,
+    dti.isComplete,
+    dt.userId,
+    coff.empId,
+    coff.firstNameEnglish,
+    coff.lastNameEnglish,
+    po.outDlvrDate,
+    pic.totalItems,
+    pic.packedItems,
+    pic.packageStatus,
+    aic.totalAdditionalItems,
+    aic.packedAdditionalItems,
+    aic.additionalItemsStatus;
+
+        `;
+  
+    
+        console.log('Executing Data Query...');
+        marketPlace.query(dataSql, params, (dataErr, dataResults) => {
+          if (dataErr) {
+            console.error("Error in data query:", dataErr);
+            return reject(dataErr);
+          }
+          console.log('dataResults', dataResults)
+          resolve({
+            items: dataResults
+          });
+        });
+      });
+  };
 
 
 

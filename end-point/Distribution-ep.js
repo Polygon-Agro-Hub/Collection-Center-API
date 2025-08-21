@@ -563,10 +563,10 @@ exports.dcmGetSelectedOfficerTargets = async (req, res) => {
 
     const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
     const deliveryLocationDataObj = deliveryLocationData[0];
-    console.log('result', deliveryLocationDataObj);
+    console.log('777result', deliveryLocationDataObj);
 
-    const { items, total } = await DistributionDAO.dcmGetSelectedOfficerTargetsDao(officerId, searchText, status, deliveryLocationDataObj);
-    console.log('items', items);
+    const { items } = await DistributionDAO.dcmGetSelectedOfficerTargetsDao(officerId, deliveryLocationDataObj, searchText, status );
+    console.log('these are items', items);
 
     // // Group by officerId (userId) and count orders
     // const groupedData = items.reduce((acc, item) => {
@@ -598,7 +598,7 @@ exports.dcmGetSelectedOfficerTargets = async (req, res) => {
 
     // console.log('sortedResult', sortedResult);
 
-    return res.status(200).json({ items, total });
+    return res.status(200).json({ items });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
