@@ -379,6 +379,7 @@ exports.dcmGetAllAssignOrders = async (req, res) => {
   try {
       console.log('user', req.user)
       const managerId = req.user.userId
+      const centerId = req.user.distributedCenterId
       const companyId = req.user.companyId
       console.log('managerId', managerId)
       const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
@@ -389,9 +390,9 @@ exports.dcmGetAllAssignOrders = async (req, res) => {
 
       const userId = req.user.userId
       console.log(userId);
-      const { page, limit, searchText, status, date } = await DistributionValidate.dcmGetAllAssignOrdersSchema.validateAsync(req.query);
+      const { searchText, status, date } = await DistributionValidate.dcmGetAllAssignOrdersSchema.validateAsync(req.query);
 
-      const { items, total } = await DistributionDAO.dcmGetAllAssignOrdersDao(managerId, page, limit, status, searchText, deliveryLocationDataObj, date)
+      const { items, total } = await DistributionDAO.dcmGetAllAssignOrdersDao(status, searchText, deliveryLocationDataObj, date, centerId)
       console.log('items', items)
       return res.status(200).json({ items, total });
   } catch (error) {

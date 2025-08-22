@@ -1,5 +1,6 @@
 const ManageOfficerValidate = require('../validations/ManageOfficer-validation')
 const ManageOfficerDAO = require('../dao/ManageOfficer-dao')
+const DistributedManageOfficerDAO = require('../dao/Distributed-ManageOfficers-dao')
 const bcrypt = require("bcryptjs");
 const uploadFileToS3 = require("../middlewares/s3upload");
 const deleteFromS3 = require("../middlewares/s3delete");
@@ -396,9 +397,18 @@ exports.updateCollectionOfficer = async (req, res) => {
 };
 
 exports.disclaimOfficer = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(`${fullUrl}`);
   try {
+    console.log(req.params)
     const { id } = req.params;
-    const result = await ManageOfficerDAO.disclaimOfficerDetailsDao(id);
+    const jobRole = req.user.role;
+
+    if (jobRole === 'Collection Center Manager') {
+      results = await ManageOfficerDAO.disclaimOfficerDetailsDao(id)
+    } else {
+      results = await DistributedManageOfficerDAO.disclaimOfficerDetailsDIODao(id)
+    }
 
     res.json({ message: 'Collection officer details updated successfully' });
   } catch (err) {
@@ -438,10 +448,17 @@ exports.claimOfficer = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   try {
     const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.body);
+    console.log(req.user)
     const userId = req.user.userId;
+    const jobRole = req.user.role;
     const centerId = req.user.centerId;
+    const distributedCenterId = req.user.distributedCenterId;
 
-    const results = await ManageOfficerDAO.claimOfficerDao(id, userId, centerId)
+    if (jobRole === 'Collection Center Manager') {
+      results = await ManageOfficerDAO.claimOfficerDao(id, userId, centerId)
+    } else {
+      results = await DistributedManageOfficerDAO.distributedClaimOfficerDao(id, userId, distributedCenterId)
+    }
 
     if (results.affectedRows > 0) {
       res.status(200).json({ results: results, status: true });

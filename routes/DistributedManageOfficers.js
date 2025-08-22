@@ -71,7 +71,14 @@ router.put(
     '/update-officer/:id', 
     authMiddleware, 
     upload.single("file"),
-    DistributedManageOfficerEP.updateCollectionOfficer
+    DistributedManageOfficerEP.updateDistributionOfficer
+);
+
+router.put(
+    '/update-officer-dio/:id', 
+    authMiddleware, 
+    upload.single("file"),
+    DistributedManageOfficerEP.updateDistributionOfficerDIO
 );
 
 router.delete(

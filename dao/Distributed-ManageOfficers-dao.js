@@ -801,6 +801,136 @@ exports.updateOfficerDetails = (id, officerData, image) => {
     });
 };
 
+exports.updateOfficerDetailsDIO = (id, officerData, image) => {
+    console.log('officer data', officerData )
+    return new Promise(async (resolve, reject) => {
+
+        try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
+
+            let qrcodeURL = officerData.previousQR || '';
+
+            // Generate QR Code
+            if (officerData.empIdPrefix !== officerData.previousEmpId) {
+                    console.log('empIdPrefix', officerData.empIdPrefix, 'previousEmpId', officerData.previousEmpId )
+                    await deleteFromS3(officerData.previousQR);
+
+                    const qrData = JSON.stringify({ empId: officerData.empIdPrefix });
+                    const qrCodeBase64 = await QRCode.toDataURL(qrData);
+                    const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+                    qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empIdPrefix}.png`, "distributionofficer/QRcode");
+                    console.log('qrcodeURL', qrcodeURL)
+                    const isprevious = qrcodeURL == officerData.previousQR
+                    console.log('isprevious', isprevious)
+            }
+            // await deleteFromS3(officerData.previousQR);
+
+            // const qrData = JSON.stringify({ empId: officerData.empId });
+            // const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            // const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            // const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "distributionofficer/QRcode");
+
+            // console.log('officer dat', officerData )
+
+
+
+            // Define SQL Query before execution
+            const sql = `
+                UPDATE collectionofficer
+                SET firstNameEnglish = ?,
+                    firstNameSinhala = ?,
+                    firstNameTamil = ?,
+                    lastNameEnglish = ?,
+                    lastNameSinhala = ?,
+                    lastNameTamil = ?,
+                    jobRole = ?,
+                    empId = ?,
+                    empType = ?,
+                    phoneCode01 = ?,
+                    phoneNumber01 = ?,
+                    phoneCode02 = ?,
+                    phoneNumber02 = ?,
+                    distributedCenterId = ?,
+                    nic = ?,
+                    email = ?,
+                    irmId = ?,
+                    password = ?,
+                    passwordUpdated = ?,
+                    houseNumber = ?,
+                    streetName = ?,
+                    city = ?,
+                    district = ?,
+                    province = ?,
+                    country = ?,
+                    languages = ?,
+                    accHolderName = ?,
+                    accNumber = ?,
+                    bankName = ?,
+                    branchName = ?,
+                    status = ?,
+                    image = ?,
+                    QRcode = ?
+                WHERE id = ?
+            `;
+
+            const updateOfficerParams = [
+                officerData.firstNameEnglish,
+                officerData.firstNameSinhala,
+                officerData.firstNameTamil,
+                officerData.lastNameEnglish,
+                officerData.lastNameSinhala,
+                officerData.lastNameTamil,
+                officerData.jobRole,
+                officerData.empIdPrefix,
+                officerData.employeeType,
+                officerData.phoneCode01,
+                officerData.phoneNumber01,
+                officerData.phoneCode02,
+                officerData.phoneNumber02,
+                officerData.centerId,
+                officerData.nic,
+                officerData.email,
+                officerData.irmId,
+                null,
+                0,
+                officerData.houseNumber,
+                officerData.streetName,
+                officerData.city,
+                officerData.district,
+                officerData.province,
+                officerData.country,
+                officerData.languages,
+                officerData.accHolderName,
+                officerData.accNumber,
+                officerData.bankName,
+                officerData.branchName,
+                "Not Approved",
+                image,
+                qrcodeURL,
+                parseInt(id),
+            ];
+
+            // Execute SQL Query
+            collectionofficer.query(
+                sql, updateOfficerParams,
+                (err, results) => {
+                    if (err) {
+                        console.error("Database Error:", err);
+                        return reject(err);
+                    }
+                    resolve(results);
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};
+
 exports.DeleteOfficerDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
@@ -962,3 +1092,36 @@ exports.UpdateCollectionOfficerStatusAndPasswordDao = (params) => {
         });
     });
 };  
+
+exports.distributedClaimOfficerDao = (id, userid, distributedCenterId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE collectionofficer
+            SET distributedCenterId = ?, irmId = ?, claimStatus = ?
+            WHERE id = ?
+        `;
+        collectionofficer.query(sql, [distributedCenterId, userid, 1, id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.disclaimOfficerDetailsDIODao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE collectionofficer
+            SET distributedCenterId = NULL, irmId = NULL, claimStatus = 0
+            WHERE id = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};

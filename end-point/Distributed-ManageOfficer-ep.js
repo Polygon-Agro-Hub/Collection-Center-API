@@ -346,7 +346,7 @@ exports.getOfficerById = async (req, res) => {
   }
 };
 
-exports.updateCollectionOfficer = async (req, res) => {
+exports.updateDistributionOfficer = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log(`${fullUrl}`);
   try {
@@ -398,14 +398,17 @@ exports.updateCollectionOfficer = async (req, res) => {
       // You can assign or store lastId if needed
     }
 
-    // const centerName = await ManageOfficerDAO.getCenterName(officerData.centerId);
-    // console.log(centerName)
-    // officerData.centerName = centerName.centerName;
-    // console.log('center name', officerData.centerName)
+    console.log('officerdata', officerData);
+    
+
+    const centerName = await ManageOfficerDAO.getCenterName(officerData.centerId);
+    console.log(centerName)
+    officerData.centerName = centerName.centerName;
+    console.log('center name', officerData.centerName)
 
     await deleteFromS3(officerData.previousImage);
 
-    let profileImageUrl = officerData.previousImage; // Default to existing image
+    let profileImageUrl = officerData.previousImage; 
 
 if (req.body.file && req.body.file.includes("base64,")) {
   console.log('deleting old image')
@@ -435,6 +438,110 @@ if (req.body.file && req.body.file.includes("base64,")) {
 
 
    const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData, profileImageUrl); 
+
+   if (result.affectedRows === 0) {
+    return res.json({ message: "User not found or no changes were made.", status: false });
+  }
+  
+  return res.status(201).json({ message: "Distribution Officer created successfully", status: true });
+  } catch (err) {
+    console.error('Error updating Distribution officer details:', err);
+    res.status(500).json({ error: 'Failed to update Distribution officer details' });
+  }
+};
+
+exports.updateDistributionOfficerDIO = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(`${fullUrl}`);
+  try {
+    const { id } = req.params;
+    console.log(id);
+
+    // if (!req.body.file) {
+    //   return res.status(400).json({ error: "No file uploaded" });
+    // }
+
+    console.log(req.body.file);
+
+    const officerData = JSON.parse(req.body.officerData)
+    console.log('this is officer data', officerData)
+
+    const existingNic = await CollectionManageOfficerDAO.getExistingNic(officerData.nic, id);
+    if (existingNic) {
+      console.log('exisit')
+      return res.status(409).json({
+        status: false,
+        message: "nic already in use."
+      });
+    }
+
+    const existingEmail = await CollectionManageOfficerDAO.getExistingEmail(officerData.email, id);
+    if (existingEmail) {
+      console.log('Email exists');
+      return res.status(410).json({ status: false, message: "Email already exists for another collection officer" });
+    }
+
+    const existingPhone1 = await CollectionManageOfficerDAO.getExistingPhone1(officerData.phoneNumber01, id);
+    if (existingPhone1) {
+      console.log('phone exists');
+      return res.status(411).json({ status: false, message: "Phone Number - 1 already exists for another collection officer" });
+    }
+
+    if (officerData.phoneNumber02) {
+      const existingPhone2 = await CollectionManageOfficerDAO.getExistingPhone2(officerData.phoneNumber02, id);
+      if (existingPhone2) {
+        console.log('phone exists');
+        return res.status(412).json({ status: false, message: "Phone Number - 2 already exists for another collection officer" });
+      }
+    }
+
+    if (officerData.jobRole && officerData.previousjobRole && officerData.jobRole !== officerData.previousjobRole) {
+      const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole);
+      officerData.empIdPrefix = lastId;
+      console.log('Triggered getCCIDforCreateEmpIdDao:', officerData.empIdPrefix);
+      // You can assign or store lastId if needed
+    }
+
+    console.log('officerdata', officerData);
+    
+
+    const centerName = await ManageOfficerDAO.getCenterName(officerData.centerId);
+    console.log(centerName)
+    officerData.centerName = centerName.centerName;
+    console.log('center name', officerData.centerName)
+
+    await deleteFromS3(officerData.previousImage);
+
+    let profileImageUrl = officerData.previousImage; 
+
+if (req.body.file && req.body.file.includes("base64,")) {
+  console.log('deleting old image')
+  try {
+    const base64String = req.body.file.split(",")[1]; // Extract Base64 content
+    const match = req.body.file.match(/data:(.*?);base64,/);
+
+    if (!match) {
+      return res.status(400).json({ error: "Invalid image format." });
+    }
+
+    const mimeType = match[1];
+    const fileBuffer = Buffer.from(base64String, "base64");
+    const fileExtension = mimeType.split("/")[1];
+    const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+
+    // Delete old image only if uploading a new one
+    await deleteFromS3(officerData.previousImage);
+
+    profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "distributionfficer/image");
+  } catch (err) {
+    console.error("Error processing image:", err);
+    return res.status(400).json({ error: "Error decoding image." });
+  }
+}
+
+
+
+   const result = await ManageOfficerDAO.updateOfficerDetailsDIO(id, officerData, profileImageUrl); 
 
    if (result.affectedRows === 0) {
     return res.json({ message: "User not found or no changes were made.", status: false });

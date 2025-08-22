@@ -469,6 +469,10 @@ exports.getOfficerByIdDAO = (id) => {
                 COF.*,
                 COM.companyNameEnglish,
                 CEN.centerName,
+                CEN.regCode,
+                DC.centerName AS distributedCenterName,
+                DC.id AS distributedCenterId,
+                DC.regCode AS distributedCenterRegCode,
                 VR.*,
                 VR.id AS vehicleRegId
             FROM 
@@ -477,6 +481,8 @@ exports.getOfficerByIdDAO = (id) => {
                 company COM ON COF.companyId = COM.id
             LEFT JOIN 
                 collectioncenter CEN ON COF.centerId = CEN.id
+            LEFT JOIN 
+                distributedcenter DC ON COF.distributedCenterId = DC.id
             LEFT JOIN
                 vehicleregistration VR ON COF.id = VR.coId
             WHERE 
@@ -533,6 +539,11 @@ exports.getOfficerByIdDAO = (id) => {
                     centerId: officer.centerId,
                     companyId: officer.companyId,
                     irmId: officer.irmId,
+                    regCode: officer.regCode,
+                    claimStatus: officer.claimStatus,
+                    distributedCenterId: officer.distributedCenterId,
+                    distributedCenterName: officer.distributedCenterName,
+                    distributedCenterRegCode: officer.distributedCenterRegCode,
                     licNo: officer.licNo,
                     insNo: officer.insNo,
                     insExpDate: officer.insExpDate,
@@ -743,13 +754,16 @@ exports.getOfficerByEmpIdDao = (id) => {
                 COM.companyNameEnglish, 
                 COF.claimStatus, 
                 COF.image,
-                CEN.centerName
+                CEN.centerName,
+                DC.centerName AS distributedCenterName
             FROM 
                 collectionofficer COF
             LEFT JOIN 
                 company COM ON COF.companyId = COM.id
             LEFT JOIN 
                 collectioncenter CEN ON COF.centerId = CEN.id
+            LEFT JOIN 
+                distributedcenter DC ON COF.distributedCenterId = DC.id
             WHERE 
                 COF.empId = ?;        `;
         collectionofficer.query(sql, [id], (err, results) => {
