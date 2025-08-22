@@ -54,6 +54,13 @@ router.post(
     DistributedManageOfficerEP.createOfficer
 )
 
+router.post(
+    "/create-officer-dio",
+    authMiddleware,
+    upload.single("file"),
+    DistributedManageOfficerEP.createOfficerDIO
+)
+
 router.get(
     "/get-officer-by-id/:id",
     authMiddleware,

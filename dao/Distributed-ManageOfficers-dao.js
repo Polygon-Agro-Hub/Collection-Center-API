@@ -358,7 +358,7 @@ exports.checkExistPhone2Dao = (phone2) => {
     });
 };
 
-exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image, lastId) => {
+exports.createDistributionOfficerPersonal = (officerData, centerId, companyId, managerID, image, lastId) => {
     console.log('centerId', centerId, 'companyId', companyId, 'managerID', managerID, 'officerData', officerData)
     return new Promise(async (resolve, reject) => {
         try {
@@ -368,10 +368,10 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
             }
 
             // Generate QR Code
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: lastId });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "distributionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${lastId}.png`, "distributionofficer/QRcode");
 
 
             // Define SQL Query before execution
@@ -397,6 +397,90 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
                     officerData.centerId,
                     companyId,
                     officerData.jobRole === 'Distribution Center Manager' ? null : officerData.irmId,
+                    officerData.firstNameEnglish,
+                    officerData.firstNameSinhala,
+                    officerData.firstNameTamil,
+                    officerData.lastNameEnglish,
+                    officerData.lastNameSinhala,
+                    officerData.lastNameTamil,
+                    officerData.jobRole,
+                    lastId,
+                    officerData.employeeType,
+                    officerData.phoneNumber01Code,
+                    officerData.phoneNumber01,
+                    officerData.phoneNumber02Code,
+                    officerData.phoneNumber02,
+                    officerData.nic,
+                    officerData.email,
+                    0,
+                    officerData.houseNumber,
+                    officerData.streetName,
+                    officerData.city,
+                    officerData.district,
+                    officerData.province,
+                    officerData.country,
+                    officerData.languages,
+                    officerData.accHolderName,
+                    officerData.accNumber,
+                    officerData.bankName,
+                    officerData.branchName,
+                    image,
+                    qrcodeURL
+                ],
+                (err, results) => {
+                    if (err) {
+                        console.error("Database Error:", err);
+                        return reject(err);
+                    }
+                    resolve(results);
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};
+
+exports.createDistributionOfficerPersonalDIO = (officerData, centerId, companyId, managerID, image, lastId) => {
+    console.log('centerId', centerId, 'companyId', companyId, 'managerID', managerID, 'officerData', officerData)
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Debugging: Check if officerData exists
+            if (!officerData || !officerData.firstNameEnglish) {
+                return reject(new Error("Officer data is missing or incomplete"));
+            }
+
+            // Generate QR Code
+            const qrData = JSON.stringify({ empId: lastId });
+            const qrCodeBase64 = await QRCode.toDataURL(qrData);
+            const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${lastId}.png`, "distributionofficer/QRcode");
+
+
+            // Define SQL Query before execution
+            const sql = `
+                INSERT INTO collectionofficer (
+                    distributedCenterId, companyId, irmId, 
+                    firstNameEnglish, firstNameSinhala, firstNameTamil, 
+                    lastNameEnglish, lastNameSinhala, lastNameTamil, 
+                    jobRole, empId, empType, 
+                    phoneCode01, phoneNumber01, phoneCode02, phoneNumber02, 
+                    nic, email, passwordUpdated, houseNumber, streetName, city, 
+                    district, province, country, languages, 
+                    accHolderName, accNumber, bankName, branchName, 
+                    status, image, QRcode
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Not Approved', ?, ?)
+            `;
+
+            // Execute SQL Query
+            collectionofficer.query(
+                sql,
+                [
+                    centerId,
+                    companyId,
+                    managerID,
                     officerData.firstNameEnglish,
                     officerData.firstNameSinhala,
                     officerData.firstNameTamil,

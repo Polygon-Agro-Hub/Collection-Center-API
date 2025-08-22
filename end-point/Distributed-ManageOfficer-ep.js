@@ -213,7 +213,91 @@ if (req.body.file && req.body.file.includes("base64,")) {
 
     console.log('fficer data after epiID, ', officerData)
 
-    // const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl,lastId);
+    const result = await ManageOfficerDAO.createDistributionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl,lastId);
+
+    if (result.affectedRows === 0) {
+      return res.json({ message: "User not found or no changes were made.", status: false });
+    }
+
+    return res.status(201).json({ message: "Collection Officer created successfully", status: true });
+  } catch (error) {
+    if (error.isJoi) {
+
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error creating collection officer:", error);
+    return res.status(500).json({ error: "An error occurred while creating the collection officer" });
+  }
+};
+
+exports.createOfficerDIO = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+    if (!req.body.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    const officerData = JSON.parse(req.body.officerData);
+    console.log('officerData', officerData);
+    const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
+    if (checkUserExist) {
+      return res.json({ message: "This NIC Number already exist.", status: false });
+    }
+
+    const checkEmailExist = await ManageOfficerDAO.checkExistEmailsDao(officerData.email);
+    if (checkEmailExist) {
+      return res.json({ message: "This Email already exist.", status: false });
+    }
+
+    const checkPhoneExist = await ManageOfficerDAO.checkExistPhoneDao(officerData.phoneNumber01);
+    if (checkPhoneExist) {
+      return res.json({ message: "This Phone Number - 1 already exist.", status: false });
+    }
+
+    if (officerData.phoneNumber02) {
+      console.log('phonenumber 2')
+      const checkPhone2Exist = await ManageOfficerDAO.checkExistPhone2Dao(officerData.phoneNumber02);
+      if (checkPhone2Exist) {
+        return res.json({ message: "This Phone Number - 2 already exist.", status: false });
+      }
+    }
+
+    const centerId = req.user.distributedCenterId;
+    const companyId = req.user.companyId;
+    const managerID = req.user.userId;
+
+    console.log('centerId', centerId, 'managerId', managerID)
+
+    let profileImageUrl = null;
+
+if (req.body.file && req.body.file.includes("base64,")) {
+  try {
+    const base64String = req.body.file.split(",")[1]; // Extract Base64 content
+    const match = req.body.file.match(/data:(.*?);base64,/);
+
+    if (!match) {
+      return res.status(400).json({ error: "Invalid image format." });
+    }
+
+    const mimeType = match[1];
+    const fileBuffer = Buffer.from(base64String, "base64");
+    const fileExtension = mimeType.split("/")[1];
+    const fileName = `${officerData.firstNameEnglish}_${officerData.lastNameEnglish}.${fileExtension}`;
+
+    profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "distributionfficer/image");
+  } catch (err) {
+    console.error("Error processing image:", err);
+    return res.status(400).json({ error: "Error decoding image." });
+  }
+}
+
+
+    const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
+
+    console.log('fficer data after epiID, ', officerData)
+
+    const result = await ManageOfficerDAO.createDistributionOfficerPersonalDIO(officerData, centerId, companyId, managerID, profileImageUrl,lastId);
 
     if (result.affectedRows === 0) {
       return res.json({ message: "User not found or no changes were made.", status: false });
