@@ -183,6 +183,8 @@ exports.createOfficer = async (req, res) => {
     const companyId = req.user.companyId;
     const managerID = req.user.userId;
 
+    console.log('centerId', centerId)
+
     let profileImageUrl = null;
 
 if (req.body.file && req.body.file.includes("base64,")) {
@@ -209,7 +211,9 @@ if (req.body.file && req.body.file.includes("base64,")) {
 
     const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
 
-    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl,lastId);
+    console.log('fficer data after epiID, ', officerData)
+
+    // const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl,lastId);
 
     if (result.affectedRows === 0) {
       return res.json({ message: "User not found or no changes were made.", status: false });

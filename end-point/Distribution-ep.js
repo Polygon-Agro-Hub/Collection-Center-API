@@ -245,22 +245,48 @@ exports.getDistributionCenterDetails = async (req, res) => {
             userId, companyId, page, limit, date, status, searchText
         );
 
-        // Enrich each item with additional data (direct field merge)
-        const enrichedItems = await Promise.all(
-            items.map(async (item) => {
-                const { rrId, ...additionalData } = await DistributionDAO.getReplaceRequestDetails(item.rrId);
-                return {
-                    ...item,
-                    ...additionalData  // Spread the additional fields directly
-                };
-            })
-        );
+        const products = await DistributionDAO.getDcmAllProducts();
 
-        console.log('enrichedItems', enrichedItems)
+        // console.log('products', products)
+
+        // const updatedItems = await Promise.all(
+        //   items.map(async (item) => {
+        //     if (item.status === "Approved") {
+        //       try {
+        //         // fetch from prevdefineproduct by replaceId
+        //         const prevProduct = await DistributionDAO.getPrevDefineProduct(
+        //           item.replceId
+        //         );
+    
+        //         if (prevProduct) {
+        //           // overwrite currentProduct fields with prevdefineproduct data
+        //           item.currentProductId = prevProduct.productId;
+        //           item.currentProduct = prevProduct.displayName;
+        //           item.currentUnitPrice = prevProduct.discountedPrice;
+        //           item.currentProductTypeId = prevProduct.productType;
+        //           item.currentProductQty = prevProduct.qty;
+        //           item.currentProductPrice = prevProduct.price;
+        //           item.currentProductShortCode = prevProduct.shortCode;
+        //           item.currentProductTypeName = prevProduct.typeName;
+        //         }
+        //       } catch (err) {
+        //         console.error(
+        //           `Error fetching prevdefineproduct for replaceId=${item.replceId}:`,
+        //           err
+        //         );
+        //       }
+        //     }
+        //     return item;
+        //   })
+        // );
+    
+
+        console.log('items', items)
 ;
         res.status(200).json({ 
-            items: enrichedItems, 
-            total 
+            items,
+            total,
+            products: products
         });
     } catch (error) {
         if (error.isJoi) {
@@ -289,7 +315,13 @@ exports.approveRequestEp = async (req, res) => {
       replaceProductId: request.replaceProductId,
       replaceQty: parseFloat(request.replaceQty),
       replacePrice: parseFloat(request.replacePrice),
-      replaceProductType: request.replaceProductType
+      replaceProductType: request.replaceProductType,
+      prevProductId: request.currentProductId,
+      prevProduct: request.currentProduct,
+      prevProductQty: parseFloat(request.currentProductQty),
+      prevProductPrice: parseFloat(request.currentProductPrice),
+      prevProductTypeId: request.currentProductTypeId,
+
     };
 
     console.log('Filtered Request:', approvedRequest);
@@ -319,7 +351,8 @@ exports.rejectRequestEp = async (req, res) => {
     // Filter necessary fields
     const approvedRequest = {
       rrId: request.rrId,
-      status: request.status
+      status: request.status,
+      orderPackageId: request.orderPackageId
     };
 
     console.log('Filtered Request:', approvedRequest);
@@ -675,7 +708,7 @@ exports.dcmGetAllProducts = async (req, res) => {
   console.log(fullUrl);
   try {
       
-      const results = await DistributionDAO.getDcmAllProducts();
+      
 
       console.log('results', results)
 ;

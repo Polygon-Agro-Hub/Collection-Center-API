@@ -469,60 +469,97 @@ exports.getCompanyCenterId = (manageId) => {
     });
 };
 
+
 exports.getAllReplaceProductsDao = (userId, companyId, page, limit, date, status, searchText) => {
     return new Promise((resolve, reject) => {
         const offset = (page - 1) * limit;
 
+
+
         let countSql = `
-            SELECT COUNT(*) AS total FROM market_place.replacerequest rr
-            JOIN market_place.orderpackage op ON rr.orderPackageId = op.id
-            JOIN market_place.producttypes pt ON rr.productType = pt.id
-            JOIN collection_officer.collectionofficer coff ON rr.userId = coff.id
-            JOIN market_place.orderpackageitems opi ON rr.replceId = opi.id
-            JOIN market_place.marketplaceitems mpi ON opi.productId = mpi.id
+            SELECT COUNT(*) AS total 
+            FROM replacerequest rp
+            JOIN orderpackage op ON rp.orderPackageId = op.id
+            LEFT JOIN orderpackageitems opi ON rp.replceId = opi.id
+            LEFT JOIN producttypes pt ON pt.id = opi.productType
+            LEFT JOIN marketplaceitems mpi1 ON rp.productId = mpi1.id 
+            LEFT JOIN marketplaceitems mpi2 ON opi.productId = mpi2.id
+            LEFT JOIN prevdefineproduct pdp ON pdp.replceId = opi.id
+            LEFT JOIN marketplaceitems mpi3 ON pdp.productId = mpi3.id
+            LEFT JOIN producttypes pt1 ON rp.productType = pt1.id
+            LEFT JOIN producttypes pt2 ON opi.productType = pt2.id
+            LEFT JOIN producttypes pt3 ON pdp.productType = pt3.id 
+            JOIN collection_officer.collectionofficer coff ON rp.userId = coff.id
             WHERE (coff.irmId = ? OR coff.empId = ?) AND coff.companyId = ?
         `;
 
         let dataSql = `
-        SELECT rr.id AS rrId,
-        coff.id AS officerId,
-        coff.empId,
-        coff.firstNameEnglish,
-        rr.replceId,
-        rr.status,
-        op.id AS orderPackageId,
-        opi.productType AS currentProductTypeId,
-        CAST(opi.qty AS DECIMAL(10,2)) AS currentProductQty,
-        CAST(opi.price AS DECIMAL(10,2)) AS currentProductPrice,
-        opi.isPacked,
-        pt.shortCode AS currentprodcutType,
-        pt.typeName AS currentProductTypeName,
-        op.isLock,
-        mpi.displayName AS currentProduct,
-        rr.createdAt
- FROM market_place.replacerequest rr
- JOIN market_place.orderpackage op ON rr.orderPackageId = op.id
- JOIN collection_officer.collectionofficer coff ON rr.userId = coff.id
- JOIN market_place.orderpackageitems opi ON rr.replceId = opi.id
- JOIN market_place.producttypes pt ON opi.productType = pt.id
- JOIN market_place.marketplaceitems mpi ON opi.productId = mpi.id
- WHERE (coff.irmId = ? OR coff.empId = ?) AND coff.companyId = ?
- 
+
+        SELECT 
+            rp.id AS rrId,
+            op.id AS orderPackageId,
+            rp.status AS status, 
+            rp.replceId,
+            coff.id AS officetId,
+            coff.empId AS empId,
+            coff.firstNameEnglish,
+            coff.lastNameEnglish,
+            mpi1.id AS replaceProductId,
+            mpi1.displayName AS replaceProduct,
+            CAST(mpi1.discountedPrice AS DECIMAL(10,2)) AS replaceUnitPrice,
+            mpi1.unitType AS replaceUnitType,
+            CAST(rp.qty AS DECIMAL(10,2)) AS replaceQty,
+            CAST(rp.price AS DECIMAL(10,2)) AS replacePrice,
+            mpi2.id AS currentProductId,
+            mpi2.displayName AS currentProduct,
+            CAST(mpi2.discountedPrice AS DECIMAL(10,2)) AS currentProductUnitPrice,
+            mpi2.unitType AS currentProductUnitTypeId,
+            pt2.shortCode AS currentProductShortCode,
+            pt2.typeName AS currentProductTypeName,
+            pt2.id AS currentProductTypeId,
+            CAST(opi.qty AS DECIMAL(10,2)) AS currentProductQty,
+            CAST(opi.price AS DECIMAL(10,2)) AS currentProductPrice,
+
+            mpi3.id AS prevDefineProductId,
+            mpi3.displayName AS prevDefineProduct,
+            CAST(mpi3.discountedPrice AS DECIMAL(10,2)) AS prevDefineProductUnitPrice,
+            mpi3.unitType AS prevDefineProductUnitTypeId,
+            pt3.shortCode AS prevDefineProductShortCode,
+            pt3.typeName AS prevDefineProductTypeName,
+            pt3.id AS prevDefineProductTypeId,
+            CAST(pdp.qty AS DECIMAL(10,2)) AS prevDefineProductQty, 
+            CAST(pdp.price AS DECIMAL(10,2)) AS prevDefineProductPrice,
+            opi.isPacked,
+            op.isLock
+        FROM replacerequest rp
+        JOIN orderpackage op ON rp.orderPackageId = op.id
+        LEFT JOIN orderpackageitems opi ON rp.replceId = opi.id
+        LEFT JOIN producttypes pt ON pt.id = opi.productType
+        LEFT JOIN marketplaceitems mpi1 ON rp.productId = mpi1.id 
+        LEFT JOIN marketplaceitems mpi2 ON opi.productId = mpi2.id
+        LEFT JOIN prevdefineproduct pdp ON pdp.replceId = opi.id
+        LEFT JOIN marketplaceitems mpi3 ON pdp.productId = mpi3.id
+        LEFT JOIN producttypes pt1 ON rp.productType = pt1.id
+        LEFT JOIN producttypes pt2 ON opi.productType = pt2.id
+        LEFT JOIN producttypes pt3 ON pdp.productType = pt3.id 
+        JOIN collection_officer.collectionofficer coff ON rp.userId = coff.id
+        WHERE (coff.irmId = ? OR coff.empId = ?) AND coff.companyId = ?
+        
         `;
 
         const countParams = [userId, userId, companyId];
         const dataParams = [userId, userId, companyId];
 
         if (date) {
-            countSql += " AND DATE(rr.createdAt) = ?";
-            dataSql += " AND DATE(rr.createdAt) = ?";
+            countSql += " AND DATE(rp.createdAt) = ?";
+            dataSql += " AND DATE(rp.createdAt) = ?";
             countParams.push(date);
             dataParams.push(date);
         }
 
         if (status) {
-            countSql += " AND rr.status = ?";
-            dataSql += " AND rr.status = ?";
+            countSql += " AND rp.status = ?";
+            dataSql += " AND rp.status = ?";
             countParams.push(status);
             dataParams.push(status);
         }
@@ -535,11 +572,11 @@ exports.getAllReplaceProductsDao = (userId, companyId, page, limit, date, status
             dataParams.push(searchValue);
         }
 
-        dataSql += " ORDER BY rr.createdAt LIMIT ? OFFSET ?";
+        dataSql += " ORDER BY rp.createdAt LIMIT ? OFFSET ?";
         dataParams.push(parseInt(limit), parseInt(offset));
 
         // Execute queries
-        collectionofficer.query(countSql, countParams, (countErr, countResults) => {
+        marketPlace.query(countSql, countParams, (countErr, countResults) => {
             if (countErr) {
                 console.error('Count query error:', countErr);
                 return reject(new Error('Database error in count query'));
@@ -547,7 +584,7 @@ exports.getAllReplaceProductsDao = (userId, companyId, page, limit, date, status
 
             const total = countResults[0]?.total || 0;
 
-            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+            marketPlace.query(dataSql, dataParams, (dataErr, dataResults) => {
                 if (dataErr) {
                     console.error('Data query error:', dataErr);
                     return reject(new Error('Database error in data query'));
@@ -561,6 +598,30 @@ exports.getAllReplaceProductsDao = (userId, companyId, page, limit, date, status
         });
     });
 };
+
+// SELECT rr.id AS rrId,
+//         coff.id AS officerId,
+//         coff.empId,
+//         coff.firstNameEnglish,
+//         rr.replceId,
+//         rr.status,
+//         op.id AS orderPackageId,
+//         opi.productType AS currentProductTypeId,
+//         CAST(opi.qty AS DECIMAL(10,2)) AS currentProductQty,
+//         CAST(opi.price AS DECIMAL(10,2)) AS currentProductPrice,
+//         opi.isPacked,
+//         pt.shortCode AS currentprodcutType,
+//         pt.typeName AS currentProductTypeName,
+//         op.isLock,
+//         mpi.displayName AS currentProduct,
+//         rr.createdAt
+//  FROM market_place.replacerequest rr
+//  JOIN market_place.orderpackage op ON rr.orderPackageId = op.id
+//  JOIN collection_officer.collectionofficer coff ON rr.userId = coff.id
+//  JOIN market_place.orderpackageitems opi ON rr.replceId = opi.id
+//  JOIN market_place.producttypes pt ON opi.productType = pt.id
+//  JOIN market_place.marketplaceitems mpi ON opi.productId = mpi.id
+//  WHERE (coff.irmId = ? OR coff.empId = ?) AND coff.companyId = ?
 
 exports.getReplaceRequestDetails = (rrId) => {
     return new Promise((resolve, reject) => {
@@ -593,7 +654,6 @@ exports.getReplaceRequestDetails = (rrId) => {
 exports.replaceProduct = (approvedRequest) => {
     console.log('approvedRequest', approvedRequest)
     return new Promise((resolve, reject) => {
-      // SQL query to update both tables
       const dataSql1 = `
         UPDATE orderpackageitems
         SET
@@ -601,7 +661,7 @@ exports.replaceProduct = (approvedRequest) => {
           qty = ?,
           price = ?
         WHERE
-          id = ?
+          id = ? 
       `;
   
       const values1 = [
@@ -618,32 +678,79 @@ exports.replaceProduct = (approvedRequest) => {
           return reject(err1);
         }
   
-        // Then update replacerequest
-        const dataSql2 = `
-          UPDATE replacerequest
-          SET status = 'Approved'
-          WHERE id = ?
+        // Second query → Insert into prevdefineproduct
+        const dataSqlExtra = `
+        INSERT INTO prevdefineproduct (
+            replceId,
+            orderPackageId,
+            productType,
+            productId,
+            qty,
+            price
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        
         `;
   
-        const values2 = [
-          approvedRequest.rrId
+        const valuesExtra = [
+          approvedRequest.replceId,
+          approvedRequest.orderPackageId,
+          approvedRequest.prevProductTypeId,
+          approvedRequest.prevProductId,
+          approvedRequest.prevProductQty,   
+          approvedRequest.prevProductPrice
         ];
   
-        marketPlace.query(dataSql2, values2, (err2, results2) => {
-          if (err2) {
-            console.error('SQL Error (replacerequest):', err2);
-            return reject(err2);
+        marketPlace.query(dataSqlExtra, valuesExtra, (errExtra, resultsExtra) => {
+          if (errExtra) {
+            console.error('SQL Error (prevdefineproduct):', errExtra);
+            return reject(errExtra);
           }
   
-          resolve({
-            success: true,
-            updatedOrderPackageItems: results1.affectedRows,
-            updatedReplaceRequest: results2.affectedRows
+          // Third query → Update replacerequest
+          const dataSql2 = `
+            UPDATE replacerequest
+            SET status = 'Approved'
+            WHERE id = ?
+          `;
+  
+          const values2 = [approvedRequest.rrId];
+  
+          marketPlace.query(dataSql2, values2, (err2, results2) => {
+            if (err2) {
+              console.error('SQL Error (replacerequest):', err2);
+              return reject(err2);
+            }
+  
+            // 🔹 Fourth query → Example: Update orders table (or any other action)
+            const dataSql3 = `
+              UPDATE orderpackage
+              SET isLock = 0
+              WHERE id = ?
+            `;
+  
+            const values3 = [approvedRequest.orderPackageId];
+  
+            marketPlace.query(dataSql3, values3, (err3, results3) => {
+              if (err3) {
+                console.error('SQL Error (orders):', err3);
+                return reject(err3);
+              }
+  
+              resolve({
+                success: true,
+                updatedOrderPackageItems: results1.affectedRows,
+                insertedPrevDefineProduct: resultsExtra.affectedRows,
+                updatedReplaceRequest: results2.affectedRows,
+                updatedOrders: results3.affectedRows
+              });
+            });
           });
         });
       });
     });
   };
+  
+  
 
   exports.rejectRequestDao = (approvedRequest) => {
     return new Promise((resolve, reject) => {
@@ -655,20 +762,42 @@ exports.replaceProduct = (approvedRequest) => {
           id = ?
       `;
   
-      const values = [
-        approvedRequest.rrId
-      ];
+      const values = [approvedRequest.rrId];
   
-      marketPlace.query(dataSql, values, (err, results) => {
+      // First query → Update replacerequest
+      marketPlace.query(dataSql, values, (err, results1) => {
         if (err) {
-          console.error('SQL Error:', err);
+          console.error('SQL Error (replacerequest):', err);
           return reject(err);
         }
   
-        resolve({ success: true, updatedRows: results.affectedRows });
+        // 🔹 Second query → Example: insert into rejection log table
+        const dataSql2 = `
+        UPDATE orderpackage
+        SET isLock = 0
+        WHERE id = ?
+        `;
+  
+        const values2 = [
+            approvedRequest.orderPackageId
+        ];
+  
+        marketPlace.query(dataSql2, values2, (err2, results2) => {
+          if (err2) {
+            console.error('SQL Error (rejectionlog):', err2);
+            return reject(err2);
+          }
+  
+          resolve({
+            success: true,
+            updatedReplaceRequest: results1.affectedRows,
+            insertedRejectionLog: results2.affectedRows
+          });
+        });
       });
     });
   };
+  
 
   exports.dcmGetAllAssignOrdersDao = (userId, page, limit, status, searchText, deliveryLocationDataObj, date) => {
     return new Promise((resolve, reject) => {
@@ -1697,12 +1826,6 @@ exports.dcmGetSelectedOfficerTargetsDao = (officerId, deliveryLocationDataObj, s
         `;
           }
         }
-    
-        // if (date) {
-        //   whereClause += " AND DATE(o.sheduleDate) = ?";
-        //   params.push(date);
-        //   countParams.push(date);
-        // }
   
       const dataSql = `
       WITH package_item_counts AS (
@@ -1807,6 +1930,22 @@ LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
           });
         });
       });
+  };
+
+  exports.getPrevDefineProduct = (replaceId) => {
+    return new Promise((resolve, reject) => {
+      const sql = `
+      SELECT pdp.productId, pdp.price, pdp.productType, pdp.qty, mpi.discountedPrice, mpi.displayName, pt.typeName, pt.shortCode FROM market_place.prevdefineproduct pdp
+      LEFT JOIN marketplaceitems mpi ON pdp.productId = mpi.id
+      LEFT JOIN market_place.producttypes pt ON pdp.productType = pt.id 
+      `;
+      marketPlace.query(sql, [replaceId], (err, results) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(results[0] || null);
+      });
+    });
   };
 
 
