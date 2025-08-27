@@ -22,7 +22,7 @@ exports.getDistributionCenterDetailsDao = (companyId, province, district, search
             LEFT JOIN 
                 collectionofficer cof ON cof.centerId = dc.id
             WHERE 
-                dcc.companyId = 5 AND c.isDistributed = 1
+                dcc.companyId = ? AND c.isDistributed = 1
         `;
 
         // Base data query to fetch center details
@@ -36,6 +36,8 @@ exports.getDistributionCenterDetailsDao = (companyId, province, district, search
         dc.district,
         dc.contact01,
         dc.contact02,
+        dc.latitude,
+        dc.longitude,
         COALESCE(SUM(CASE WHEN cof.jobRole = 'Distribution Officer' THEN 1 ELSE 0 END), 0) AS distributionOfficerCount,
         COALESCE(SUM(CASE WHEN cof.jobRole = 'Customer Officer' THEN 1 ELSE 0 END), 0) AS customerOfficerCount,
         COALESCE(SUM(CASE WHEN cof.jobRole = 'Distribution Center Manager' THEN 1 ELSE 0 END), 0) AS distributionCenterManagerCount,
@@ -47,7 +49,7 @@ exports.getDistributionCenterDetailsDao = (companyId, province, district, search
     JOIN 
         distributedcenter dc ON dcc.centerId = dc.id
     LEFT JOIN 
-        collectionofficer cof ON cof.centerId = dc.id
+        collectionofficer cof ON cof.distributedCenterId = dc.id
     WHERE 
         dcc.companyId = ? AND c.isDistributed = 1
         `;
@@ -153,9 +155,9 @@ exports.createDistributionCenter = (centerData, companyId) => {
                     // SQL query to insert data into collectioncenter
                     const insertCenterSQL = `
                         INSERT INTO distributedcenter (
-                            regCode, centerName, district, province, city, country, latitude, longitude
+                            regCode, centerName, district, province, city, country, latitude, longitude, code1, contact01, code2, contact02, email
                         ) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `;
 
                     // Execute the query to insert data into collectioncenter
@@ -169,7 +171,12 @@ exports.createDistributionCenter = (centerData, companyId) => {
                             centerData.city,
                             centerData.country,
                             centerData.latitude,
-                            centerData.longitude
+                            centerData.longitude,
+                            centerData.phoneNumber01Code,
+                            centerData.phoneNumber01,
+                            centerData.phoneNumber02Code,
+                            centerData.phoneNumber02,
+                            centerData.email
                         ],
                         (err, centerResults) => {
                             if (err) {
@@ -2897,6 +2904,97 @@ LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
     });
   };
 
+  exports.generateRegCode = (province, district, city, callback) => {
+    // Generate the prefix based on province and district
+    const prefix =
+      'D' + province.slice(0, 2).toUpperCase() +
+      district.slice(0, 1).toUpperCase() +
+      city.slice(0, 1).toUpperCase();
+  
+    // SQL query to get the latest regCode
+    const query = `SELECT regCode FROM distributedcenter WHERE regCode LIKE ? ORDER BY regCode DESC LIMIT 1`;
+  
+    // Execute the query
+    collectionofficer.execute(query, [`${prefix}-%`], (err, results) => {
+      if (err) {
+        console.error("Error executing query:", err);
+        return callback(err);
+      }
+  
+      let newRegCode = `${prefix}-01`; // Default to 01 if no regCode found
+  
+      if (results.length > 0) {
+        // Get the last regCode and extract the number
+        const lastRegCode = results[0].regCode;
+        const lastNumber = parseInt(lastRegCode.split("-")[1]);
+        const newNumber = lastNumber + 1;
+        newRegCode = `${prefix}-${String(newNumber).padStart(2, "0")}`;
+      }
+  
+      // Return the new regCode
+      callback(null, newRegCode);
+    });
+  };
+
+  exports.checkExistEmailsDao = (email) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT *
+            FROM distributedcenter
+            WHERE email = ?
+        `;
+
+        collectionofficer.query(sql, [email], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            let validationResult = false;
+            if (results.length > 0) {
+                validationResult = true;
+            }
+            resolve(validationResult);
+        });
+    });
+};
+
+exports.checkExistPhoneDao = (phone1) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT *
+            FROM distributedcenter
+            WHERE contact01 = ? OR contact02 = ?
+        `;
+
+        collectionofficer.query(sql, [phone1, phone1], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            let validationResult = false;
+            if (results.length > 0) {
+                validationResult = true;
+            }
+            resolve(validationResult);
+        });
+    });
+};
+
+exports.checkExistPhone2Dao = (phone2) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT *
+            FROM distributedcenter
+            WHERE contact01 = ? OR contact02 = ?
+        `;
+
+        collectionofficer.query(sql, [phone2, phone2], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            const validationResult = results.length > 0;
+            resolve(validationResult);
+        });
+    });
+};
 
 
 

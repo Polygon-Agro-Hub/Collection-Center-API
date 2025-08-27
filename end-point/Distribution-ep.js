@@ -46,6 +46,24 @@ exports.getDistributionCenterDetails = async (req, res) => {
       const companyId = req.user.companyId;
 
       console.log('centerData', centerData)
+
+      const checkEmailExist = await DistributionDAO.checkExistEmailsDao(centerData.email);
+    if (checkEmailExist) {
+      return res.json({ message: "This Email already exist.", status: false });
+    }
+
+    const checkPhoneExist = await DistributionDAO.checkExistPhoneDao(centerData.phoneNumber01);
+    if (checkPhoneExist) {
+      return res.json({ message: "This Phone Number - 1 already exist.", status: false });
+    }
+
+    if (centerData.phoneNumber02) {
+      console.log('phonenumber 2')
+      const checkPhone2Exist = await DistributionDAO.checkExistPhone2Dao(centerData.phoneNumber02);
+      if (checkPhone2Exist) {
+        return res.json({ message: "This Phone Number - 2 already exist.", status: false });
+      }
+    }
   
       // Call the TargetDAO.createCenter function with the required parameters
       const result = await DistributionDAO.createDistributionCenter(centerData, companyId);
@@ -784,6 +802,22 @@ exports.dchGetCenterTargetOutForDelivery = async (req, res) => {
     console.error("Error fetching officer targets:", error);
     return res.status(500).json({ error: "An error occurred while fetching officer targets" });
   }
+};
+
+exports.generateRegCode = (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log("Request URL:", fullUrl);
+  console.log('generating')
+  const { province, district, city } = req.body;
+
+  // Call DAO to generate the regCode
+  DistributionDAO.generateRegCode(province, district, city, (err, regCode) => {
+    if (err) {
+      return res.status(500).json({ error: "Error generating regCode" });
+    }
+
+    res.json({ regCode });
+  });
 };
 
 

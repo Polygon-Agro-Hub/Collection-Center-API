@@ -120,4 +120,6 @@ router.get('/get-center-target-out-for-delivery',
     DistributionEp.dchGetCenterTargetOutForDelivery
 );
 
+router.post("/generate-regcode", DistributionEp.generateRegCode);
+
 module.exports = router;
