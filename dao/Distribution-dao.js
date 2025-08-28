@@ -375,18 +375,23 @@ exports.getDistributedCompanyCenter = (managerId, companyId, centerId) => {
 
 exports.getDeliveryChargeCity = (companyCenterId) => {
   return new Promise((resolve, reject) => {
-      const sql = `
-      SELECT dc.city FROM collection_officer.centerowncity coc
-      LEFT JOIN collection_officer.deliverycharge dc ON coc.cityId = dc.id
+    const sql = `
+      SELECT dc.city 
+      FROM collection_officer.centerowncity coc
+      LEFT JOIN collection_officer.deliverycharge dc 
+        ON coc.cityId = dc.id
       WHERE coc.companyCenterId = ?
-      `;
+    `;
 
-      collectionofficer.query(sql, [companyCenterId], (err, results) => {
-          if (err) {
-              return reject(err);
-          }
-          resolve(results);
-      });
+    collectionofficer.query(sql, [companyCenterId], (err, results) => {
+      if (err) {
+        return reject(err);
+      }
+
+      // Map result rows into an array of city values
+      const cities = results.map(row => row.city);
+      resolve(cities);
+    });
   });
 };
 
@@ -424,6 +429,7 @@ exports.getDistributionOrders = (deliveryLocationData, centerId) => {
 
     if (deliveryLocationData && deliveryLocationData.length > 0) {
       params.push(deliveryLocationData, deliveryLocationData);
+      console.log('params', params)
     }
 
     params.push(centerId);
@@ -1183,21 +1189,30 @@ LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
 // };
 
 
-exports.dcmGetToDoAssignOrdersDao = (packageStatus, search, deliveryLocationDataObj, date, centerId) => {
+exports.dcmGetToDoAssignOrdersDao = (packageStatus, search, deliveryLocationData, date, centerId) => {
     console.log('fetching')
-    console.log('deliveryLocationDataObj', deliveryLocationDataObj)
+
     return new Promise((resolve, reject) => {
 
-        const { city, district } = deliveryLocationDataObj;
+      const params = [];
 
-        const params = [city, district, city, district, centerId];
+      if (deliveryLocationData && deliveryLocationData.length > 0) {
+        params.push(deliveryLocationData, deliveryLocationData);
+      }
+  
+      params.push(centerId);
   
       let whereClause = ` 
       WHERE 
       po.status = 'Processing'
       AND po.isTargetAssigned = 1 
       AND op.packingStatus != 'Todo'
-      AND ((oh.city IN (?, ?) OR oa.city IN (?, ?)) OR o.centerId = ?)
+      AND (
+        ${deliveryLocationData && deliveryLocationData.length > 0
+          ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+          : ""}
+        o.centerId = ?
+      )
       AND (
         -- Only include Pending and Opened orders
         -- Pending: No items packed from any type
@@ -1490,21 +1505,30 @@ LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
 // };
 
 
-exports.dcmGetCompletedAssignOrdersDao = (search, deliveryLocationDataObj, date, centerId) => {
+exports.dcmGetCompletedAssignOrdersDao = (search, deliveryLocationData, date, centerId) => {
     console.log('fetching')
-    console.log('deliveryLocationDataObj', deliveryLocationDataObj)
+
     return new Promise((resolve, reject) => {
 
-        const { city, district } = deliveryLocationDataObj;
+      const params = [];
 
-        const params = [city, district, city, district, centerId];
+      if (deliveryLocationData && deliveryLocationData.length > 0) {
+        params.push(deliveryLocationData, deliveryLocationData);
+      }
+  
+      params.push(centerId);
   
       let whereClause = ` 
       WHERE 
       po.status = 'Processing'
       AND po.isTargetAssigned = 1 
       AND op.packingStatus != 'Todo'
-      AND ((oh.city IN (?, ?) OR oa.city IN (?, ?)) OR o.centerId = ?)
+      AND (
+        ${deliveryLocationData && deliveryLocationData.length > 0
+          ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+          : ""}
+        o.centerId = ?
+      )
       AND (
         -- Only include Completed orders
         -- Completed: ALL existing items (both types) are packed
@@ -1727,14 +1751,17 @@ LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
 //     });
 // };
 
-exports.dcmGetOutForDeliveryOrdersDao = (status, searchText, deliveryLocationDataObj, centerId) => {
+exports.dcmGetOutForDeliveryOrdersDao = (status, searchText, deliveryLocationData, centerId) => {
     return new Promise((resolve, reject) => {
 
 
-        const { city, district } = deliveryLocationDataObj;
+      const dataParams = [];
 
-        // const countParams = [city, district, city, district, centerId];
-        const dataParams = [city, district, city, district, centerId];
+      if (deliveryLocationData && deliveryLocationData.length > 0) {
+        dataParams.push(deliveryLocationData, deliveryLocationData);
+      }
+  
+      dataParams.push(centerId);
 
         // let countSql = `
         //     SELECT COUNT(*) AS total FROM market_place.processorders po
@@ -1783,7 +1810,12 @@ END AS deliveryPeriod
         LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
         LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
         WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1
-        AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+        AND (
+          ${deliveryLocationData && deliveryLocationData.length > 0
+            ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+            : ""}
+          o.centerId = ?
+        )
         `;
 
         if (searchText) {
@@ -1879,166 +1911,430 @@ exports.dcmSetStatusAndTimeDao = (data) => {
     });
   };
 
-  exports.dcmGetOfficerTargetsDao = (managerId, deliveryLocationDataObj, centerId) => {
-    console.log('fetching')
-    console.log('deliveryLocationDataObj', deliveryLocationDataObj)
-    return new Promise((resolve, reject) => {
+//   exports.dcmGetOfficerTargetsDao = (managerId, deliveryLocationDataObj) => {
+//     return new Promise((resolve, reject) => {
+//         const { city, district } = deliveryLocationDataObj;
+//         const params = [managerId, managerId, city, district, city, district];
+        
+//         // Combined query to get both counts and data
+//         let sql = `
+//         WITH package_item_counts AS (
+//             SELECT 
+//                 op.orderId,
+//                 COUNT(*) AS totalItems,
+//                 SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) AS packedItems
+//             FROM orderpackageitems opi
+//             JOIN orderpackage op ON opi.orderPackageId = op.id
+//             GROUP BY op.orderId
+//         ),
+//         additional_items_counts AS (
+//             SELECT 
+//                 orderId,
+//                 COUNT(*) AS totalAdditionalItems,
+//                 SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) AS packedAdditionalItems
+//             FROM orderadditionalitems
+//             GROUP BY orderId
+//         ),
+//         officer_orders AS (
+//             SELECT 
+//                 dti.id AS distributedTargetItemId, 
+//                 dt.id AS distributedTargetId, 
+//                 po.id AS processOrderId, 
+//                 dti.isComplete, 
+//                 dt.userId, 
+//                 po.status, 
+//                 po.isTargetAssigned, 
+//                 po.packagePackStatus, 
+//                 po.outDlvrDate, 
+//                 coff.empId, 
+//                 coff.firstNameEnglish, 
+//                 coff.lastNameEnglish,
+//                 COALESCE(pic.totalItems, 0) AS totPackageItems,
+//                 COALESCE(pic.packedItems, 0) AS packPackageItems,
+//                 COALESCE(aic.totalAdditionalItems, 0) AS totalAdditionalItems,
+//                 COALESCE(aic.packedAdditionalItems, 0) AS packedAdditionalItems
+                
+//             FROM collection_officer.distributedtarget dt  
+//             JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+//             JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+//             JOIN market_place.processorders po ON dti.orderId = po.id
+//             LEFT JOIN market_place.orders o ON o.id = po.orderId
+//             LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+//             LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+//             LEFT JOIN package_item_counts pic ON pic.orderId = po.id
+//             LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
+//             WHERE (coff.id = ? OR coff.irmId = ?) 
+//                 AND po.status IN ('Processing', 'Out For Delivery') 
+//                 AND po.isTargetAssigned = 1
+//                 AND (oh.city IN (?, ?) OR oa.city IN (?, ?))
+//         ),
+//         categorized_orders AS (
+//             SELECT *,
+//                 CASE
+//                     -- PENDING: Using exact logic from your function
+//                     WHEN (
+//                         -- Case 1: Both types exist, both are not started
+//                         (totPackageItems > 0 AND COALESCE(totalAdditionalItems, 0) > 0 
+//                          AND packPackageItems = 0 AND COALESCE(packedAdditionalItems, 0) = 0)
+//                         OR
+//                         -- Case 2: Only package items exist, not started
+//                         (totPackageItems > 0 AND COALESCE(totalAdditionalItems, 0) = 0 
+//                          AND packPackageItems = 0)
+//                         OR
+//                         -- Case 3: Only additional items exist, not started  
+//                         (COALESCE(totPackageItems, 0) = 0 AND COALESCE(totalAdditionalItems, 0) > 0 
+//                          AND COALESCE(packedAdditionalItems, 0) = 0)
+//                     ) THEN 'Pending'
+                    
+//                     -- COMPLETED: Using exact logic from your function
+//                     WHEN (
+//                         -- Case 1: Both types exist, both completed
+//                         (totPackageItems > 0 AND COALESCE(totalAdditionalItems, 0) > 0 
+//                          AND packPackageItems = totPackageItems 
+//                          AND COALESCE(packedAdditionalItems, 0) = COALESCE(totalAdditionalItems, 0))
+//                         OR
+//                         -- Case 2: Only package items exist, completed
+//                         (totPackageItems > 0 AND COALESCE(totalAdditionalItems, 0) = 0 
+//                          AND packPackageItems = totPackageItems)
+//                         OR
+//                         -- Case 3: Only additional items exist, completed
+//                         (COALESCE(totPackageItems, 0) = 0 AND COALESCE(totalAdditionalItems, 0) > 0 
+//                          AND COALESCE(packedAdditionalItems, 0) = COALESCE(totalAdditionalItems, 0))
+//                     ) THEN 'Completed'
+                    
+//                     -- OPENED: Using exact logic from your function
+//                     WHEN (
+//                         -- Has some progress but not fully completed
+//                         -- Some package items packed but not all
+//                         (totPackageItems > 0 AND packPackageItems > 0 AND packPackageItems < totPackageItems)
+//                         OR
+//                         -- Some additional items packed but not all  
+//                         (COALESCE(totalAdditionalItems, 0) > 0 AND COALESCE(packedAdditionalItems, 0) > 0 
+//                          AND COALESCE(packedAdditionalItems, 0) < COALESCE(totalAdditionalItems, 0))
+//                         OR
+//                         -- Package items completed but additional items not started/partial
+//                         (totPackageItems > 0 AND COALESCE(totalAdditionalItems, 0) > 0 
+//                          AND packPackageItems = totPackageItems 
+//                          AND COALESCE(packedAdditionalItems, 0) < COALESCE(totalAdditionalItems, 0))
+//                         OR
+//                         -- Additional items completed but package items not started/partial  
+//                         (totPackageItems > 0 AND COALESCE(totalAdditionalItems, 0) > 0 
+//                          AND COALESCE(packedAdditionalItems, 0) = COALESCE(totalAdditionalItems, 0)
+//                          AND packPackageItems < totPackageItems)
+//                     ) THEN 'Opened'
+                    
+//                     ELSE 'Unknown'
+//                 END AS overallStatus
+//             FROM officer_orders
+//         )
+//         SELECT 
+//             -- Get all order details
+//             distributedTargetItemId,
+//             distributedTargetId,
+//             processOrderId,
+//             isComplete,
+//             userId,
+//             status,
+//             isTargetAssigned,
+//             packagePackStatus,
+//             outDlvrDate,
+//             empId,
+//             firstNameEnglish,
+//             lastNameEnglish,
+//             totPackageItems,
+//             packPackageItems,
+//             totalAdditionalItems,
+//             packedAdditionalItems,
+//             overallStatus,
+            
+//             -- Get counts using window functions
+//             COUNT(*) OVER() as total,
+//             COUNT(CASE WHEN overallStatus = 'Pending' THEN 1 END) OVER() as pending,
+//             COUNT(CASE WHEN overallStatus = 'Opened' THEN 1 END) OVER() as opened,
+//             COUNT(CASE WHEN overallStatus = 'Completed' THEN 1 END) OVER() as completed
+            
+//         FROM categorized_orders
+//         ORDER BY outDlvrDate DESC
+//         `;
 
-        const { city, district } = deliveryLocationDataObj;
+//         console.log('Executing Officer Targets Query...');
+//         marketPlace.query(sql, params, (err, results) => {
+//             if (err) {
+//                 console.error('Error in query:', err);
+//                 return reject(err);
+//             }
 
-        const params = [managerId, managerId, city, district, city, district, centerId];
+//             console.log('Query results:', results);
+
+//             // Extract counts from first row (they're the same in all rows due to window functions)
+//             const counts = results.length > 0 ? {
+//                 total: results[0].total,
+//                 pending: results[0].pending,
+//                 opened: results[0].opened,
+//                 completed: results[0].completed
+//             } : {
+//                 total: 0,
+//                 pending: 0,
+//                 opened: 0,
+//                 completed: 0
+//             };
+
+//             // Remove the count columns from individual items
+//             const items = results.map(item => {
+//                 const { total, pending, opened, completed, ...cleanItem } = item;
+//                 return cleanItem;
+//             });
+
+//             console.log('Final counts:', counts);
+//             console.log('Items with status:', items.map(i => ({ id: i.processOrderId, status: i.overallStatus })));
+
+//             resolve({ 
+//                 items, 
+//                 counts 
+//             });
+//         });
+//     });
+// };
+
+// exports.dcmGetAllAssignOrdersDao = (packageStatus, search, deliveryLocationData, date, centerId) => {
+//   console.log('fetching')
   
-      let whereClause = ` 
-      WHERE 
-      (coff.id = ? OR coff.irmId = ? ) AND
-      po.status IN ('Processing', 'Out For Delivery')
-      AND po.isTargetAssigned = 1 
-      AND op.packingStatus != 'Todo'
-      AND ((oh.city IN (?, ?) OR oa.city IN (?, ?)) OR o.centerId = ?)
-       `;
-  
+//   return new Promise((resolve, reject) => {
+
+//     const params = [];
+
+//     if (deliveryLocationData && deliveryLocationData.length > 0) {
+//       params.push(deliveryLocationData, deliveryLocationData);
+//     }
+
+//     params.push(centerId);
+
+//     let whereClause = ` 
+//     WHERE 
+//     po.status = 'Processing'
+//     AND po.isTargetAssigned = 1 
+//     AND op.packingStatus != 'Todo'
+//     AND (
+//       ${deliveryLocationData && deliveryLocationData.length > 0
+//         ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+//         : ""}
+//       o.centerId = ?
+//     )
+//      `;
+
+   
+
+//     if (search) {
+//       whereClause += ` AND (po.invNo LIKE ?)`;
+//       const searchPattern = `%${search}%`;
+//       params.push(searchPattern);
+//     }
+
+//     if (date) {
+//       whereClause +=  ` AND DATE(o.sheduleDate) = ? `;
+//       params.push(date);
+//   }
+
+//   // if (packageStatus) {
+//   //     if (packageStatus === 'Pending') {
+//   //       whereClause += ` 
+//   //     AND (
+//   //       (pic.packedItems = 0 AND pic.totalItems > 0) 
+//   //       OR 
+//   //       (COALESCE(aic.packedAdditionalItems, 0) = 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0)
+//   //     )
+//   //   `;
+//   //     } else if (packageStatus === 'Completed') {
+//   //       whereClause += ` 
+//   //     AND (
+//   //       (pic.totalItems > 0 AND pic.packedItems = pic.totalItems) 
+//   //       OR 
+//   //       (COALESCE(aic.totalAdditionalItems, 0) > 0 AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0))
+//   //     )
+//   //   `;
+//   //     } else if (packageStatus === 'Opened') {
+//   //       whereClause += ` 
+//   //     AND (
+//   //       (pic.packedItems > 0 AND pic.totalItems > pic.packedItems) 
+//   //       OR 
+//   //       (COALESCE(aic.packedAdditionalItems, 0) > 0 AND COALESCE(aic.totalAdditionalItems, 0) > COALESCE(aic.packedAdditionalItems, 0))
+//   //     )
+//   //   `;
+//   //     }
+//   //   }
+
+//     if (packageStatus) {
+//       if (packageStatus === 'Pending') {
+//         // Truly pending: BOTH package items AND additional items have no packed items
+//         // OR only one type exists and it's not started
+//         whereClause += ` 
+//           AND (
+//             -- Case 1: Both types exist, both are not started
+//             (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
+//              AND pic.packedItems = 0 AND COALESCE(aic.packedAdditionalItems, 0) = 0)
+//             OR
+//             -- Case 2: Only package items exist, not started
+//             (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) = 0 
+//              AND pic.packedItems = 0)
+//             OR
+//             -- Case 3: Only additional items exist, not started  
+//             (COALESCE(pic.totalItems, 0) = 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
+//              AND COALESCE(aic.packedAdditionalItems, 0) = 0)
+//           )
+//         `;
+//       } else if (packageStatus === 'Completed') {
+//         // Completed: ALL existing items (both types) are packed
+//         whereClause += ` 
+//           AND (
+//             -- Case 1: Both types exist, both completed
+//             (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
+//              AND pic.packedItems = pic.totalItems 
+//              AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0))
+//             OR
+//             -- Case 2: Only package items exist, completed
+//             (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) = 0 
+//              AND pic.packedItems = pic.totalItems)
+//             OR
+//             -- Case 3: Only additional items exist, completed
+//             (COALESCE(pic.totalItems, 0) = 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
+//              AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0))
+//           )
+//         `;
+//       } else if (packageStatus === 'Opened') {
+//         // Opened: At least one item packed, but not all items packed
+//         // This means partially completed from any type
+//         whereClause += ` 
+//           AND (
+//             -- Has some progress but not fully completed
+//             (
+//               -- Some package items packed but not all
+//               (pic.totalItems > 0 AND pic.packedItems > 0 AND pic.packedItems < pic.totalItems)
+//               OR
+//               -- Some additional items packed but not all  
+//               (COALESCE(aic.totalAdditionalItems, 0) > 0 AND COALESCE(aic.packedAdditionalItems, 0) > 0 
+//                AND COALESCE(aic.packedAdditionalItems, 0) < COALESCE(aic.totalAdditionalItems, 0))
+//               OR
+//               -- Package items completed but additional items not started/partial
+//               (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
+//                AND pic.packedItems = pic.totalItems 
+//                AND COALESCE(aic.packedAdditionalItems, 0) < COALESCE(aic.totalAdditionalItems, 0))
+//               OR
+//               -- Additional items completed but package items not started/partial  
+//               (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
+//                AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0)
+//                AND pic.packedItems < pic.totalItems)
+//             )
+//           )
+//         `;
+//       }
+//   }
+
       
-      const dataSql = `
-      WITH package_item_counts AS (
-        SELECT 
-            op.orderId,
-            COUNT(*) AS totalItems,
-            SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) AS packedItems,
-            CASE
-                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) = 0 AND COUNT(*) > 0 THEN 'Pending'
-                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) > 0 
-                    AND SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) < COUNT(*) THEN 'Opened'
-                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) = COUNT(*) AND COUNT(*) > 0 THEN 'Completed'
-                ELSE 'Unknown'
-            END AS packageStatus
-        FROM orderpackageitems opi
-        JOIN orderpackage op ON opi.orderPackageId = op.id
-        GROUP BY op.orderId
-    ),
-    additional_items_counts AS (
-        SELECT 
-            orderId,
-            COUNT(*) AS totalAdditionalItems,
-            SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) AS packedAdditionalItems,
-            CASE
-                WHEN COUNT(*) = 0 THEN 'Unknown'
-                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) = 0 THEN 'Pending'
-                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) > 0 
-                     AND SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) < COUNT(*) THEN 'Opened'
-                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) = COUNT(*) THEN 'Completed'
-                ELSE 'Unknown'
-            END AS additionalItemsStatus
-        FROM orderadditionalitems
-        GROUP BY orderId
-    ),
-    order_status_determination AS (
-        SELECT 
-            dt.userId,
-            dti.orderId,
-            po.id AS processOrderId,
-            CASE
-                -- Pending: No items packed from any type
-                WHEN (
-                    -- Case 1: Both types exist, both are not started
-                    (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
-                     AND pic.packedItems = 0 AND COALESCE(aic.packedAdditionalItems, 0) = 0)
-                    OR
-                    -- Case 2: Only package items exist, not started
-                    (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) = 0 
-                     AND pic.packedItems = 0)
-                    OR
-                    -- Case 3: Only additional items exist, not started  
-                    (COALESCE(pic.totalItems, 0) = 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
-                     AND COALESCE(aic.packedAdditionalItems, 0) = 0)
-                ) THEN 'Pending'
-                
-                -- Completed: ALL existing items (both types) are packed
-                WHEN (
-                    -- Case 1: Both types exist, both completed
-                    (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
-                     AND pic.packedItems = pic.totalItems 
-                     AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0))
-                    OR
-                    -- Case 2: Only package items exist, completed
-                    (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) = 0 
-                     AND pic.packedItems = pic.totalItems)
-                    OR
-                    -- Case 3: Only additional items exist, completed
-                    (COALESCE(pic.totalItems, 0) = 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
-                     AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0))
-                ) THEN 'Completed'
-                
-                -- Opened: At least one item packed, but not all items packed
-                WHEN (
-                    -- Some package items packed but not all
-                    (pic.totalItems > 0 AND pic.packedItems > 0 AND pic.packedItems < pic.totalItems)
-                    OR
-                    -- Some additional items packed but not all  
-                    (COALESCE(aic.totalAdditionalItems, 0) > 0 AND COALESCE(aic.packedAdditionalItems, 0) > 0 
-                     AND COALESCE(aic.packedAdditionalItems, 0) < COALESCE(aic.totalAdditionalItems, 0))
-                    OR
-                    -- Package items completed but additional items not started/partial
-                    (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
-                     AND pic.packedItems = pic.totalItems 
-                     AND COALESCE(aic.packedAdditionalItems, 0) < COALESCE(aic.totalAdditionalItems, 0))
-                    OR
-                    -- Additional items completed but package items not started/partial  
-                    (pic.totalItems > 0 AND COALESCE(aic.totalAdditionalItems, 0) > 0 
-                     AND COALESCE(aic.packedAdditionalItems, 0) = COALESCE(aic.totalAdditionalItems, 0)
-                     AND pic.packedItems < pic.totalItems)
-                ) THEN 'Opened'
-                
-                ELSE 'Unknown'
-            END AS overallOrderStatus
-        FROM collection_officer.distributedtarget dt  
-        JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
-        JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
-        JOIN market_place.processorders po ON dti.orderId = po.id
-        LEFT JOIN orders o ON po.orderId = o.id
-        LEFT JOIN orderpackage op ON op.orderId = po.id 
-        LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
-        LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
-        LEFT JOIN package_item_counts pic ON pic.orderId = po.id
-        LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
-        ${whereClause}
-        GROUP BY 
-            dt.userId, dti.orderId, po.id, pic.totalItems, pic.packedItems, 
-            aic.totalAdditionalItems, aic.packedAdditionalItems
-    )
-          
-    SELECT 
-        osd.userId,
-        coff.empId, 
-        coff.firstNameEnglish, 
-        coff.lastNameEnglish,
-        COUNT(*) AS totalOrders,
-        SUM(CASE WHEN osd.overallOrderStatus = 'Pending' THEN 1 ELSE 0 END) AS pendingOrders,
-        SUM(CASE WHEN osd.overallOrderStatus = 'Opened' THEN 1 ELSE 0 END) AS openedOrders,
-        SUM(CASE WHEN osd.overallOrderStatus = 'Completed' THEN 1 ELSE 0 END) AS completedOrders,
-        SUM(CASE WHEN osd.overallOrderStatus = 'Unknown' THEN 1 ELSE 0 END) AS unknownOrders
-    FROM order_status_determination osd
-    JOIN collection_officer.collectionofficer coff ON osd.userId = coff.id
-    GROUP BY 
-        osd.userId, coff.empId, coff.firstNameEnglish, coff.lastNameEnglish
-    ORDER BY 
-        coff.firstNameEnglish, coff.lastNameEnglish;
 
-        `;
+//     const dataSql = `
+//     WITH package_item_counts AS (
+//       SELECT 
+//           op.orderId,
+//           COUNT(*) AS totalItems,
+//           SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) AS packedItems,
+//           CASE
+//               WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) = 0 AND COUNT(*) > 0 THEN 'Pending'
+//               WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) > 0 
+//                   AND SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) < COUNT(*) THEN 'Opened'
+//               WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) = COUNT(*) AND COUNT(*) > 0 THEN 'Completed'
+//               ELSE 'Unknown'
+//           END AS packageStatus
+//       FROM orderpackageitems opi
+//       JOIN orderpackage op ON opi.orderPackageId = op.id
+//       GROUP BY op.orderId
+//   ),
+//   additional_items_counts AS (
+//       SELECT 
+//           orderId,
+//           COUNT(*) AS totalAdditionalItems,
+//           SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) AS packedAdditionalItems,
+//           CASE
+//               WHEN COUNT(*) = 0 THEN 'Unknown'
+//               WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) = 0 THEN 'Pending'
+//               WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) > 0 
+//                    AND SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) < COUNT(*) THEN 'Opened'
+//               WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) = COUNT(*) THEN 'Completed'
+//               ELSE 'Unknown'
+//           END AS additionalItemsStatus
+//       FROM orderadditionalitems
+//       GROUP BY orderId
+//   )
+        
+//   SELECT 
+//   o.id,
+//   po.id AS processOrderId,
+//   po.invNo,
+//   o.sheduleDate,
+//   o.sheduleTime,
+//   dti.id AS distributedTargetItemId, 
+//   dt.id AS distributedTargetId, 
+//   dti.isComplete,
+//   dt.userId,
+//   coff.empId, 
+//   coff.firstNameEnglish, 
+//   coff.lastNameEnglish,
+//   po.outDlvrDate,
+//   COUNT(DISTINCT op.id) AS packageCount,
+//   SUM(DISTINCT mpi.productPrice) AS packagePrice,
+//   COALESCE(pic.totalItems, 0) AS totPackageItems,
+//   COALESCE(pic.packedItems, 0) AS packPackageItems,
+//   COALESCE(aic.totalAdditionalItems, 0) AS totalAdditionalItems,
+//   COALESCE(aic.packedAdditionalItems, 0) AS packedAdditionalItems,
+//   pic.packageStatus,
+//   COALESCE(aic.additionalItemsStatus, 'Unknown') AS additionalItemsStatus
+// FROM collection_officer.distributedtarget dt  
+// JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+// JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+// JOIN market_place.processorders po ON dti.orderId = po.id
+// LEFT JOIN orders o ON po.orderId = o.id
+// LEFT JOIN orderpackage op ON op.orderId = po.id 
+// LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+// LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+// LEFT JOIN marketplacepackages mpi ON op.packageId = mpi.id
+// LEFT JOIN package_item_counts pic ON pic.orderId = po.id
+// LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
+//       ${whereClause}
+//       GROUP BY
+//   o.id,
+//   po.id,
+//   po.invNo,
+//   o.sheduleDate,
+//   dti.id,
+//   dt.id,
+//   dti.isComplete,
+//   dt.userId,
+//   coff.empId,
+//   coff.firstNameEnglish,
+//   coff.lastNameEnglish,
+//   po.outDlvrDate,
+//   pic.totalItems,
+//   pic.packedItems,
+//   pic.packageStatus,
+//   aic.totalAdditionalItems,
+//   aic.packedAdditionalItems,
+//   aic.additionalItemsStatus;
+
+//       `;
+
   
-    
-        console.log('Executing Data Query...');
-        marketPlace.query(dataSql, params, (dataErr, dataResults) => {
-          if (dataErr) {
-            console.error("Error in data query:", dataErr);
-            return reject(dataErr);
-          }
-          console.log('dataResults', dataResults)
-          resolve({
-            items: dataResults
-          });
-        });
-      });
-  };
+//       console.log('Executing Data Query...');
+//       marketPlace.query(dataSql, params, (dataErr, dataResults) => {
+//         if (dataErr) {
+//           console.error("Error in data query:", dataErr);
+//           return reject(dataErr);
+//         }
+//         console.log('dataResults', dataResults)
+//         resolve({
+//           items: dataResults
+//         });
+//       });
+//     });
+// };
 
 //   exports.dcmGetOfficerTargetsDao = (managerId, deliveryLocationDataObj) => {
 //     return new Promise((resolve, reject) => {
@@ -2098,6 +2394,128 @@ exports.dcmSetStatusAndTimeDao = (data) => {
 //         });
 //     });
 // };
+
+exports.dcmGetOfficerTargetsDao = (managerId, deliveryLocationData, centerId) => {
+  return new Promise((resolve, reject) => {
+
+    const dataParams = [managerId, managerId];
+
+        if (deliveryLocationData && deliveryLocationData.length > 0) {
+          dataParams.push(deliveryLocationData, deliveryLocationData);
+        }
+    
+        dataParams.push(centerId);
+
+      let dataSql = `
+      WITH package_item_counts AS (
+        SELECT 
+            op.orderId,
+            COUNT(*) AS totalItems,
+            SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) AS packedItems,
+            CASE
+                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) = 0 AND COUNT(*) > 0 THEN 'Pending'
+                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) > 0 
+                    AND SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) < COUNT(*) THEN 'Opened'
+                WHEN SUM(CASE WHEN opi.isPacked = 1 THEN 1 ELSE 0 END) = COUNT(*) AND COUNT(*) > 0 THEN 'Completed'
+                ELSE 'Unknown'
+            END AS packageStatus
+        FROM orderpackageitems opi
+        JOIN orderpackage op ON opi.orderPackageId = op.id
+        GROUP BY op.orderId
+    ),
+    additional_items_counts AS (
+        SELECT 
+            orderId,
+            COUNT(*) AS totalAdditionalItems,
+            SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) AS packedAdditionalItems,
+            CASE
+                WHEN COUNT(*) = 0 THEN 'Unknown'
+                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) = 0 THEN 'Pending'
+                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) > 0 
+                     AND SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) < COUNT(*) THEN 'Opened'
+                WHEN SUM(CASE WHEN isPacked = 1 THEN 1 ELSE 0 END) = COUNT(*) THEN 'Completed'
+                ELSE 'Unknown'
+            END AS additionalItemsStatus
+        FROM orderadditionalitems
+        GROUP BY orderId
+    )
+          
+    SELECT 
+    coff.id AS officerId,
+    o.id,
+    po.id AS processOrderId,
+    po.invNo,
+    o.sheduleDate,
+    o.sheduleTime,
+    dti.id AS distributedTargetItemId, 
+    dt.id AS distributedTargetId, 
+    dti.isComplete,
+    dt.userId,
+    coff.empId, 
+    coff.firstNameEnglish, 
+    coff.lastNameEnglish,
+    po.outDlvrDate,
+    COUNT(DISTINCT op.id) AS packageCount,
+    SUM(DISTINCT mpi.productPrice) AS packagePrice,
+    COALESCE(pic.totalItems, 0) AS totPackageItems,
+    COALESCE(pic.packedItems, 0) AS packPackageItems,
+    COALESCE(aic.totalAdditionalItems, 0) AS totalAdditionalItems,
+    COALESCE(aic.packedAdditionalItems, 0) AS packedAdditionalItems,
+    pic.packageStatus,
+    COALESCE(aic.additionalItemsStatus, 'Unknown') AS additionalItemsStatus
+  FROM collection_officer.distributedtarget dt  
+  JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
+  JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id
+  JOIN market_place.processorders po ON dti.orderId = po.id
+  LEFT JOIN orders o ON po.orderId = o.id
+  LEFT JOIN orderpackage op ON op.orderId = po.id 
+  LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+  LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+  LEFT JOIN marketplacepackages mpi ON op.packageId = mpi.id
+  LEFT JOIN package_item_counts pic ON pic.orderId = po.id
+  LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
+        WHERE
+      coff.id = ? OR coff.irmId = ? AND po.status IN ('Processing', 'Out For Delivery')
+      AND po.isTargetAssigned = 1 
+      AND op.packingStatus != 'Todo'
+      AND (
+              ${deliveryLocationData && deliveryLocationData.length > 0
+                ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+                : ""}
+              o.centerId = ?
+            )
+      
+        GROUP BY
+    o.id,
+    po.id,
+    po.invNo,
+    o.sheduleDate,
+    dti.id,
+    dt.id,
+    dti.isComplete,
+    dt.userId,
+    coff.empId,
+    coff.firstNameEnglish,
+    coff.lastNameEnglish,
+    po.outDlvrDate,
+    pic.totalItems,
+    pic.packedItems,
+    pic.packageStatus,
+    aic.totalAdditionalItems,
+    aic.packedAdditionalItems,
+    aic.additionalItemsStatus;
+      `;
+
+          marketPlace.query(dataSql, dataParams, (dataErr, dataResults) => {
+              if (dataErr) {
+                  console.error('Error in data query:', dataErr);
+                  return reject(dataErr);
+              }
+
+              resolve({ items: dataResults });
+          });
+  });
+};
 
 exports.getAllOfficersDao = (userId, companyId) => {
     return new Promise((resolve, reject) => {
@@ -2244,19 +2662,30 @@ exports.getDcmAllProducts = () => {
     });
 };
 
-exports.dchGetCenterTarget = (companyHeadId, search, packageStatus, date, companyId, centerId) => {
+exports.dchGetCenterTarget = (deliveryLocationData, search, packageStatus, date, companyId, centerId) => {
   console.log('fetching')
 
   return new Promise((resolve, reject) => {
 
-      const params = [companyId, centerId];
+    const params = [];
+
+    if (deliveryLocationData && deliveryLocationData.length > 0) {
+      params.push(deliveryLocationData, deliveryLocationData);
+    }
+
+    params.push(centerId);
 
     let whereClause = ` 
     WHERE 
     po.status IN ('Processing', 'Out For Delivery') 
     AND po.isTargetAssigned = 1 
     AND op.packingStatus != 'Todo'
-    AND coff.companyId = ? AND coff.distributedCenterId = ?
+    AND (
+      ${deliveryLocationData && deliveryLocationData.length > 0
+        ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+        : ""}
+      o.centerId = ?
+    )
      `;
 
      if (date) {
@@ -2529,10 +2958,21 @@ LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
 
 
 
-exports.dchGetCenterTargetOutForDelivery = (companyHeadId, searchText, status, date, companyId, centerId) => {
+exports.dchGetCenterTargetOutForDelivery = (deliveryLocationData, searchText, status, date, companyId, centerId) => {
     return new Promise((resolve, reject) => {
-        const countParams = [companyId, centerId];
-        const dataParams = [companyId, centerId];
+
+      const countParams = [];
+      const dataParams = [];
+
+      if (deliveryLocationData && deliveryLocationData.length > 0) {
+        dataParams.push(deliveryLocationData, deliveryLocationData);
+        countParams.push(deliveryLocationData, deliveryLocationData);
+      }
+  
+      dataParams.push(centerId);
+      countParams.push(centerId);
+
+      console.log('dataParams', dataParams)
 
         let countSql = `
             SELECT COUNT(*) AS total FROM market_place.processorders po
@@ -2542,7 +2982,13 @@ exports.dchGetCenterTargetOutForDelivery = (companyHeadId, searchText, status, d
             LEFT JOIN collection_officer.distributedtargetitems dti ON dti.orderId = po.id
             LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
             LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
-            WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1 AND coff.companyId = ? AND coff.distributedCenterId = ?
+            WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1 
+            AND (
+              ${deliveryLocationData && deliveryLocationData.length > 0
+                ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+                : ""}
+              o.centerId = ?
+            )
         `;
 
         let dataSql = `
@@ -2579,7 +3025,13 @@ END AS deliveryPeriod
         LEFT JOIN collection_officer.distributedtargetitems dti ON dti.orderId = po.id
         LEFT JOIN collection_officer.distributedtarget dt ON dti.targetId = dt.id
         LEFT JOIN collection_officer.collectionofficer coff ON dt.userId = coff.id 
-        WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1 AND coff.companyId = ? AND coff.distributedCenterId = ?
+        WHERE po.status = 'Out For Delivery' AND po.isTargetAssigned = 1 
+        AND (
+          ${deliveryLocationData && deliveryLocationData.length > 0
+            ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+            : ""}
+          o.centerId = ?
+        )
         `;
 
         if (searchText) {
@@ -2781,14 +3233,17 @@ END AS deliveryPeriod
       //   countParams.push(date);
       // }
 
-exports.dcmGetSelectedOfficerTargetsDao = (officerId, deliveryLocationDataObj, search, packageStatus, centerId ) => {
+exports.dcmGetSelectedOfficerTargetsDao = (officerId, deliveryLocationData, search, packageStatus, centerId ) => {
     console.log('fetching')
-    console.log('deliveryLocationDataObj', deliveryLocationDataObj)
     return new Promise((resolve, reject) => {
 
-        const { city, district } = deliveryLocationDataObj;
+      const params = [officerId];
 
-        const params = [officerId, city, district, city, district, centerId];
+      if (deliveryLocationData && deliveryLocationData.length > 0) {
+        params.push(deliveryLocationData, deliveryLocationData);
+      }
+  
+      params.push(centerId);
   
       let whereClause = ` 
       WHERE 
@@ -2796,7 +3251,12 @@ exports.dcmGetSelectedOfficerTargetsDao = (officerId, deliveryLocationDataObj, s
       AND po.status IN ('Processing', 'Out For Delivery') 
       AND po.isTargetAssigned = 1 
       AND op.packingStatus != 'Todo'
-      AND ((oh.city IN (?, ?) OR oa.city IN (?, ?)) OR o.centerId = ?)
+      AND (
+        ${deliveryLocationData && deliveryLocationData.length > 0
+          ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+          : ""}
+        o.centerId = ?
+      )
        `;
   
      
@@ -2805,7 +3265,7 @@ exports.dcmGetSelectedOfficerTargetsDao = (officerId, deliveryLocationDataObj, s
         whereClause += ` AND (po.invNo LIKE ?)`;
         const searchPattern = `%${search}%`;
         params.push(searchPattern);
-        countParams.push(searchPattern);
+        
       }
 
       if (packageStatus) {
