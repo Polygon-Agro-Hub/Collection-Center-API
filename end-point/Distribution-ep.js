@@ -147,15 +147,25 @@ exports.getDistributionCenterDetails = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     console.log(fullUrl)
     try {
+
+      console.log('user', req.user)
       
       const managerId = req.user.userId
       const companyId = req.user.companyId
-      console.log('managerId', managerId)
-      const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
-      const deliveryLocationDataObj = deliveryLocationData[0]
-      console.log('result',deliveryLocationDataObj)
+      const centerId = req.user.distributedCenterId
+      console.log('managerId', managerId,'companyId',  companyId, 'centerId', centerId)
+      const companyCenterId = await DistributionDAO.getDistributedCompanyCenter(managerId, companyId, centerId);
+      // const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+      // const deliveryLocationDataObj = deliveryLocationData[0]
+      // console.log('result',deliveryLocationDataObj)
 
-      const orders = await DistributionDAO.getDistributionOrders(deliveryLocationDataObj);
+      console.log('companyCenterId', companyCenterId[0].companyCenterId)
+
+      const deliveryLocationData = await DistributionDAO.getDeliveryChargeCity(companyCenterId[0].companyCenterId);
+
+      console.log('deliveryLocationData', deliveryLocationData)
+
+      const orders = await DistributionDAO.getDistributionOrders(deliveryLocationData, centerId);
       console.log('orders',orders)
       return res.status(200).json(orders);
     } catch (error) {
@@ -397,20 +407,25 @@ exports.dcmGetAllAssignOrders = async (req, res) => {
   try {
       console.log('user', req.user)
       const managerId = req.user.userId
-      const centerId = req.user.distributedCenterId
       const companyId = req.user.companyId
-      console.log('managerId', managerId)
-      const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
-      const deliveryLocationDataObj = deliveryLocationData[0]
-      console.log('result',deliveryLocationDataObj)
+      const centerId = req.user.distributedCenterId
+      console.log('managerId', managerId,'companyId',  companyId, 'centerId', centerId)
+      const companyCenterId = await DistributionDAO.getDistributedCompanyCenter(managerId, companyId, centerId);
+      // const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+      // const deliveryLocationDataObj = deliveryLocationData[0]
+      // console.log('result',deliveryLocationDataObj)
 
-      // const orders = await DistributionDAO.getDistributionOrders(deliveryLocationDataObj);
+      console.log('companyCenterId', companyCenterId[0].companyCenterId)
+
+      const deliveryLocationData = await DistributionDAO.getDeliveryChargeCity(companyCenterId[0].companyCenterId);
+
+      console.log('deliveryLocationData', deliveryLocationData)
 
       const userId = req.user.userId
       console.log(userId);
       const { searchText, status, date } = await DistributionValidate.dcmGetAllAssignOrdersSchema.validateAsync(req.query);
 
-      const { items, total } = await DistributionDAO.dcmGetAllAssignOrdersDao(status, searchText, deliveryLocationDataObj, date, centerId)
+      const { items, total } = await DistributionDAO.dcmGetAllAssignOrdersDao(status, searchText, deliveryLocationData, date, centerId)
       console.log('items', items)
       return res.status(200).json({ items, total });
   } catch (error) {

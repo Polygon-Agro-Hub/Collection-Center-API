@@ -354,44 +354,88 @@ exports.getCenterName = (managerId, companyId) => {
     });
 };
 
-exports.getDistributionOrders = (deliveryLocationDataObj) => {
-    return new Promise((resolve, reject) => {
-        const sql = `
-            SELECT 
-                po.id AS processOrderId,
-                po.invNo,
-                o.id AS orderId,
-                po.status,
-                po.isTargetAssigned,
-                oh.city AS ohCity,
-                oa.city AS oaCity,
-                o.sheduleDate,
-                o.sheduleTime
-                
-            FROM market_place.processorders po
-            LEFT JOIN market_place.orders o ON o.id = po.orderId
-            LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
-            LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
-            WHERE 
-                (oh.city IN (?, ?) OR 
-                oa.city IN (?, ?))
-                AND o.sheduleDate >= CURDATE()
-  AND o.sheduleDate < DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND (po.isTargetAssigned IS NULL OR po.isTargetAssigned != 1) AND po.status = 'Processing';
-        `;
+exports.getDistributedCompanyCenter = (managerId, companyId, centerId) => {
+  return new Promise((resolve, reject) => {
+      const sql = `
+      SELECT dcc.id AS companyCenterId
+      FROM collection_officer.distributedcompanycenter dcc 
+      JOIN collection_officer.distributedcenter dc ON dcc.centerId = dc.id
+      JOIN collection_officer.company c ON dcc.companyId = c.id
+      WHERE c.id = ? AND dc.id = ?
+      `;
 
-        const { city, district } = deliveryLocationDataObj;
-
-        const params = [city, district, city, district];
-
-        collectionofficer.query(sql, params, (err, results) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(results);
-        });
-    });
+      collectionofficer.query(sql, [companyId, centerId], (err, results) => {
+          if (err) {
+              return reject(err);
+          }
+          resolve(results);
+      });
+  });
 };
 
+exports.getDeliveryChargeCity = (companyCenterId) => {
+  return new Promise((resolve, reject) => {
+      const sql = `
+      SELECT dc.city FROM collection_officer.centerowncity coc
+      LEFT JOIN collection_officer.deliverycharge dc ON coc.cityId = dc.id
+      WHERE coc.companyCenterId = ?
+      `;
+
+      collectionofficer.query(sql, [companyCenterId], (err, results) => {
+          if (err) {
+              return reject(err);
+          }
+          resolve(results);
+      });
+  });
+};
+
+exports.getDistributionOrders = (deliveryLocationData, centerId) => {
+  return new Promise((resolve, reject) => {
+    let sql = `
+      SELECT 
+          po.id AS processOrderId,
+          po.invNo,
+          o.id AS orderId,
+          po.status,
+          po.isTargetAssigned,
+          oh.city AS ohCity,
+          oa.city AS oaCity,
+          o.sheduleDate,
+          o.sheduleTime
+      FROM market_place.processorders po
+      LEFT JOIN market_place.orders o ON o.id = po.orderId
+      LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
+      LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+      WHERE 
+          (
+            ${deliveryLocationData && deliveryLocationData.length > 0
+              ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+              : ""}
+            o.centerId = ?
+          )
+          AND o.sheduleDate >= CURDATE()
+          AND o.sheduleDate < DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+          AND (po.isTargetAssigned IS NULL OR po.isTargetAssigned != 1)
+          AND po.status = 'Processing'
+    `;
+
+    const params = [];
+
+    if (deliveryLocationData && deliveryLocationData.length > 0) {
+      params.push(deliveryLocationData, deliveryLocationData);
+    }
+
+    params.push(centerId);
+
+    collectionofficer.query(sql, params, (err, results) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(results);
+    });
+  });
+};
 
 exports.assignDistributionTargetsDAO = (companyCenterId, formattedAssignments) => {
     console.log('dao', companyCenterId, formattedAssignments);
@@ -805,21 +849,30 @@ exports.replaceProduct = (approvedRequest) => {
     });
   };
 
-  exports.dcmGetAllAssignOrdersDao = (packageStatus, search, deliveryLocationDataObj, date, centerId) => {
+  exports.dcmGetAllAssignOrdersDao = (packageStatus, search, deliveryLocationData, date, centerId) => {
     console.log('fetching')
-    console.log('deliveryLocationDataObj', deliveryLocationDataObj)
+    
     return new Promise((resolve, reject) => {
 
-        const { city, district } = deliveryLocationDataObj;
+      const params = [];
 
-        const params = [city, district, city, district, centerId];
+      if (deliveryLocationData && deliveryLocationData.length > 0) {
+        params.push(deliveryLocationData, deliveryLocationData);
+      }
+  
+      params.push(centerId);
   
       let whereClause = ` 
       WHERE 
       po.status = 'Processing'
       AND po.isTargetAssigned = 1 
       AND op.packingStatus != 'Todo'
-      AND ((oh.city IN (?, ?) OR oa.city IN (?, ?)) OR o.centerId = ?)
+      AND (
+        ${deliveryLocationData && deliveryLocationData.length > 0
+          ? "(oh.city IN (?) OR oa.city IN (?)) OR"
+          : ""}
+        o.centerId = ?
+      )
        `;
   
      
