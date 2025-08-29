@@ -735,7 +735,9 @@ exports.dcmGetOfficerTargets = async (req, res) => {
     }, {});
 
     // Step 3: return as array
-    const result = Object.values(grouped);
+    const result = Object.values(grouped).sort((a, b) => {
+      return a.name.localeCompare(b.name);
+    });
     console.log('results', result)
 
     return res.status(200).json({ officers: result });
