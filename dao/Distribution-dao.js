@@ -51,7 +51,7 @@ exports.getDistributionCenterDetailsDao = (companyId, province, district, search
     LEFT JOIN 
         collectionofficer cof ON cof.distributedCenterId = dc.id
     WHERE 
-        dcc.companyId = ? AND c.isDistributed = 1
+        dcc.companyId = ? AND c.isDistributed = 1 
         `;
 
         // Prepare query parameters
@@ -87,6 +87,7 @@ exports.getDistributionCenterDetailsDao = (companyId, province, district, search
             GROUP BY 
             dc.id, dc.regCode, dc.centerName, dc.province, 
             dc.district, dc.contact01, dc.contact02
+            ORDER BY dc.createdAt ASC
         `;
 
         // Add pagination

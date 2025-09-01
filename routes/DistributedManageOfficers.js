@@ -29,11 +29,11 @@ router.get(
     DistributedManageOfficerEP.getDCHOwnCenters
 )
 
-router.get(
-    "/get-centers-dch-own",
-    authMiddleware,
-    DistributedManageOfficerEP.getDCHOwnCenters
-)
+// router.get(
+//     "/get-centers-dch-own",
+//     authMiddleware,
+//     DistributedManageOfficerEP.getDCHOwnCenters
+// )
 
 router.get(
     "/get-distribution-center-managers/:id",
