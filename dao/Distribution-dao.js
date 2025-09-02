@@ -87,8 +87,10 @@ exports.getDistributionCenterDetailsDao = (companyId, province, district, search
             GROUP BY 
             dc.id, dc.regCode, dc.centerName, dc.province, 
             dc.district, dc.contact01, dc.contact02
-            ORDER BY dc.createdAt ASC
+            ORDER BY dc.createdAt DESC
         `;
+
+        countSql += ` ORDER BY dc.createdAt DESC`;
 
         // Add pagination
         const offset = (page - 1) * limit;
@@ -413,6 +415,7 @@ exports.getDistributionOrders = (deliveryLocationData, centerId) => {
       LEFT JOIN market_place.orders o ON o.id = po.orderId
       LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
       LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
+      LEFT JOIN market_place.orderpackage op ON op.orderId = po.id
       WHERE 
           (
             ${deliveryLocationData && deliveryLocationData.length > 0
@@ -423,7 +426,7 @@ exports.getDistributionOrders = (deliveryLocationData, centerId) => {
           AND o.sheduleDate >= CURDATE()
           AND o.sheduleDate < DATE_ADD(CURDATE(), INTERVAL 3 DAY)
           AND (po.isTargetAssigned IS NULL OR po.isTargetAssigned != 1)
-          AND po.status = 'Processing'
+          AND po.status = 'Processing' AND (op.packingStatus = 'Dispatch' OR op.packingStatus IS NULL)
     `;
 
     const params = [];
