@@ -653,6 +653,32 @@ exports.getCCIDforCreateEmpIdDao = (employee) => {
     });
 };
 
+exports.getManagerByIdDAO = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                COF.firstNameEnglish, COF.lastNameEnglish
+            FROM 
+                collectionofficer COF
+            WHERE 
+                COF.id = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length === 0) {
+                return resolve(null);
+            }
+            resolve(
+                results[0]
+            )
+        });
+    });
+};
+
 exports.getCenterName = (centerId) => {
     return new Promise((resolve, reject) => {
         const sql = `
