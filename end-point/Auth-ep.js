@@ -29,6 +29,7 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ error: "User not found." });
     }
     console.log(user);
+    const comapny = await AuthDAO.getCompanyImages(user.companyId);
     
 
     if (user.jobRole !== 'Collection Center Manager' && user.jobRole !== 'Collection Center Head' && user.jobRole !== 'Distribution Center Head' && user.jobRole !== 'Distribution Center Manager') {
@@ -62,6 +63,8 @@ exports.loginUser = async (req, res) => {
           updatedPassword: user.passwordUpdated,
           distributedCenterId: user.distributedCenterId,
           image: user.image,
+          companyImage: comapny ? comapny.logo : null,
+          companyFavicon: comapny ? comapny.favicon : null,
           expiresIn: 18000,
         };
 

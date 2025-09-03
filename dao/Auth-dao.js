@@ -82,51 +82,72 @@ exports.getUserDAO = (userId) => {
     WHERE 
         COF.id = ?`;
 
-      collectionofficer.query(sql, [userId], (err, results) => {
-          if (err) {
-              return reject(err); // Reject promise if an error occurs
-          }
+    collectionofficer.query(sql, [userId], (err, results) => {
+      if (err) {
+        return reject(err); // Reject promise if an error occurs
+      }
 
-          if (results.length === 0) {
-              return resolve(null); // No officer found
-          }
+      if (results.length === 0) {
+        return resolve(null); // No officer found
+      }
 
-          const officer = results[0];
+      const officer = results[0];
 
-          resolve({
-              collectionOfficer: {
-                  id: officer.id,
-                  firstNameEnglish: officer.firstNameEnglish,
-                  lastNameEnglish: officer.lastNameEnglish,
-                  phoneNumber01: officer.phoneNumber01,
-                  phoneNumber02: officer.phoneNumber02,
-                  nic: officer.nic,
-                  email: officer.email,
-                  passwordUpdated: officer.passwordUpdated,
-                  houseNumber: officer.houseNumber,
-                  streetName: officer.streetName,
-                  city: officer.city,
-                  district: officer.district,
-                  province: officer.province,
-                  country: officer.country,
-                  languages: officer.languages,
-                  empId: officer.empId,
-                  jobRole: officer.jobRole,
-                  employeeType: officer.empType,
-                  accHolderName: officer.accHolderName,
-                  accNumber: officer.accNumber,
-                  bankName: officer.bankName,
-                  branchName: officer.branchName,
-                  image: officer.image,
-                  companyNameEnglish: officer.companyNameEnglish,
-                  centerName: officer.centerName,
-                  phoneCode01:officer.phoneCode01,
-                  phoneCode02:officer.phoneCode02
+      resolve({
+        collectionOfficer: {
+          id: officer.id,
+          firstNameEnglish: officer.firstNameEnglish,
+          lastNameEnglish: officer.lastNameEnglish,
+          phoneNumber01: officer.phoneNumber01,
+          phoneNumber02: officer.phoneNumber02,
+          nic: officer.nic,
+          email: officer.email,
+          passwordUpdated: officer.passwordUpdated,
+          houseNumber: officer.houseNumber,
+          streetName: officer.streetName,
+          city: officer.city,
+          district: officer.district,
+          province: officer.province,
+          country: officer.country,
+          languages: officer.languages,
+          empId: officer.empId,
+          jobRole: officer.jobRole,
+          employeeType: officer.empType,
+          accHolderName: officer.accHolderName,
+          accNumber: officer.accNumber,
+          bankName: officer.bankName,
+          branchName: officer.branchName,
+          image: officer.image,
+          companyNameEnglish: officer.companyNameEnglish,
+          centerName: officer.centerName,
+          phoneCode01: officer.phoneCode01,
+          phoneCode02: officer.phoneCode02
 
 
 
-              },
-          });
+        },
       });
+    });
+  });
+};
+
+
+exports.getCompanyImages = (id) => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+            SELECT 
+                logo, favicon
+            FROM 
+                company
+           WHERE
+                id = ?`;
+
+    collectionofficer.query(sql, [id], (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(results[0]);
+      }
+    });
   });
 };
