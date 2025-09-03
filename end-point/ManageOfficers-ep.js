@@ -258,6 +258,8 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
 
 
 exports.getOfficerById = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.params);
     const officerData = await ManageOfficerDAO.getOfficerByIdDAO(id);
@@ -266,7 +268,7 @@ exports.getOfficerById = async (req, res) => {
       return res.status(404).json({ error: "Collection Officer not found" });
     }
 
-    console.log(officerData);
+    
 
     // If image URL exists, fetch and convert to Base64
     // if (officerData.collectionOfficer.image) {
