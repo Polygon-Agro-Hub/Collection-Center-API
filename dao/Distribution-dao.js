@@ -876,7 +876,10 @@ exports.replaceProduct = (approvedRequest) => {
       WHERE 
       po.status = 'Processing'
       AND po.isTargetAssigned = 1 
-      AND op.packingStatus != 'Todo'
+      AND (
+        (o.isPackage = 1 AND op.packingStatus != 'Todo') 
+        OR o.isPackage = 0
+      )
       AND (
         ${deliveryLocationData && deliveryLocationData.length > 0
           ? "(oh.city IN (?) OR oa.city IN (?)) OR"
@@ -1048,7 +1051,7 @@ exports.replaceProduct = (approvedRequest) => {
     COALESCE(pic.packedItems, 0) AS packPackageItems,
     COALESCE(aic.totalAdditionalItems, 0) AS totalAdditionalItems,
     COALESCE(aic.packedAdditionalItems, 0) AS packedAdditionalItems,
-    pic.packageStatus,
+    COALESCE(pic.packageStatus, 'Unknown') AS packageStatus,
     COALESCE(aic.additionalItemsStatus, 'Unknown') AS additionalItemsStatus
 FROM collection_officer.distributedtarget dt  
 JOIN collection_officer.distributedtargetitems dti ON dti.targetId = dt.id
@@ -1060,7 +1063,7 @@ LEFT JOIN market_place.orderhouse oh ON oh.orderId = o.id
 LEFT JOIN market_place.orderapartment oa ON oa.orderId = o.id
 LEFT JOIN marketplacepackages mpi ON op.packageId = mpi.id
 LEFT JOIN package_item_counts pic ON pic.orderId = po.id
-LEFT JOIN additional_items_counts aic ON aic.orderId = po.id
+LEFT JOIN additional_items_counts aic ON aic.orderId = o.id
         ${whereClause}
         GROUP BY
     o.id,
