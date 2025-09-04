@@ -91,6 +91,13 @@ exports.dchGetcenterTargetOutForDeliverySchema = Joi.object({
     date: Joi.string().allow('').optional(),
 });
 
+exports.downloadAllTargetProgressSchema = Joi.object({
+    test: Joi.number().integer().optional(),
+    status: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional(),
+});
+
 // exports.dcmSetTimeAndStatusSchema = Joi.object({
 //     data: Joi.object({
 //       orderIds: Joi.array()

@@ -994,6 +994,139 @@ exports.generateRegCode = (req, res) => {
   });
 };
 
+// exports.dcmGetAllAssignOrders = async (req, res) => {
+//   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+//   console.log('fullUrl', fullUrl)
+//   try {
+//       console.log('user', req.user)
+//       const managerId = req.user.userId
+//       const companyId = req.user.companyId
+//       const centerId = req.user.distributedCenterId
+//       console.log('managerId', managerId,'companyId',  companyId, 'centerId', centerId)
+//       const companyCenterId = await DistributionDAO.getDistributedCompanyCenter(managerId, companyId, centerId);
+//       // const deliveryLocationData = await DistributionDAO.getCenterName(managerId, companyId);
+//       // const deliveryLocationDataObj = deliveryLocationData[0]
+//       // console.log('result',deliveryLocationDataObj)
+
+//       console.log('companyCenterId', companyCenterId[0].companyCenterId)
+
+//       const deliveryLocationData = await DistributionDAO.getDeliveryChargeCity(companyCenterId[0].companyCenterId);
+
+//       console.log('deliveryLocationData', deliveryLocationData)
+
+//       const userId = req.user.userId
+//       console.log(userId);
+//       const { searchText, status, date } = await DistributionValidate.dcmGetAllAssignOrdersSchema.validateAsync(req.query);
+
+//       const { items, total } = await DistributionDAO.dcmGetAllAssignOrdersDao(status, searchText, deliveryLocationData, date, centerId)
+//       console.log('items', items)
+//       return res.status(200).json({ items, total });
+//   } catch (error) {
+//       if (error.isJoi) {
+//           return res.status(400).json({ error: error.details[0].message });
+//       }
+
+//       console.error("Error fetching recived complaind:", error);
+//       return res.status(500).json({ error: "An error occurred while fetching recived complaind" });
+//   }
+// }
+
+exports.downloadAllTargetProgress = async (req, res) => {
+  try {
+    const validatedQuery = await DistributionValidate.downloadAllTargetProgressSchema.validateAsync(req.query);
+    const { status, date, searchText } = validatedQuery;
+
+    const managerId = req.user.userId;
+    const companyId = req.user.companyId;
+    const centerId = req.user.distributedCenterId;
+
+    const companyCenterId = await DistributionDAO.getDistributedCompanyCenter(managerId, companyId, centerId);
+    const deliveryLocationData = await DistributionDAO.getDeliveryChargeCity(companyCenterId[0].companyCenterId);
+
+    const data = await DistributionDAO.downloadAllTargetProgressDao(
+      status, searchText, deliveryLocationData, date, centerId
+    );
+
+    // ✅ Apply your combinedStatus logic
+    const itemsWithStatus = data.dataResults.map((item) => {
+      let combinedStatus = '';
+
+      if (item.packageStatus === 'Pending' && (item.additionalItemsStatus === 'Unknown' || item.additionalItemsStatus === 'Pending')) {
+        combinedStatus = 'Pending';
+      }
+      else if (item.packageStatus === 'Pending' && (item.additionalItemsStatus === 'Opened' || item.additionalItemsStatus === 'Completed')) {
+        combinedStatus = 'Opened';
+      }
+      else if (item.packageStatus === 'Opened') {
+        combinedStatus = 'Opened';
+      }
+      else if (item.packageStatus === 'Completed' && item.additionalItemsStatus === 'Unknown') {
+        combinedStatus = 'Completed';
+      }
+      else if (item.packageStatus === 'Completed' && item.additionalItemsStatus === 'Pending') {
+        combinedStatus = 'Pending';
+      }
+      else if (item.packageStatus === 'Completed' && item.additionalItemsStatus === 'Opened') {
+        combinedStatus = 'Opened';
+      }
+      else if (item.packageStatus === 'Completed' && item.additionalItemsStatus === 'Completed') {
+        combinedStatus = 'Completed';
+      }
+      else if (item.packageStatus === 'Unknown' && item.additionalItemsStatus === 'Pending') {
+        combinedStatus = 'Pending';
+      }
+      else if (item.packageStatus === 'Unknown' && item.additionalItemsStatus === 'Opened') {
+        combinedStatus = 'Opened';
+      }
+      else if (item.packageStatus === 'Unknown' && item.additionalItemsStatus === 'Completed') {
+        combinedStatus = 'Completed';
+      }
+      else if (item.packageStatus === 'Unknown' && item.additionalItemsStatus === 'Unknown') {
+        combinedStatus = 'Unknown';
+      }
+
+      return {
+        ...item,
+        combinedStatus,
+      };
+    });
+
+    // ✅ Format data for Excel including combinedStatus
+    const formattedData = itemsWithStatus.map((item) => ({
+  'Order ID': item.invNo ?? 'N/A',
+  'Assigned To': `${item.firstNameEnglish ?? ''} ${item.lastNameEnglish ?? ''}`.trim() || 'N/A',
+  'Delivery Time Slot': `${item.sheduleDate ? new Date(item.sheduleDate).toISOString().split('T')[0] : 'N/A'} ${item.sheduleTime ?? ''}`.trim(),
+  'Status': item.combinedStatus ?? 'Unknown',
+}));
+
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    worksheet['!cols'] = [
+      { wch: 25 }, // Order ID
+      { wch: 20 }, // Assigned To
+      { wch: 20 }, // Delivery Time Slot
+      { wch: 15 }, // Status
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Target Progress');
+
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="TargetProgress.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(excelBuffer);
+
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
 
   
   
