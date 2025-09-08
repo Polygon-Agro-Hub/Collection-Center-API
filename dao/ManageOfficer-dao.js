@@ -920,7 +920,8 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
         let countSql = `
             SELECT COUNT(*) AS total
             FROM collectionofficer Coff
-            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+            WHERE (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%')
+            AND Coff.companyId = ?
         `;
 
         let dataSql = `
@@ -940,7 +941,9 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff, collectioncenter Cen 
-                     WHERE Coff.centerId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+                     WHERE Coff.centerId = Cen.id
+                     AND (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%')
+                     AND Coff.companyId = ?
 
                  `;
 
