@@ -126,6 +126,18 @@ router.get(
     DistributionEp.downloadAllTargetProgress
   )
 
+  router.get(
+    "/download-out-for-delivery-target-progress",
+    authMiddleware,
+    DistributionEp.downloadOutForDeliveryTargetProgress
+  )
+
+  router.get(
+    "/download-dch-out-for-delivery-target-progress",
+    authMiddleware,
+    DistributionEp.downloadDCHOutForDeliveryTargetProgress
+  )
+
 router.post("/generate-regcode", DistributionEp.generateRegCode);
 
 module.exports = router;

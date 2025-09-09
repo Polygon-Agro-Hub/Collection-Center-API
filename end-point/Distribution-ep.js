@@ -1126,6 +1126,142 @@ exports.downloadAllTargetProgress = async (req, res) => {
   }
 };
 
+exports.downloadOutForDeliveryTargetProgress = async (req, res) => {
+  try {
+    const validatedQuery = await DistributionValidate.downloadOutForDeliveryTargetProgressSchema.validateAsync(req.query);
+    const { status, searchText } = validatedQuery;
+
+    const managerId = req.user.userId;
+    const companyId = req.user.companyId;
+    const centerId = req.user.distributedCenterId;
+
+    const companyCenterId = await DistributionDAO.getDistributedCompanyCenter(managerId, companyId, centerId);
+    const deliveryLocationData = await DistributionDAO.getDeliveryChargeCity(companyCenterId[0].companyCenterId);
+
+    const {items} = await DistributionDAO.dcmGetOutForDeliveryTargetProgressReportDao(
+      status, searchText, deliveryLocationData, centerId
+    );
+
+    console.log('items', items)
+
+    
+    // ✅ Format data for Excel including combinedStatus
+    const formattedData = items.map((item) => {
+      // Format outDlvrDateLocal if present
+      let outTime = 'N/A';
+      if (item.outDlvrDateLocal) {
+        outTime = new Date(item.outDlvrDateLocal).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }).replace(':', '.'); // convert "10:00 AM" -> "10.00 AM"
+      }
+    
+      return {
+        'Order ID': item.invNo ?? 'N/A',
+        'Completed By': `${item.firstNameEnglish ?? ''} ${item.lastNameEnglish ?? ''}`.trim() || 'N/A',
+        'Delivery Time Slot': `${item.sheduleDate ? new Date(item.sheduleDate).toISOString().split('T')[0] : 'N/A'} ${item.sheduleTime ?? ''}`.trim(),
+        'Out Time': outTime,
+        'Status': item.deliveryPeriod ?? 'Unknown',
+      };
+    });
+
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    worksheet['!cols'] = [
+      { wch: 25 }, // Order ID
+      { wch: 20 }, // Assigned To
+      { wch: 30 }, // Delivery Time Slot
+      { wch: 20 },
+      { wch: 15 }, // Status
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Target Progress');
+
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="TargetProgress.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(excelBuffer);
+
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+exports.downloadDCHOutForDeliveryTargetProgress = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log("Request URL:", fullUrl);
+  try {
+    const validatedQuery = await DistributionValidate.downloadAllTargetProgressSchema.validateAsync(req.query);
+    const { centerId, status, date, searchText } = validatedQuery;
+
+    const companyHeadId = req.user.userId;
+    const companyId = req.user.companyId;
+    console.log('managerId', companyHeadId, 'companyId', companyId, 'centerId', centerId);
+
+    const companyCenterId = await DistributionDAO.getDistributedCompanyCenter(companyHeadId, companyId, centerId);
+    const deliveryLocationData = await DistributionDAO.getDeliveryChargeCity(companyCenterId[0].companyCenterId);
+
+    const {items} = await DistributionDAO.dchGetCenterTargetOutForDeliveryReport(
+      companyHeadId, searchText, status, date, companyId, centerId
+    );
+
+    
+    // ✅ Format data for Excel including combinedStatus
+    const formattedData = items.map((item) => {
+      // Format outDlvrDateLocal if present
+      let outTime = 'N/A';
+      if (item.outDlvrDateLocal) {
+        outTime = new Date(item.outDlvrDateLocal).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }).replace(':', '.'); // convert "10:00 AM" -> "10.00 AM"
+      }
+    
+      return {
+        'Order ID': item.invNo ?? 'N/A',
+        'Completed By': `${item.firstNameEnglish ?? ''} ${item.lastNameEnglish ?? ''}`.trim() || 'N/A',
+        'Delivery Time Slot': `${item.sheduleDate ? new Date(item.sheduleDate).toISOString().split('T')[0] : 'N/A'} ${item.sheduleTime ?? ''}`.trim(),
+        'Out Time': outTime,
+        'Status': item.deliveryPeriod ?? 'Unknown',
+      };
+    });
+
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    worksheet['!cols'] = [
+      { wch: 25 }, // Order ID
+      { wch: 20 }, // Assigned To
+      { wch: 30 }, // Delivery Time Slot
+      { wch: 20 },
+      { wch: 15 }, // Status
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Target Progress');
+
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="TargetProgress.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(excelBuffer);
+
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
 
 
   
