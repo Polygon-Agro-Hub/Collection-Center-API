@@ -1032,6 +1032,8 @@ exports.generateRegCode = (req, res) => {
 // }
 
 exports.downloadAllTargetProgress = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log("Request URL:", fullUrl);
   try {
     const validatedQuery = await DistributionValidate.downloadAllTargetProgressSchema.validateAsync(req.query);
     const { status, date, searchText } = validatedQuery;

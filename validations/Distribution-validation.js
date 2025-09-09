@@ -91,7 +91,7 @@ exports.dchGetcenterTargetOutForDeliverySchema = Joi.object({
     date: Joi.string().allow('').optional(),
 });
 
-exports.downloadAllTargetProgressSchema = Joi.object({
+exports.downloadDCHOutForDeliveryTargetProgressSchema = Joi.object({
     centerId: Joi.number().integer().optional(),
     status: Joi.string().allow('').optional(),
     date: Joi.string().allow('').optional(),
@@ -104,7 +104,7 @@ exports.downloadOutForDeliveryTargetProgressSchema = Joi.object({
     searchText: Joi.string().allow('').optional(),
 });
 
-exports.downloadDCHOutForDeliveryTargetProgressSchema = Joi.object({
+exports.downloadAllTargetProgressSchema = Joi.object({
     test: Joi.number().integer().optional(),
     status: Joi.string().allow('').optional(),
     date: Joi.string().allow('').optional(),
