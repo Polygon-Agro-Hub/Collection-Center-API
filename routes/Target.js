@@ -182,6 +182,9 @@ router.post(
     TargetEP.editCenter
 )
 
+router.post("/generate-regcode", TargetEP.generateRegCode);
+
+
 
 module.exports = router;
 

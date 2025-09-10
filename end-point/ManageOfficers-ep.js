@@ -586,6 +586,23 @@ exports.getCCHOwnCenters = async (req, res) => {
   }
 };
 
+exports.getCCHOwnCentersWithRegCode = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+    const companyId = req.user.companyId;
+    console.log('companyId', companyId)
+    const result = await ManageOfficerDAO.getCCHOwnCentersWithRegCode(companyId);
+    console.log('result', result)
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
 
 exports.getCenterManager = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
@@ -630,8 +647,11 @@ exports.CCHcreateOfficer = async (req, res) => {
       profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
     }
 
+    console.log('officerData', officerData)
+    
+    const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
 
-    const result = await ManageOfficerDAO.createCollectionOfficerPersonalCCH(officerData, companyId, profileImageUrl);
+    const result = await ManageOfficerDAO.createCollectionOfficerPersonalCCH(officerData, companyId, profileImageUrl, lastId);
 
     if (result.affectedRows === 0) {
       return res.json({ message: "User not found or no changes were made.", status: false });
@@ -708,9 +728,11 @@ exports.CCHcreateOfficer = async (req, res) => {
 
 
 exports.CCHupdateCollectionOfficer = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
 
-    console.log(req.body);
+    // console.log(req.body);
     const { id } = req.params;
 
     let result;
@@ -721,7 +743,20 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
     const officerData = JSON.parse(req.body.officerData);
     const nic = officerData.nic;
     const email = officerData.email;
-    console.log(officerData);
+    // console.log(officerData);
+
+    console.log('job role', officerData.jobRole, 'previous job role', officerData.previousJobRole, )
+
+    if (officerData.jobRole && officerData.previousJobRole && officerData.jobRole !== officerData.previousJobRole) {
+      console.log('making')
+      const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
+      officerData.empIdPrefix = lastId;
+      console.log('Triggered getCCIDforCreateEmpIdDao:', officerData.empIdPrefix);
+      // You can assign or store lastId if needed
+    }
+
+    console.log('officerData.empIdPrefix', officerData.empIdPrefix)
+
     const existingNic = await ManageOfficerDAO.getExistingNic(nic, id); // assuming you'll check by NIC and exclude by ID
     console.log('starts functions')
     if (existingNic) {
@@ -733,6 +768,20 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
       console.log('Email exists');
       return res.status(410).json({ status: false, message: "Email already exists for another collection officer" });
     }
+
+    // const existingPhone1 = await CollectionManageOfficerDAO.getExistingPhone1(officerData.phoneNumber01, id);
+    // if (existingPhone1) {
+    //   console.log('phone exists');
+    //   return res.status(411).json({ status: false, message: "Phone Number - 1 already exists for another collection officer" });
+    // }
+
+    // if (officerData.phoneNumber02) {
+    //   const existingPhone2 = await CollectionManageOfficerDAO.getExistingPhone2(officerData.phoneNumber02, id);
+    //   if (existingPhone2) {
+    //     console.log('phone exists');
+    //     return res.status(412).json({ status: false, message: "Phone Number - 2 already exists for another collection officer" });
+    //   }
+    // }
 
     if (req.body.file === "null") {
       result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, officerData.previousImage);
@@ -748,6 +797,10 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
       const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
       await deleteFromS3(officerData.previousImage);
 
+      console.log('officerData', officerData)
+
+      
+  
       result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, profileImageUrl);
 
     }

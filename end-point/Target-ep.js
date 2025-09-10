@@ -141,10 +141,12 @@ exports.getOfficerDetails = async (req, res) => {
 
 exports.getCenterDashbord = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
 
   try {
     const { id } = req.params;
     const officerCount = await TargetDAO.getCenterNameAndOficerCountDao(id);
+    const centerData = await TargetDAO.getRegCodeDao(id);
     const transCount = await TargetDAO.getTransactionCountDao(id);
     const transAmountCount = await TargetDAO.getTransactionAmountCountDao(id);
     const resentCollection = await TargetDAO.getReseantCollectionDao(id);
@@ -153,7 +155,9 @@ exports.getCenterDashbord = async (req, res) => {
 
     const limitedResentCollection = resentCollection.slice(0, 5);
 
-    return res.status(200).json({ officerCount, transCount: transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
+    console.log('centerData', centerData)
+
+    return res.status(200).json({ officerCount, centerData, transCount: transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -989,5 +993,21 @@ exports.editCenter = async (req, res) => {
       error: "An error occurred while creating the Center",
     });
   }
+};
+
+exports.generateRegCode = (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log("Request URL:", fullUrl);
+  console.log('generating')
+  const { province, district, city } = req.body;
+
+  // Call DAO to generate the regCode
+  TargetDAO.generateRegCode(province, district, city, (err, regCode) => {
+    if (err) {
+      return res.status(500).json({ error: "Error generating regCode" });
+    }
+
+    res.json({ regCode });
+  });
 };
 

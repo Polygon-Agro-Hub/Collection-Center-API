@@ -394,6 +394,22 @@ exports.getCenterNameAndOficerCountDao = (centerId) => {
     });
 };
 
+exports.getRegCodeDao = (centerId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+           SELECT CC.regCode, CC.centerName, CC.id
+           FROM collectioncenter CC
+           WHERE CC.id = ?
+        `
+        collectionofficer.query(sql, [centerId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results[0]);
+        });
+    });
+};
+
 
 exports.getTransactionCountDao = (centerId) => {
     return new Promise((resolve, reject) => {
@@ -2240,3 +2256,36 @@ exports.editCenter = (centerData, companyId) => {
         }
     });
 };
+
+
+exports.generateRegCode = (province, district, city, callback) => {
+    // Generate the prefix based on province and district
+    const prefix =
+      province.slice(0, 2).toUpperCase() +
+      district.slice(0, 1).toUpperCase() +
+      city.slice(0, 1).toUpperCase();
+  
+    // SQL query to get the latest regCode
+    const query = `SELECT regCode FROM collectioncenter WHERE regCode LIKE ? ORDER BY regCode DESC LIMIT 1`;
+  
+    // Execute the query
+    collectionofficer.execute(query, [`${prefix}-%`], (err, results) => {
+      if (err) {
+        console.error("Error executing query:", err);
+        return callback(err);
+      }
+  
+      let newRegCode = `${prefix}-01`; // Default to 01 if no regCode found
+  
+      if (results.length > 0) {
+        // Get the last regCode and extract the number
+        const lastRegCode = results[0].regCode;
+        const lastNumber = parseInt(lastRegCode.split("-")[1]);
+        const newNumber = lastNumber + 1;
+        newRegCode = `${prefix}-${String(newNumber).padStart(2, "0")}`;
+      }
+  
+      // Return the new regCode
+      callback(null, newRegCode);
+    });
+  };

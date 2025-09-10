@@ -266,6 +266,7 @@ exports.getAllRecivedCCHComplainDao = (companyId, page, limit, status, searchTex
             SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCHStatus AS status, OC.createdAt, OC.reply, COF.empId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND complainAssign LIKE "CCH" AND COF.companyId = ?
+            
         `;
 
         if (searchText) {
@@ -289,7 +290,7 @@ exports.getAllRecivedCCHComplainDao = (companyId, page, limit, status, searchTex
         }
 
 
-        dataSql += " LIMIT ? OFFSET ? ";
+        dataSql += "ORDER BY OC.createdAt DESC LIMIT ? OFFSET ? ";
         dataParams.push(limit, offset);
 
         collectionofficer.query(countSql, countParams, (countErr, countResults) => {
@@ -332,6 +333,7 @@ exports.getAllSendCCHComplainDao = (userId, companyId, page, limit, status, empt
             SELECT OC.id, OC.refNo, CC.categoryEnglish AS complainCategory, OC.complain, OC.CCHStatus AS status, OC.createdAt, OC.reply, COF.empId, COF.id as officerId
             FROM officercomplains OC, collectionofficer COF, agro_world_admin.complaincategory CC
             WHERE OC.officerId = COF.id AND OC.complainCategory = CC.id AND OC.complainAssign = "Admin" AND COF.companyId = ?
+            
         `;
 
         if (searchText) {
@@ -370,7 +372,7 @@ exports.getAllSendCCHComplainDao = (userId, companyId, page, limit, status, empt
         }
 
 
-        dataSql += " LIMIT ? OFFSET ? ";
+        dataSql += "ORDER BY OC.createdAt DESC LIMIT ? OFFSET ? ";
         dataParams.push(limit, offset);
 
         collectionofficer.query(countSql, countParams, (countErr, countResults) => {

@@ -107,6 +107,12 @@ router.get(
     ManageOfficerEP.getCCHOwnCenters
 )
 
+router.get(
+    "/get-centers-with-reg-cch-own",
+    authMiddleware,
+    ManageOfficerEP.getCCHOwnCentersWithRegCode
+)
+
 
 router.get(
     "/get-center-managers/:id",

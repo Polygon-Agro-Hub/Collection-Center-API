@@ -1026,6 +1026,26 @@ exports.getCCHOwnCenters = (id) => {
             SELECT CC.id, CC.centerName, CC.regCode
             FROM collectioncenter CC, companycenter COMC
             WHERE COMC.centerId = CC.id AND COMC.companyId = ?
+            ORDER BY 
+    CC.centerName ASC;
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.getCCHOwnCentersWithRegCode = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT CC.id, CC.centerName, CC.regCode
+            FROM collectioncenter CC, companycenter COMC
+            WHERE COMC.centerId = CC.id AND COMC.companyId = ?
+            ORDER BY CC.regCode ASC, CC.centerName ASC;
         `;
 
         collectionofficer.query(sql, [id], (err, results) => {
@@ -1056,7 +1076,7 @@ exports.getCenterManagerDao = (companyId, centerId) => {
 };
 
 
-exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => {
+exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image, lastId) => {
     return new Promise(async (resolve, reject) => {
         try {
             // Debugging: Check if officerData exists
@@ -1071,10 +1091,10 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
 
 
             // Generate QR Code
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: lastId });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${lastId}.png`, "collectionofficer/QRcode");
 
 
             // Define SQL Query before execution
@@ -1107,7 +1127,7 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
                     officerData.lastNameSinhala,
                     officerData.lastNameTamil,
                     officerData.jobRole,
-                    officerData.empId,
+                    lastId,
                     officerData.employeeType,
                     officerData.phoneNumber01Code,
                     officerData.phoneNumber01,
@@ -1163,10 +1183,10 @@ exports.CCHupdateOfficerDetails = (id, officerData, image) => {
             // Generate QR Code
             await deleteFromS3(officerData.previousQR);
 
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: officerData.empIdPrefix });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empIdPrefix}.png`, "collectionofficer/QRcode");
 
 
 
@@ -1217,7 +1237,7 @@ exports.CCHupdateOfficerDetails = (id, officerData, image) => {
                 officerData.lastNameSinhala,
                 officerData.lastNameTamil,
                 officerData.jobRole,
-                officerData.empId,
+                officerData.empIdPrefix,
                 officerData.employeeType,
                 officerData.phoneCode01,
                 officerData.phoneNumber01,
@@ -1608,3 +1628,51 @@ exports.getDistributionCenterManagerDao = (companyId, centerId) => {
     });
 };
 
+exports.getCCIDforCreateEmpIdDao = (employee) => {
+    console.log('employee', employee)
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT empId 
+        FROM collectionofficer
+        WHERE jobRole = ?
+        ORDER BY 
+          CAST(SUBSTRING(empId FROM 4) AS UNSIGNED) DESC
+        LIMIT 1
+      `;
+      const values = [employee];
+  
+      collectionofficer.query(sql, values, (err, results) => {
+        if (err) {
+          return reject(err);
+        }
+  
+        if (results.length === 0) {
+          if (employee === "Collection Center Head") {
+            return resolve("CCH00001");
+          } else if (employee === "Collection Center Manager") {
+            return resolve("CCM00001");
+          } else if (employee === "Collection Officer") {
+            return resolve("COO00001");
+          } else if (employee === "Distribution Manager") {
+            return resolve("DCM00001");
+          }
+            else if (employee === "Distribution Office") {
+            return resolve("DIO00001");
+          }
+        }
+        console.log('results', results)
+  
+        const highestId = results[0].empId;
+  
+        const prefix = highestId.substring(0, 3); // e.g., "CCM"
+        const numberStr = highestId.substring(3); // e.g., "00007"
+        const number = parseInt(numberStr, 10);
+  
+        const nextNumber = number + 1;
+        const nextId = `${prefix}${nextNumber.toString().padStart(5, "0")}`; // e.g., "CCM00008"
+        console.log('nextId', nextId)
+  
+        resolve(nextId);
+      });
+    });
+  };
