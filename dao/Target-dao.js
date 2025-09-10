@@ -1094,9 +1094,9 @@ exports.createCenter = (centerData, companyId) => {
                     // SQL query to insert data into collectioncenter
                     const insertCenterSQL = `
                         INSERT INTO collectioncenter (
-                            regCode, centerName, district, province, buildingNumber, city, street, country
+                            regCode, centerName, district, province, buildingNumber, city, street, country, contact01, contact02, code1, code2
                         ) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `;
 
                     // Execute the query to insert data into collectioncenter
@@ -1111,6 +1111,11 @@ exports.createCenter = (centerData, companyId) => {
                             centerData.city,
                             centerData.street,
                             centerData.country,
+                            centerData.phoneNumber01,
+                            centerData.phoneNumber02,
+                            centerData.phoneNumber01Code,
+                            centerData.phoneNumber02Code
+                            
                         ],
                         (err, centerResults) => {
                             if (err) {

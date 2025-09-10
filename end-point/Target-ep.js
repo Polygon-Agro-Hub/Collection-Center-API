@@ -166,10 +166,13 @@ exports.getCenterDashbord = async (req, res) => {
 
 exports.getAllPriceDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     const companyId = req.user.companyId
     const { centerId, page, limit, grade, searchText } = await TargetValidate.getAllPriceDetailSchema.validateAsync(req.query);
     const { items, total } = await TargetDAO.getAllPriceDetailsDao(companyId, centerId, page, limit, grade, searchText);
+
+    console.log('itens', items)
 
     res.status(200).json({ items, total });
   } catch (error) {
@@ -397,6 +400,8 @@ exports.createCenter = async (req, res) => {
     }
 
     const centerData = JSON.parse(req.body.centerData);
+
+    console.log('centerData', centerData)
     const companyId = req.user.companyId;
 
     // Call the TargetDAO.createCenter function with the required parameters
