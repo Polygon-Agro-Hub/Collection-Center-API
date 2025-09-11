@@ -284,6 +284,7 @@ exports.AssignOfficerTarget = async (req, res) => {
 
 exports.getTargetDetailsToPass = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
 
     const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
@@ -557,6 +558,7 @@ exports.getCenterTarget = async (req, res) => {
 
 exports.getCenterCenterCrops = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullurl', fullUrl)
   try {
     const companyId = req.user.companyId;
     const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
@@ -566,6 +568,8 @@ exports.getCenterCenterCrops = async (req, res) => {
     if (companyCenterId === null) {
       res.json({ items: [], message: "No center found" })
     }
+
+    console.log('companyCenterId', companyCenterId)
 
     const { items, total } = await TargetDAO.getCenterCenterCropsDao(companyCenterId, page, limit, searchText);
     return res.status(200).json({ items, total });

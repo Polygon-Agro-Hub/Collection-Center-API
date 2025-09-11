@@ -81,6 +81,8 @@ exports.createOfficer = async (req, res) => {
     const companyId = req.user.companyId;
     const managerID = req.user.userId;
 
+    console.log('managerID', managerID)
+
     const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
     const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
     const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
@@ -90,7 +92,9 @@ exports.createOfficer = async (req, res) => {
 
     const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
 
-    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl);
+    const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
+
+    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl, lastId);
 
     if (result.affectedRows === 0) {
       return res.json({ message: "User not found or no changes were made.", status: false });
@@ -389,6 +393,14 @@ exports.updateCollectionOfficer = async (req, res) => {
 
     const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
 
+    if (officerData.jobRole && officerData.previousJobRole && officerData.jobRole !== officerData.previousJobRole) {
+      console.log('making')
+      const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
+      officerData.empIdPrefix = lastId;
+      console.log('Triggered getCCIDforCreateEmpIdDao:', officerData.empIdPrefix);
+      // You can assign or store lastId if needed
+    }
+
     const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData, profileImageUrl);
 
     res.json({ message: 'Collection officer details updated successfully' });
@@ -422,8 +434,10 @@ exports.disclaimOfficer = async (req, res) => {
 
 exports.getOfficerByEmpId = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     const { id } = await ManageOfficerValidate.getparmasEmpIdSchema.validateAsync(req.params);
+    console.log('id', id)
 
     const result = await ManageOfficerDAO.getOfficerByEmpIdDao(id)
     if (result.length === 0) {
@@ -629,11 +643,36 @@ exports.CCHcreateOfficer = async (req, res) => {
     if (!req.body.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
+
+    // const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
+    // if (checkUserExist) {
+    //   return res.json({ message: "This NIC Number already exist.", status: false });
+    // }
+
+    
     const officerData = JSON.parse(req.body.officerData);
     const companyId = req.user.companyId;
     const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
     if (checkUserExist) {
-      return res.json({ message: "This NIC Number already exist.", status: false });
+      return res.json({ message: "This NIC Number already exist for another user.", status: false });
+    }
+
+    const checkEmailExist = await ManageOfficerDAO.checkExistEmailsDao(officerData.email);
+    if (checkEmailExist) {
+      return res.json({ message: "This Email already exist for another user.", status: false });
+    }
+
+    const checkPhoneExist = await ManageOfficerDAO.checkExistPhoneDao(officerData.phoneNumber01);
+    if (checkPhoneExist) {
+      return res.json({ message: "This Phone Number - 1 already exist for another user.", status: false });
+    }
+
+    if (officerData.phoneNumber02) {
+      console.log('phonenumber 2')
+      const checkPhone2Exist = await ManageOfficerDAO.checkExistPhone2Dao(officerData.phoneNumber02);
+      if (checkPhone2Exist) {
+        return res.json({ message: "This Phone Number - 2 already exist for another user.", status: false });
+      }
     }
 
     let profileImageUrl = null;
@@ -769,19 +808,19 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
       return res.status(410).json({ status: false, message: "Email already exists for another collection officer" });
     }
 
-    // const existingPhone1 = await CollectionManageOfficerDAO.getExistingPhone1(officerData.phoneNumber01, id);
-    // if (existingPhone1) {
-    //   console.log('phone exists');
-    //   return res.status(411).json({ status: false, message: "Phone Number - 1 already exists for another collection officer" });
-    // }
+    const existingPhone1 = await ManageOfficerDAO.getExistingPhone1(officerData.phoneNumber01, id);
+    if (existingPhone1) {
+      console.log('phone exists');
+      return res.status(411).json({ status: false, message: "Phone Number - 1 already exists for another collection officer" });
+    }
 
-    // if (officerData.phoneNumber02) {
-    //   const existingPhone2 = await CollectionManageOfficerDAO.getExistingPhone2(officerData.phoneNumber02, id);
-    //   if (existingPhone2) {
-    //     console.log('phone exists');
-    //     return res.status(412).json({ status: false, message: "Phone Number - 2 already exists for another collection officer" });
-    //   }
-    // }
+    if (officerData.phoneNumber02) {
+      const existingPhone2 = await ManageOfficerDAO.getExistingPhone2(officerData.phoneNumber02, id);
+      if (existingPhone2) {
+        console.log('phone exists');
+        return res.status(412).json({ status: false, message: "Phone Number - 2 already exists for another collection officer" });
+      }
+    }
 
     if (req.body.file === "null") {
       result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, officerData.previousImage);

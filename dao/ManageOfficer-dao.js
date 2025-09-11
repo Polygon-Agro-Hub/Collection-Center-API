@@ -43,7 +43,7 @@ exports.getForCreateIdDao = (role) => {
 };
 
 
-exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image) => {
+exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image, lastId) => {
     return new Promise(async (resolve, reject) => {
         try {
             // Debugging: Check if officerData exists
@@ -54,10 +54,10 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
 
 
             // Generate QR Code
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: lastId });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${lastId}.png`, "collectionofficer/QRcode");
 
 
             // Define SQL Query before execution
@@ -90,7 +90,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
                     officerData.lastNameSinhala,
                     officerData.lastNameTamil,
                     officerData.jobRole,
-                    officerData.empId,
+                    lastId,
                     officerData.employeeType,
                     officerData.phoneNumber01Code,
                     officerData.phoneNumber01,
@@ -206,7 +206,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
         let countSql = `
             SELECT COUNT(*) AS total
             FROM collectionofficer Coff
-            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
+            WHERE (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%') AND Coff.centerId = ?
         `;
 
         let dataSql = `
@@ -225,7 +225,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff
-                     WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
+                     WHERE (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%') AND Coff.centerId = ?
 
                  `;
 
@@ -596,10 +596,10 @@ exports.updateOfficerDetails = (id, officerData, image) => {
             // Generate QR Code
             await deleteFromS3(officerData.previousQR);
 
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: officerData.empIdPrefix });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empIdPrefix}.png`, "collectionofficer/QRcode");
 
 
 
@@ -648,7 +648,7 @@ exports.updateOfficerDetails = (id, officerData, image) => {
                 officerData.lastNameSinhala,
                 officerData.lastNameTamil,
                 officerData.jobRole,
-                officerData.empId,
+                officerData.empIdPrefix,
                 officerData.employeeType,
                 officerData.phoneCode01,
                 officerData.phoneNumber01,
@@ -796,23 +796,22 @@ exports.claimOfficerDao = (id, userid, centerid) => {
 exports.getTargetDetailsToPassDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-                    SELECT 
-                        ODT.id,
-                        DT.id AS targetId,
-                        CV.id AS cropId,
-                        ODT.officerId,
-                        CV.varietyNameEnglish, 
-                        ODT.target, 
-                        ODT.complete,
-                        DT.toDate,
-                        DT.toTime,
-                        COF.empId,
-                        COF.centerId,
-                        COF.companyId,
-                        ODT.grade,
-                        (ODT.target - ODT.complete) AS todo
-                    FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
-                    WHERE ODT.id = ? AND ODT.dailyTargetId = DT.id AND ODT.officerId = COF.id AND ODT.varietyId = CV.id
+        SELECT 
+            OFT.id,
+            DT.id AS targetId,
+            CV.id AS cropId,
+            OFT.officerId,
+            CV.varietyNameEnglish, 
+            OFT.target, 
+            OFT.complete,
+
+            COF.empId,
+            COF.centerId,
+            COF.companyId,
+            DT.grade,
+            (OFT.target - OFT.complete) AS todo
+        FROM collection_officer.officertarget OFT, plant_care.cropvariety CV, collection_officer.dailytarget DT, collection_officer.collectionofficer COF
+        WHERE OFT.id = ? AND OFT.dailyTargetId = DT.id AND OFT.officerId = COF.id AND DT.varietyId = CV.id
                 `;
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
