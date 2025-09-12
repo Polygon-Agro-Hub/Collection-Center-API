@@ -272,6 +272,16 @@ exports.getOfficerById = async (req, res) => {
       return res.status(404).json({ error: "Collection Officer not found" });
     }
 
+    let managerName = null; 
+
+    console.log('managerName', managerName)
+
+if (officerData.collectionOfficer.irmId) {
+  managerName = await ManageOfficerDAO.getManagerByIdDAO(
+    officerData.collectionOfficer.irmId
+  );
+}
+
     
 
     // If image URL exists, fetch and convert to Base64
@@ -328,7 +338,7 @@ exports.getOfficerById = async (req, res) => {
 
     console.log(`Response size: ${sizeInBytes} bytes`);
 
-    res.json({ officerData });
+    res.json({ officerData, managerName });
   } catch (err) {
     if (err.isJoi) {
       return res.status(400).json({ error: err.details[0].message });
