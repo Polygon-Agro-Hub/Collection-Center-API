@@ -1843,7 +1843,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?`;
+            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ? `;
 
 
         let dataSql =
@@ -1860,7 +1860,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ? 
-            ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish`;
+            `;
 
         const dataParams = [officerId, data.fromDate, data.toDate];
         const countParams = [officerId, data.fromDate, data.toDate];
@@ -1908,7 +1908,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
                     OR CG.cropNameEnglish LIKE ?
                     OR DT.grade LIKE ?
                     OR OFT.target LIKE ?
-                )`;
+                ) `;
             countSql += searchCondition;
             dataSql += searchCondition;
             const searchValue = `%${searchText}%`;
@@ -1916,7 +1916,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += " LIMIT ? OFFSET ?";
+        dataSql += " ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish LIMIT ? OFFSET ?";
         dataParams.push(parseInt(limit), parseInt(offset));
 
         collectionofficer.query(countSql, countParams, (countErr, countResults) => {

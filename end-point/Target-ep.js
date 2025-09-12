@@ -719,7 +719,7 @@ exports.officerTargetCheckAvailable = async (req, res) => {
     const { page, limit, status, validity, searchText } = req.query;
     const result = await TargetDAO.officerTargetCheckAvailableDao(officer);
     if (result === null) {
-      return res.json({ message: "--No Data Available--", result: result, status: false });
+      return res.json({ message: "--No Data Available--", result: [], status: false });
     }
 
     console.log('result', result, 'officer', officer, page, limit, status, validity, searchText)

@@ -11,7 +11,7 @@ exports.getAllPriceListDao = (companyId, centerId, page, limit, grade, searchTex
         `;
 
         let dataSql = `
-            SELECT MPS.id, CG.cropNameEnglish, CV.varietyNameEnglish,  MP.averagePrice, MP.grade, MPS.updatedPrice, MP.createdAt
+            SELECT MPS.id, CG.cropNameEnglish, CV.varietyNameEnglish,  MP.averagePrice, MP.grade, MPS.updatedPrice, MP.price AS indicatePrice, MP.createdAt
             FROM marketprice MP, marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
             WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.companyCenterId = (SELECT id FROM companycenter WHERE companyId = ? AND centerId = ?)
         `;
