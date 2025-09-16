@@ -1015,3 +1015,285 @@ exports.generateRegCode = (req, res) => {
   });
 };
 
+exports.downloadOfficerTargets = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+    // const user = req.user
+    // const companyId = req.user.companyId;
+    // const centerId = req.user.centerId;
+    const validatedQuery = await TargetValidate.downloadOfficerTargetSchema.validateAsync(req.query);
+
+    const { officerId, status, searchText } = validatedQuery;
+
+    const data = await TargetDAO.downloadOfficerTargets(officerId, status, searchText)
+    console.log('dta', data)
+
+    // let data;
+
+    // if (user.role === "Collection Center Manager") {
+    //   data = await ReportDAO.downloadPaymentReportForCCM(
+    //     fromDate,
+    //     toDate,
+    //     centerId,
+    //     searchText,
+    //     companyId,
+    //     user.userId
+    //   );
+
+    // } else {
+    //   data = await ReportDAO.downloadPaymentReport(
+    //     fromDate,
+    //     toDate,
+    //     center,
+    //     searchText,
+    //     companyId
+    //   );
+    // }
+
+
+    // Format data for Excel
+    const formattedData = data.flatMap(item => [
+      {
+        'Crop Name': item.cropNameEnglish ?? 'N/A',
+        'Variety Name': item.varietyNameEnglish ?? 'N/A',
+        'Grade': item.grade ?? 'N/A',
+        'Target(kg)': item.target ?? 0,
+        'To Do(kg)': item.remaining ?? 'N/A',
+        'Completed(kg)': item.complete ?? 0,
+        'Status': item.status ?? 'N/A',
+        'Ends At': item.toDate ?? 'N/A',
+        
+      }
+    ]);
+    
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    worksheet['!cols'] = [
+      { wch: 25 }, // GRN
+      { wch: 25 }, // Amount
+      { wch: 25 }, // Center Reg Code
+      { wch: 25 }, // Center Name
+      { wch: 25 }, // Farmer NIC
+      { wch: 25 }, // Farmer Name
+      { wch: 25 }, // Farmer Contact
+      { wch: 25 }, // Account Holder Name
+      
+    ];
+
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmer Payement Template');
+
+    // Write the workbook to a buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', 'attachment; filename="Farmer Payement Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    // Send the file to the client
+    res.send(excelBuffer);
+
+    // return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+exports.downloadOfficerTargets = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+    // const user = req.user
+    // const companyId = req.user.companyId;
+    // const centerId = req.user.centerId;
+    const validatedQuery = await TargetValidate.downloadOfficerTargetSchema.validateAsync(req.query);
+
+    const { officerId, status, searchText } = validatedQuery;
+
+    const data = await TargetDAO.downloadOfficerTargets(officerId, status, searchText)
+    console.log('dta', data)
+
+    // let data;
+
+    // if (user.role === "Collection Center Manager") {
+    //   data = await ReportDAO.downloadPaymentReportForCCM(
+    //     fromDate,
+    //     toDate,
+    //     centerId,
+    //     searchText,
+    //     companyId,
+    //     user.userId
+    //   );
+
+    // } else {
+    //   data = await ReportDAO.downloadPaymentReport(
+    //     fromDate,
+    //     toDate,
+    //     center,
+    //     searchText,
+    //     companyId
+    //   );
+    // }
+
+
+    // Format data for Excel
+    const formattedData = data.flatMap(item => [
+      {
+        'Crop Name': item.cropNameEnglish ?? 'N/A',
+        'Variety Name': item.varietyNameEnglish ?? 'N/A',
+        'Grade': item.grade ?? 'N/A',
+        'Target(kg)': item.target ?? 0,
+        'To Do(kg)': item.remaining ?? 'N/A',
+        'Completed(kg)': item.complete ?? 0,
+        'Status': item.status ?? 'N/A',
+        'Ends At': item.toDate ?? 'N/A',
+        
+      }
+    ]);
+    
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    worksheet['!cols'] = [
+      { wch: 25 }, // GRN
+      { wch: 25 }, // Amount
+      { wch: 25 }, // Center Reg Code
+      { wch: 25 }, // Center Name
+      { wch: 25 }, // Farmer NIC
+      { wch: 25 }, // Farmer Name
+      { wch: 25 }, // Farmer Contact
+      { wch: 25 }, // Account Holder Name
+      
+    ];
+
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmer Payement Template');
+
+    // Write the workbook to a buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', 'attachment; filename="Farmer Payement Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    // Send the file to the client
+    res.send(excelBuffer);
+
+    // return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+exports.downloadMyTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+    // const user = req.user
+    // const companyId = req.user.companyId;
+    // const centerId = req.user.centerId;
+
+    const userId = req.user.userId;
+    const validatedQuery = await TargetValidate.downloadMyTargetSchema.validateAsync(req.query);
+
+    const { status, searchText } = validatedQuery;
+
+    const data = await TargetDAO.downloadMyTargetDao(userId, status, searchText)
+    console.log('dta', data)
+
+    // let data;
+
+    // if (user.role === "Collection Center Manager") {
+    //   data = await ReportDAO.downloadPaymentReportForCCM(
+    //     fromDate,
+    //     toDate,
+    //     centerId,
+    //     searchText,
+    //     companyId,
+    //     user.userId
+    //   );
+
+    // } else {
+    //   data = await ReportDAO.downloadPaymentReport(
+    //     fromDate,
+    //     toDate,
+    //     center,
+    //     searchText,
+    //     companyId
+    //   );
+    // }
+
+
+    // Format data for Excel
+    const formattedData = data.flatMap(item => [
+      {
+        'Crop Name': item.cropNameEnglish ?? 'N/A',
+        'Variety Name': item.varietyNameEnglish ?? 'N/A',
+        'Grade': item.grade ?? 'N/A',
+        'Target(kg)': item.target ?? 0,
+        'To Do(kg)': item.remaining ?? 'N/A',
+        'Completed(kg)': item.complete ?? 0,
+        'Status': item.status ?? 'N/A',
+        'Ends At': item.toDate ?? 'N/A',
+        
+      }
+    ]);
+    
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    worksheet['!cols'] = [
+      { wch: 25 }, // GRN
+      { wch: 25 }, // Amount
+      { wch: 25 }, // Center Reg Code
+      { wch: 25 }, // Center Name
+      { wch: 25 }, // Farmer NIC
+      { wch: 25 }, // Farmer Name
+      { wch: 25 }, // Farmer Contact
+      { wch: 25 }, // Account Holder Name
+      
+    ];
+
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmer Payement Template');
+
+    // Write the workbook to a buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', 'attachment; filename="Farmer Payement Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    // Send the file to the client
+    res.send(excelBuffer);
+
+    // return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};

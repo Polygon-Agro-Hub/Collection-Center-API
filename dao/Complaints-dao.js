@@ -510,11 +510,14 @@ exports.GetComplainTemplateDataDao = (id) => {
                 CONCAT(COF.firstNameTamil, ' ', COF.lastNameTamil) AS TamName,
                 COM.companyNameEnglish,
                 COM.companyNameSinhala,
-                COM.companyNameTamil
+                COM.companyNameTamil,
+                CC.centerName, CC.regCode
             FROM 
                 collectionofficer COF
             LEFT JOIN 
                 company COM ON COF.companyId = COM.id  -- Assuming there's a companyId foreign key
+            LEFT JOIN 
+                collectioncenter CC ON COF.centerId = CC.id
             WHERE 
                 COF.id = ?
         `;

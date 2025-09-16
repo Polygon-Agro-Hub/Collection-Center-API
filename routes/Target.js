@@ -184,7 +184,18 @@ router.post(
 
 router.post("/generate-regcode", TargetEP.generateRegCode);
 
+router.get(
+    "/download-officer-target",
+    authMiddleware,
+    TargetEP.downloadOfficerTargets
+  )
 
+  router.get(
+    "/download-my-target",
+    authMiddleware,
+    TargetEP.downloadMyTarget
+  )
+  
 
 module.exports = router;
 
