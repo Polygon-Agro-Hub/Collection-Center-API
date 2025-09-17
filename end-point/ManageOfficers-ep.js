@@ -446,10 +446,12 @@ exports.getOfficerByEmpId = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   console.log('fullUrl', fullUrl)
   try {
+
+    companyId = req.user.companyId
     const { id } = await ManageOfficerValidate.getparmasEmpIdSchema.validateAsync(req.params);
     console.log('id', id)
 
-    const result = await ManageOfficerDAO.getOfficerByEmpIdDao(id)
+    const result = await ManageOfficerDAO.getOfficerByEmpIdDao(id, companyId)
     if (result.length === 0) {
       return res.json({ message: "no data found!", status: false })
     }
@@ -575,12 +577,14 @@ exports.editOfficerTarget = async (req, res) => {
 
 exports.getAllOfficersForCCH = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     // Validate query parameters      
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
     const companyId = req.user.companyId;
     const { page, limit, status, role, searchText, center } = validatedQuery;
     const { items, total } = await ManageOfficerDAO.getAllOfficersForCCHDAO(companyId, page, limit, status, role, searchText, center);
+    console.log('ietms', items, 'total', total)
     return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {

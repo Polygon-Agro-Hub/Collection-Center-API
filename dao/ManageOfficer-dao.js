@@ -742,7 +742,7 @@ exports.disclaimOfficerDetailsDao = (id) => {
 
 
 
-exports.getOfficerByEmpIdDao = (id) => {
+exports.getOfficerByEmpIdDao = (id, companyId) => {
     return new Promise((resolve, reject) => {
         const sql = `
             SELECT 
@@ -765,8 +765,8 @@ exports.getOfficerByEmpIdDao = (id) => {
             LEFT JOIN 
                 distributedcenter DC ON COF.distributedCenterId = DC.id
             WHERE 
-                COF.empId = ?;        `;
-        collectionofficer.query(sql, [id], (err, results) => {
+                COF.empId = ? AND COF.companyId = ?;        `;
+        collectionofficer.query(sql, [id, companyId], (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -918,8 +918,9 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM collectionofficer Coff
-            WHERE (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%')
+            FROM collection_officer.collectionofficer Coff, collection_officer.collectioncenter Cen 
+            WHERE Coff.centerId = Cen.id
+            AND (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%')
             AND Coff.companyId = ?
         `;
 
