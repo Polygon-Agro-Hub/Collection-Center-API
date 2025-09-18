@@ -268,6 +268,8 @@ exports.getOfficerById = async (req, res) => {
     const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.params);
     const officerData = await ManageOfficerDAO.getOfficerByIdDAO(id);
 
+    console.log('officerData', officerData)
+
     if (!officerData) {
       return res.status(404).json({ error: "Collection Officer not found" });
     }
