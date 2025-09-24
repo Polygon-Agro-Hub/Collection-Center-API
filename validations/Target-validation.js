@@ -141,3 +141,19 @@ exports.downloadCurrentTargetSchema = Joi.object({
 
 });
 
+exports.getCenterDataSchema = Joi.object({
+    centreId: Joi.number().integer().required()
+});
+
+
+exports.downloadOfficerTargetSchema = Joi.object({
+    officerId: Joi.number().integer().min(1).default(1).optional(),
+    status: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional(),
+});
+
+
+exports.downloadMyTargetSchema = Joi.object({
+    status: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional(),
+});

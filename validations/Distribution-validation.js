@@ -1,0 +1,124 @@
+const Joi = require('joi');
+
+exports.getDistributionCenterSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    searchText: Joi.string().allow('').optional(),
+    province: Joi.string().optional(),
+    district: Joi.string().optional()
+
+});
+
+exports.getAllCenterOfficersSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    centerId: Joi.number().integer().required(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().optional(),
+    role: Joi.string().optional(),
+    center: Joi.number().integer().optional()
+    
+});
+
+exports.getRequestSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).default(10).optional(),
+    date: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional()
+    
+    
+});
+
+exports.dcmGetAllAssignOrdersSchema = Joi.object({
+    test: Joi.number().integer().min(1).default(1).optional(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+
+});
+
+exports.dcmGetToDoAssignOrdersSchema = Joi.object({
+
+    test: Joi.number().integer().min(1).default(1).optional(),
+    status: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+
+});
+
+exports.dcmGetCompletedAssignOrdersSchema = Joi.object({
+    test: Joi.number().integer().min(1).default(1).optional(),
+    searchText: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+
+});
+
+exports.dcmGetOutForDeliveryOrdersSchema = Joi.object({
+    test: Joi.number().integer().min(1).default(1).optional(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+
+});
+
+exports.dcmGetparmasIdSchema = Joi.object({
+    officerId: Joi.number().integer().required(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+});
+
+exports.dcmPassTargetSchema = Joi.object({
+    processOrderIds: Joi.array()
+        .items(Joi.number().integer().required())
+        .min(1)
+        .required(),
+    distributedTargetId: Joi.number().integer().required(),
+    officerId: Joi.number().integer().required(),
+    previousOfficerId: Joi.number().integer().required(),
+});
+
+exports.dchGetcenterTargetSchema = Joi.object({
+    centerId: Joi.number().integer().required(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+});
+
+exports.dchGetcenterTargetOutForDeliverySchema = Joi.object({
+    centerId: Joi.number().integer().required(),
+    searchText: Joi.string().allow('').optional(),
+    status: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+});
+
+exports.downloadDCHOutForDeliveryTargetProgressSchema = Joi.object({
+    centerId: Joi.number().integer().optional(),
+    status: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional(),
+});
+
+exports.downloadOutForDeliveryTargetProgressSchema = Joi.object({
+    test: Joi.number().integer().optional(),
+    status: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional(),
+});
+
+exports.downloadAllTargetProgressSchema = Joi.object({
+    test: Joi.number().integer().optional(),
+    status: Joi.string().allow('').optional(),
+    date: Joi.string().allow('').optional(),
+    searchText: Joi.string().allow('').optional(),
+});
+
+// exports.dcmSetTimeAndStatusSchema = Joi.object({
+//     data: Joi.object({
+//       orderIds: Joi.array()
+//         .items(Joi.number().integer().positive())
+//         .min(1)
+//         .required(),
+//       time: Joi.string()
+//         .isoDate()
+//         .required()
+//     }).required()
+//   });

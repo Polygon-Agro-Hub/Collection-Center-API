@@ -169,6 +169,33 @@ router.get(
     TargetEP.downloadCurrentTarget
   )
 
+  router.get(
+    "/get-center-data/:centreId",
+    authMiddleware,
+    TargetEP.getCenterData
+)
+
+router.post(
+    '/edit-center',
+    authMiddleware,
+    upload.single("file"),
+    TargetEP.editCenter
+)
+
+router.post("/generate-regcode", TargetEP.generateRegCode);
+
+router.get(
+    "/download-officer-target",
+    authMiddleware,
+    TargetEP.downloadOfficerTargets
+  )
+
+  router.get(
+    "/download-my-target",
+    authMiddleware,
+    TargetEP.downloadMyTarget
+  )
+  
 
 module.exports = router;
 

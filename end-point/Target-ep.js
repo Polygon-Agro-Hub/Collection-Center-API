@@ -141,10 +141,12 @@ exports.getOfficerDetails = async (req, res) => {
 
 exports.getCenterDashbord = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
 
   try {
     const { id } = req.params;
     const officerCount = await TargetDAO.getCenterNameAndOficerCountDao(id);
+    const centerData = await TargetDAO.getRegCodeDao(id);
     const transCount = await TargetDAO.getTransactionCountDao(id);
     const transAmountCount = await TargetDAO.getTransactionAmountCountDao(id);
     const resentCollection = await TargetDAO.getReseantCollectionDao(id);
@@ -153,7 +155,9 @@ exports.getCenterDashbord = async (req, res) => {
 
     const limitedResentCollection = resentCollection.slice(0, 5);
 
-    return res.status(200).json({ officerCount, transCount: transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
+    console.log('centerData', centerData)
+
+    return res.status(200).json({ officerCount, centerData, transCount: transCount, transAmountCount, limitedResentCollection, totExpences, difExpences });
   } catch (error) {
     if (error.isJoi) {
       return res.status(400).json({ error: error.details[0].message });
@@ -166,10 +170,13 @@ exports.getCenterDashbord = async (req, res) => {
 
 exports.getAllPriceDetails = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     const companyId = req.user.companyId
     const { centerId, page, limit, grade, searchText } = await TargetValidate.getAllPriceDetailSchema.validateAsync(req.query);
     const { items, total } = await TargetDAO.getAllPriceDetailsDao(companyId, centerId, page, limit, grade, searchText);
+
+    console.log('itens', items)
 
     res.status(200).json({ items, total });
   } catch (error) {
@@ -277,6 +284,7 @@ exports.AssignOfficerTarget = async (req, res) => {
 
 exports.getTargetDetailsToPass = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
 
     const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
@@ -397,6 +405,8 @@ exports.createCenter = async (req, res) => {
     }
 
     const centerData = JSON.parse(req.body.centerData);
+
+    console.log('centerData', centerData)
     const companyId = req.user.companyId;
 
     // Call the TargetDAO.createCenter function with the required parameters
@@ -548,6 +558,7 @@ exports.getCenterTarget = async (req, res) => {
 
 exports.getCenterCenterCrops = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullurl', fullUrl)
   try {
     const companyId = req.user.companyId;
     const { id } = await TargetValidate.IdValidationSchema.validateAsync(req.params);
@@ -557,6 +568,8 @@ exports.getCenterCenterCrops = async (req, res) => {
     if (companyCenterId === null) {
       res.json({ items: [], message: "No center found" })
     }
+
+    console.log('companyCenterId', companyCenterId)
 
     const { items, total } = await TargetDAO.getCenterCenterCropsDao(companyCenterId, page, limit, searchText);
     return res.status(200).json({ items, total });
@@ -706,7 +719,7 @@ exports.officerTargetCheckAvailable = async (req, res) => {
     const { page, limit, status, validity, searchText } = req.query;
     const result = await TargetDAO.officerTargetCheckAvailableDao(officer);
     if (result === null) {
-      return res.json({ message: "--No Data Available--", result: result, status: false });
+      return res.json({ message: "--No Data Available--", result: [], status: false });
     }
 
     console.log('result', result, 'officer', officer, page, limit, status, validity, searchText)
@@ -913,5 +926,374 @@ exports.downloadCurrentTarget = async (req, res) => {
 
     console.error("Error fetching Current Center Target:", error);
     return res.status(500).json({ error: "An error occurred while fetching Current Center Target" });
+  }
+};
+
+exports.getCenterData = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+    // const { centreId } = await TargetValidate.getCenterDataSchema.validateAsync(req.params);
+
+    const { centreId } = req.params;
+
+    console.log('centreId', centreId)
+
+    const results = await TargetDAO.getCentreDataDao(centreId);
+    console.log('this is', results);
+    return res.status(200).json({
+      centreData: results
+    });
+    
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    console.error("Error fetching crop names and verity:", error);
+    return res.status(500).json({ error: "An error occurred while fetching crop names and verity" });
+  }
+};
+
+exports.editCenter = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+
+  try {
+    if (!req.body.centerData) {
+      return res.status(400).json({ error: "Center data is missing" });
+    }
+
+    const centerData = JSON.parse(req.body.centerData);
+    const companyId = req.user.companyId;
+
+    // Call the TargetDAO.createCenter function with the required parameters
+    const result = await TargetDAO.editCenter(centerData, companyId);
+
+    // Check if data was successfully inserted
+    if (result) {
+      return res.status(201).json({
+        message: "Center created successfully",
+        status: true,
+        data: result,
+      });
+    } else {
+      return res.status(400).json({
+        message: "Data insertion failed or no changes were made",
+        status: false,
+      });
+    }
+  } catch (error) {
+    if (error.message.includes("Duplicate regCode")) {
+      // Handle duplicate regCode error
+      return res.status(409).json({ error: error.message });
+    }
+
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error creating Center:", error);
+    return res.status(500).json({
+      error: "An error occurred while creating the Center",
+    });
+  }
+};
+
+exports.generateRegCode = (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log("Request URL:", fullUrl);
+  console.log('generating')
+  const { province, district, city } = req.body;
+
+  // Call DAO to generate the regCode
+  TargetDAO.generateRegCode(province, district, city, (err, regCode) => {
+    if (err) {
+      return res.status(500).json({ error: "Error generating regCode" });
+    }
+
+    res.json({ regCode });
+  });
+};
+
+exports.downloadOfficerTargets = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+    // const user = req.user
+    // const companyId = req.user.companyId;
+    // const centerId = req.user.centerId;
+    const validatedQuery = await TargetValidate.downloadOfficerTargetSchema.validateAsync(req.query);
+
+    const { officerId, status, searchText } = validatedQuery;
+
+    const data = await TargetDAO.downloadOfficerTargets(officerId, status, searchText)
+    console.log('dta', data)
+
+    // let data;
+
+    // if (user.role === "Collection Center Manager") {
+    //   data = await ReportDAO.downloadPaymentReportForCCM(
+    //     fromDate,
+    //     toDate,
+    //     centerId,
+    //     searchText,
+    //     companyId,
+    //     user.userId
+    //   );
+
+    // } else {
+    //   data = await ReportDAO.downloadPaymentReport(
+    //     fromDate,
+    //     toDate,
+    //     center,
+    //     searchText,
+    //     companyId
+    //   );
+    // }
+
+
+    // Format data for Excel
+    const formattedData = data.flatMap(item => [
+      {
+        'Crop Name': item.cropNameEnglish ?? 'N/A',
+        'Variety Name': item.varietyNameEnglish ?? 'N/A',
+        'Grade': item.grade ?? 'N/A',
+        'Target(kg)': item.target ?? 0,
+        'To Do(kg)': item.remaining ?? 'N/A',
+        'Completed(kg)': item.complete ?? 0,
+        'Status': item.status ?? 'N/A',
+        'Ends At': item.toDate ?? 'N/A',
+        
+      }
+    ]);
+    
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    worksheet['!cols'] = [
+      { wch: 25 }, // GRN
+      { wch: 25 }, // Amount
+      { wch: 25 }, // Center Reg Code
+      { wch: 25 }, // Center Name
+      { wch: 25 }, // Farmer NIC
+      { wch: 25 }, // Farmer Name
+      { wch: 25 }, // Farmer Contact
+      { wch: 25 }, // Account Holder Name
+      
+    ];
+
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmer Payement Template');
+
+    // Write the workbook to a buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', 'attachment; filename="Farmer Payement Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    // Send the file to the client
+    res.send(excelBuffer);
+
+    // return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+exports.downloadOfficerTargets = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+    // const user = req.user
+    // const companyId = req.user.companyId;
+    // const centerId = req.user.centerId;
+    const validatedQuery = await TargetValidate.downloadOfficerTargetSchema.validateAsync(req.query);
+
+    const { officerId, status, searchText } = validatedQuery;
+
+    const data = await TargetDAO.downloadOfficerTargets(officerId, status, searchText)
+    console.log('dta', data)
+
+    // let data;
+
+    // if (user.role === "Collection Center Manager") {
+    //   data = await ReportDAO.downloadPaymentReportForCCM(
+    //     fromDate,
+    //     toDate,
+    //     centerId,
+    //     searchText,
+    //     companyId,
+    //     user.userId
+    //   );
+
+    // } else {
+    //   data = await ReportDAO.downloadPaymentReport(
+    //     fromDate,
+    //     toDate,
+    //     center,
+    //     searchText,
+    //     companyId
+    //   );
+    // }
+
+
+    // Format data for Excel
+    const formattedData = data.flatMap(item => [
+      {
+        'Crop Name': item.cropNameEnglish ?? 'N/A',
+        'Variety Name': item.varietyNameEnglish ?? 'N/A',
+        'Grade': item.grade ?? 'N/A',
+        'Target(kg)': item.target ?? 0,
+        'To Do(kg)': item.remaining ?? 'N/A',
+        'Completed(kg)': item.complete ?? 0,
+        'Status': item.status ?? 'N/A',
+        'Ends At': item.toDate ?? 'N/A',
+        
+      }
+    ]);
+    
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    worksheet['!cols'] = [
+      { wch: 25 }, // GRN
+      { wch: 25 }, // Amount
+      { wch: 25 }, // Center Reg Code
+      { wch: 25 }, // Center Name
+      { wch: 25 }, // Farmer NIC
+      { wch: 25 }, // Farmer Name
+      { wch: 25 }, // Farmer Contact
+      { wch: 25 }, // Account Holder Name
+      
+    ];
+
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmer Payement Template');
+
+    // Write the workbook to a buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', 'attachment; filename="Farmer Payement Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    // Send the file to the client
+    res.send(excelBuffer);
+
+    // return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+
+exports.downloadMyTarget = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+
+    // const user = req.user
+    // const companyId = req.user.companyId;
+    // const centerId = req.user.centerId;
+
+    const userId = req.user.userId;
+    const validatedQuery = await TargetValidate.downloadMyTargetSchema.validateAsync(req.query);
+
+    const { status, searchText } = validatedQuery;
+
+    const data = await TargetDAO.downloadMyTargetDao(userId, status, searchText)
+    console.log('dta', data)
+
+    // let data;
+
+    // if (user.role === "Collection Center Manager") {
+    //   data = await ReportDAO.downloadPaymentReportForCCM(
+    //     fromDate,
+    //     toDate,
+    //     centerId,
+    //     searchText,
+    //     companyId,
+    //     user.userId
+    //   );
+
+    // } else {
+    //   data = await ReportDAO.downloadPaymentReport(
+    //     fromDate,
+    //     toDate,
+    //     center,
+    //     searchText,
+    //     companyId
+    //   );
+    // }
+
+
+    // Format data for Excel
+    const formattedData = data.flatMap(item => [
+      {
+        'Crop Name': item.cropNameEnglish ?? 'N/A',
+        'Variety Name': item.varietyNameEnglish ?? 'N/A',
+        'Grade': item.grade ?? 'N/A',
+        'Target(kg)': item.target ?? 0,
+        'To Do(kg)': item.remaining ?? 'N/A',
+        'Completed(kg)': item.complete ?? 0,
+        'Status': item.status ?? 'N/A',
+        'Ends At': item.toDate ?? 'N/A',
+        
+      }
+    ]);
+    
+    // Create a worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    worksheet['!cols'] = [
+      { wch: 25 }, // GRN
+      { wch: 25 }, // Amount
+      { wch: 25 }, // Center Reg Code
+      { wch: 25 }, // Center Name
+      { wch: 25 }, // Farmer NIC
+      { wch: 25 }, // Farmer Name
+      { wch: 25 }, // Farmer Contact
+      { wch: 25 }, // Account Holder Name
+      
+    ];
+
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmer Payement Template');
+
+    // Write the workbook to a buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', 'attachment; filename="Farmer Payement Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    // Send the file to the client
+    res.send(excelBuffer);
+
+    // return res.status(200).json({ items, total });
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
   }
 };

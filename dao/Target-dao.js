@@ -62,22 +62,32 @@ exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
                     WHEN DT.target > DT.complete THEN 'Pending'
                     ELSE 'Completed'
                 END AS status
-
             FROM dailytarget DT, plant_care.cropvariety CV, plant_care.cropgroup CG
-            WHERE DT.date = CURDATE() and DT.companyCenterId = ? AND DT.target != 0 AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id
-            ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish
-            
-        `
+            WHERE DT.date = CURDATE() 
+            AND DT.companyCenterId = ? 
+            AND DT.target != 0 
+            AND DT.varietyId = CV.id 
+            AND CV.cropGroupId = CG.id
+        `;
+
         const sqlParams = [companyCenterId];
+
         if (searchText) {
-            const searchCondition =
-                ` AND  CV.varietyNameEnglish LIKE ? `;
-            targetSql += searchCondition;
+            console.log("------------------------------------------------------------");
+            console.log("Search Text:", searchText);
+            console.log("------------------------------------------------------------");
+
+            // Add search condition properly
+            targetSql += ` AND CV.varietyNameEnglish LIKE ? `;
             const searchValue = `%${searchText}%`;
             sqlParams.push(searchValue);
         }
 
-        const total = 0;
+        // Add ORDER BY clause after all conditions
+        targetSql += ` ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish`;
+
+        console.log("Final SQL:", targetSql);
+        console.log("SQL Parameters:", sqlParams);
 
         // Execute data query
         collectionofficer.query(targetSql, sqlParams, (dataErr, dataResults) => {
@@ -85,9 +95,7 @@ exports.getAllDailyTargetDAO = (companyCenterId, searchText) => {
                 console.error('Error in data query:', dataErr);
                 return reject(dataErr);
             }
-
-
-            resolve({ resultTarget: dataResults, total });
+            resolve({ resultTarget: dataResults, total: dataResults.length || 0 });
         });
     });
 };
@@ -394,6 +402,22 @@ exports.getCenterNameAndOficerCountDao = (centerId) => {
     });
 };
 
+exports.getRegCodeDao = (centerId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+           SELECT CC.regCode, CC.centerName, CC.id
+           FROM collectioncenter CC
+           WHERE CC.id = ?
+        `
+        collectionofficer.query(sql, [centerId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results[0]);
+        });
+    });
+};
+
 
 exports.getTransactionCountDao = (centerId) => {
     return new Promise((resolve, reject) => {
@@ -453,8 +477,7 @@ exports.getReseantCollectionDao = (centerId) => {
             JOIN collectionofficer COF ON RFP.collectionOfficerId = COF.id
             JOIN plant_care.cropvariety CV ON FPC.cropId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-            WHERE DATE(RFP.createdAt) = '2024-12-31' 
-            AND COF.centerId = ?
+            WHERE COF.centerId = ?
             GROUP BY CG.cropNameEnglish, CV.varietyNameEnglish, DATE(RFP.createdAt)
             ORDER BY DATE(RFP.createdAt)
             LIMIT 5
@@ -1095,9 +1118,9 @@ exports.createCenter = (centerData, companyId) => {
                     // SQL query to insert data into collectioncenter
                     const insertCenterSQL = `
                         INSERT INTO collectioncenter (
-                            regCode, centerName, district, province, buildingNumber, city, street, country
+                            regCode, centerName, district, province, buildingNumber, city, street, country, contact01, contact02, code1, code2
                         ) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `;
 
                     // Execute the query to insert data into collectioncenter
@@ -1112,6 +1135,11 @@ exports.createCenter = (centerData, companyId) => {
                             centerData.city,
                             centerData.street,
                             centerData.country,
+                            centerData.phoneNumber01,
+                            centerData.phoneNumber02,
+                            centerData.phoneNumber01Code,
+                            centerData.phoneNumber02Code
+
                         ],
                         (err, centerResults) => {
                             if (err) {
@@ -1652,7 +1680,6 @@ exports.getAssignCenterTargetDAO = (id, searchText) => {
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE  DATE(DT.date) = CURDATE() AND DT.companyCenterId = ?
-            ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish
         `;
         const sqlParams = [id];
 
@@ -1661,6 +1688,8 @@ exports.getAssignCenterTargetDAO = (id, searchText) => {
             sqlParams.push(`%${searchText}%`);
 
         }
+
+        sql += `ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish`
 
         collectionofficer.query(sql, sqlParams, (err, results) => {
             if (err) {
@@ -1814,8 +1843,8 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             JOIN dailytarget DT ON OFT.dailyTargetId = DT.id
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
-            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ?`;
-            
+            WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ? `;
+
 
         let dataSql =
             `SELECT 
@@ -1831,7 +1860,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             JOIN plant_care.cropvariety CV ON DT.varietyId = CV.id
             JOIN plant_care.cropgroup CG ON CV.cropGroupId = CG.id
             WHERE OFT.officerId = ? AND DT.date BETWEEN ? AND ? 
-            ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish`;
+            `;
 
         const dataParams = [officerId, data.fromDate, data.toDate];
         const countParams = [officerId, data.fromDate, data.toDate];
@@ -1879,7 +1908,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
                     OR CG.cropNameEnglish LIKE ?
                     OR DT.grade LIKE ?
                     OR OFT.target LIKE ?
-                )`;
+                ) `;
             countSql += searchCondition;
             dataSql += searchCondition;
             const searchValue = `%${searchText}%`;
@@ -1887,7 +1916,7 @@ exports.getAvailableOfficerDao = (officerId, data, page, limit, status, validity
             dataParams.push(searchValue, searchValue, searchValue, searchValue);
         }
 
-        dataSql += " LIMIT ? OFFSET ?";
+        dataSql += " ORDER BY CG.cropNameEnglish, CV.varietyNameEnglish LIMIT ? OFFSET ?";
         dataParams.push(parseInt(limit), parseInt(offset));
 
         collectionofficer.query(countSql, countParams, (countErr, countResults) => {
@@ -2136,6 +2165,247 @@ exports.downloadCurrentTargetDAO = (companyCenterId, status, searchText) => {
                 };
             });
             resolve({ resultTarget });
+        });
+    });
+};
+
+exports.getCentreDataDao = (centreId) => {
+    return new Promise((resolve, reject) => {
+        let dataSql = `
+        SELECT cc.id, cc.regCode, cc.centerName, cc.district, cc.province, cc.country, cc.buildingNumber, cc.street, cc.city FROM collection_officer.collectioncenter cc WHERE cc.id = ?;
+        `;
+        collectionofficer.query(dataSql, [centreId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            if (results.length === 0) {
+                return resolve(null);
+            }
+            resolve(results);
+            console.log('results', results)
+        });
+    });
+};
+
+exports.editCenter = (centerData, companyId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Validate input data
+            if (!centerData || !centerData.centerName || !centerData.id) {
+                return reject(new Error("Center data is missing or incomplete"));
+            }
+
+            const centerId = centerData.id;
+
+            // SQL query to check for duplicate regCode, excluding current center
+            const checkDuplicateSQL = `
+                SELECT regCode FROM collectioncenter 
+                WHERE regCode = ? AND id != ?
+            `;
+
+            collectionofficer.query(
+                checkDuplicateSQL,
+                [centerData.regCode, centerId],
+                (err, duplicateResults) => {
+                    if (err) {
+                        console.error("Database Error (check duplicate):", err);
+                        return reject(err);
+                    }
+
+                    if (duplicateResults.length > 0) {
+                        return reject(new Error(`Duplicate regCode: ${centerData.regCode} already exists.`));
+                    }
+
+                    // SQL query to update collectioncenter
+                    const updateCenterSQL = `
+                        UPDATE collectioncenter
+                        SET
+                            regCode = ?,
+                            centerName = ?,
+                            district = ?,
+                            province = ?,
+                            buildingNumber = ?,
+                            city = ?,
+                            street = ?,
+                            country = ?
+                        WHERE id = ?
+                    `;
+
+                    collectionofficer.query(
+                        updateCenterSQL,
+                        [
+                            centerData.regCode,
+                            centerData.centerName,
+                            centerData.district,
+                            centerData.province,
+                            centerData.buildingNumber,
+                            centerData.city,
+                            centerData.street,
+                            centerData.country,
+                            centerId
+                        ],
+                        (err, updateResults) => {
+                            if (err) {
+                                console.error("Database Error (update center):", err);
+                                return reject(err);
+                            }
+
+                            // Return success response
+                            resolve({
+                                message: "Center updated successfully",
+                                centerId: centerId
+                            });
+                        }
+                    );
+                }
+            );
+        } catch (error) {
+            console.error("Error:", error);
+            reject(error);
+        }
+    });
+};
+
+
+exports.generateRegCode = (province, district, city, callback) => {
+    // Generate the prefix based on province and district
+    const prefix =
+        province.slice(0, 2).toUpperCase() +
+        district.slice(0, 1).toUpperCase() +
+        city.slice(0, 1).toUpperCase();
+
+    // SQL query to get the latest regCode
+    const query = `SELECT regCode FROM collectioncenter WHERE regCode LIKE ? ORDER BY regCode DESC LIMIT 1`;
+
+    // Execute the query
+    collectionofficer.execute(query, [`${prefix}-%`], (err, results) => {
+        if (err) {
+            console.error("Error executing query:", err);
+            return callback(err);
+        }
+
+        let newRegCode = `${prefix}-01`; // Default to 01 if no regCode found
+
+        if (results.length > 0) {
+            // Get the last regCode and extract the number
+            const lastRegCode = results[0].regCode;
+            const lastNumber = parseInt(lastRegCode.split("-")[1]);
+            const newNumber = lastNumber + 1;
+            newRegCode = `${prefix}-${String(newNumber).padStart(2, "0")}`;
+        }
+
+        // Return the new regCode
+        callback(null, newRegCode);
+    });
+};
+
+
+
+exports.downloadOfficerTargets = (userId, status, search) => {
+    return new Promise((resolve, reject) => {
+        let sql =
+            `SELECT 
+            OFT.id, 
+            OFT.dailyTargetId, 
+            DT.varietyId, 
+            CV.varietyNameEnglish, 
+            CG.cropNameEnglish, 
+            OFT.target, 
+            DT.grade, 
+            OFT.complete, 
+            CO.empId,
+            DT.date AS toDate,
+            CASE 
+                WHEN OFT.target > OFT.complete THEN 'Pending'
+                WHEN OFT.target < OFT.complete THEN 'Exceeded'
+                WHEN OFT.target = OFT.complete THEN 'Completed'
+            END AS status,
+            CASE 
+                WHEN OFT.complete > OFT.target THEN 0.00
+                ELSE OFT.target - OFT.complete
+            END AS remaining
+        FROM dailytarget DT, officertarget OFT, plant_care.cropgroup CG, plant_care.cropvariety CV, collectionofficer CO
+        WHERE OFT.officerId = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id AND OFT.officerId = CO.id
+    `;
+
+        const params = [userId];
+
+        if (status) {
+            sql += ` AND (
+                CASE 
+                    WHEN OFT.target > OFT.complete THEN 'Pending'
+                    WHEN OFT.target < OFT.complete THEN 'Exceeded'
+                    WHEN OFT.target = OFT.complete THEN 'Completed'
+                END
+            ) = ?`;
+            params.push(status);
+        }
+
+        if (search) {
+            sql += ` AND (CV.varietyNameEnglish LIKE ? OR CG.cropNameEnglish LIKE ?)`;
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        collectionofficer.query(sql, params, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.downloadMyTargetDao = (userId, status, search) => {
+    return new Promise((resolve, reject) => {
+        let sql =
+            `SELECT 
+            OFT.id, 
+            OFT.dailyTargetId, 
+            DT.varietyId, 
+            CV.varietyNameEnglish, 
+            CG.cropNameEnglish, 
+            OFT.target, 
+            DT.grade, 
+            OFT.complete, 
+            CO.empId,
+            DT.date AS toDate,
+            CASE 
+                WHEN OFT.target > OFT.complete THEN 'Pending'
+                WHEN OFT.target < OFT.complete THEN 'Exceeded'
+                WHEN OFT.target = OFT.complete THEN 'Completed'
+            END AS status,
+            CASE 
+                WHEN OFT.complete > OFT.target THEN 0.00
+                ELSE OFT.target - OFT.complete
+            END AS remaining
+        FROM dailytarget DT, officertarget OFT, plant_care.cropgroup CG, plant_care.cropvariety CV, collectionofficer CO
+        WHERE OFT.officerId = ? AND OFT.dailyTargetId = DT.id AND DT.varietyId = CV.id AND CV.cropGroupId = CG.id AND OFT.officerId = CO.id
+    `;
+
+        const params = [userId];
+
+        if (status) {
+            sql += ` AND (
+                CASE 
+                    WHEN OFT.target > OFT.complete THEN 'Pending'
+                    WHEN OFT.target < OFT.complete THEN 'Exceeded'
+                    WHEN OFT.target = OFT.complete THEN 'Completed'
+                END
+            ) = ?`;
+            params.push(status);
+        }
+
+        if (search) {
+            sql += ` AND (CV.varietyNameEnglish LIKE ? OR CG.cropNameEnglish LIKE ?)`;
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        collectionofficer.query(sql, params, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
         });
     });
 };

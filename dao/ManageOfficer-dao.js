@@ -43,7 +43,7 @@ exports.getForCreateIdDao = (role) => {
 };
 
 
-exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image) => {
+exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, managerID, image, lastId) => {
     return new Promise(async (resolve, reject) => {
         try {
             // Debugging: Check if officerData exists
@@ -54,10 +54,10 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
 
 
             // Generate QR Code
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: lastId });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${lastId}.png`, "collectionofficer/QRcode");
 
 
             // Define SQL Query before execution
@@ -90,7 +90,7 @@ exports.createCollectionOfficerPersonal = (officerData, centerId, companyId, man
                     officerData.lastNameSinhala,
                     officerData.lastNameTamil,
                     officerData.jobRole,
-                    officerData.empId,
+                    lastId,
                     officerData.employeeType,
                     officerData.phoneNumber01Code,
                     officerData.phoneNumber01,
@@ -206,7 +206,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
         let countSql = `
             SELECT COUNT(*) AS total
             FROM collectionofficer Coff
-            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
+            WHERE (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%') AND Coff.centerId = ?
         `;
 
         let dataSql = `
@@ -225,7 +225,7 @@ exports.getAllOfficersDAO = (centerId, page, limit, status, role, searchText) =>
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff
-                     WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.centerId = ?
+                     WHERE (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%') AND Coff.centerId = ?
 
                  `;
 
@@ -300,6 +300,7 @@ exports.getAllCompanyNamesDao = () => {
         const sql = `
             SELECT id, companyNameEnglish
             FROM company
+            WHERE isCollection = 1
         `;
         collectionofficer.query(sql, (err, results) => {
             if (err) {
@@ -468,6 +469,10 @@ exports.getOfficerByIdDAO = (id) => {
                 COF.*,
                 COM.companyNameEnglish,
                 CEN.centerName,
+                CEN.regCode,
+                DC.centerName AS distributedCenterName,
+                DC.id AS distributedCenterId,
+                DC.regCode AS distributedCenterRegCode,
                 VR.*,
                 VR.id AS vehicleRegId
             FROM 
@@ -476,6 +481,8 @@ exports.getOfficerByIdDAO = (id) => {
                 company COM ON COF.companyId = COM.id
             LEFT JOIN 
                 collectioncenter CEN ON COF.centerId = CEN.id
+            LEFT JOIN 
+                distributedcenter DC ON COF.distributedCenterId = DC.id
             LEFT JOIN
                 vehicleregistration VR ON COF.id = VR.coId
             WHERE 
@@ -532,6 +539,11 @@ exports.getOfficerByIdDAO = (id) => {
                     centerId: officer.centerId,
                     companyId: officer.companyId,
                     irmId: officer.irmId,
+                    regCode: officer.regCode,
+                    claimStatus: officer.claimStatus,
+                    distributedCenterId: officer.distributedCenterId,
+                    distributedCenterName: officer.distributedCenterName,
+                    distributedCenterRegCode: officer.distributedCenterRegCode,
                     licNo: officer.licNo,
                     insNo: officer.insNo,
                     insExpDate: officer.insExpDate,
@@ -584,10 +596,10 @@ exports.updateOfficerDetails = (id, officerData, image) => {
             // Generate QR Code
             await deleteFromS3(officerData.previousQR);
 
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: officerData.empIdPrefix });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empIdPrefix}.png`, "collectionofficer/QRcode");
 
 
 
@@ -636,7 +648,7 @@ exports.updateOfficerDetails = (id, officerData, image) => {
                 officerData.lastNameSinhala,
                 officerData.lastNameTamil,
                 officerData.jobRole,
-                officerData.empId,
+                officerData.empIdPrefix,
                 officerData.employeeType,
                 officerData.phoneCode01,
                 officerData.phoneNumber01,
@@ -730,7 +742,7 @@ exports.disclaimOfficerDetailsDao = (id) => {
 
 
 
-exports.getOfficerByEmpIdDao = (id) => {
+exports.getOfficerByEmpIdDao = (id, companyId) => {
     return new Promise((resolve, reject) => {
         const sql = `
             SELECT 
@@ -742,16 +754,19 @@ exports.getOfficerByEmpIdDao = (id) => {
                 COM.companyNameEnglish, 
                 COF.claimStatus, 
                 COF.image,
-                CEN.centerName
+                CEN.centerName,
+                DC.centerName AS distributedCenterName
             FROM 
                 collectionofficer COF
             LEFT JOIN 
                 company COM ON COF.companyId = COM.id
             LEFT JOIN 
                 collectioncenter CEN ON COF.centerId = CEN.id
+            LEFT JOIN 
+                distributedcenter DC ON COF.distributedCenterId = DC.id
             WHERE 
-                COF.empId = ?;        `;
-        collectionofficer.query(sql, [id], (err, results) => {
+                COF.empId = ? AND COF.companyId = ?;        `;
+        collectionofficer.query(sql, [id, companyId], (err, results) => {
             if (err) {
                 return reject(err);
             }
@@ -781,23 +796,22 @@ exports.claimOfficerDao = (id, userid, centerid) => {
 exports.getTargetDetailsToPassDao = (id) => {
     return new Promise((resolve, reject) => {
         const sql = `
-                    SELECT 
-                        ODT.id,
-                        DT.id AS targetId,
-                        CV.id AS cropId,
-                        ODT.officerId,
-                        CV.varietyNameEnglish, 
-                        ODT.target, 
-                        ODT.complete,
-                        DT.toDate,
-                        DT.toTime,
-                        COF.empId,
-                        COF.centerId,
-                        COF.companyId,
-                        ODT.grade,
-                        (ODT.target - ODT.complete) AS todo
-                    FROM officerdailytarget ODT, plant_care.cropvariety CV, dailytarget DT, collectionofficer COF
-                    WHERE ODT.id = ? AND ODT.dailyTargetId = DT.id AND ODT.officerId = COF.id AND ODT.varietyId = CV.id
+        SELECT 
+            OFT.id,
+            DT.id AS targetId,
+            CV.id AS cropId,
+            OFT.officerId,
+            CV.varietyNameEnglish, 
+            OFT.target, 
+            OFT.complete,
+
+            COF.empId,
+            COF.centerId,
+            COF.companyId,
+            DT.grade,
+            (OFT.target - OFT.complete) AS todo
+        FROM collection_officer.officertarget OFT, plant_care.cropvariety CV, collection_officer.dailytarget DT, collection_officer.collectionofficer COF
+        WHERE OFT.id = ? AND OFT.dailyTargetId = DT.id AND OFT.officerId = COF.id AND DT.varietyId = CV.id
                 `;
         collectionofficer.query(sql, [id], (err, results) => {
             if (err) {
@@ -904,8 +918,10 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
 
         let countSql = `
             SELECT COUNT(*) AS total
-            FROM collectionofficer Coff
-            WHERE Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+            FROM collection_officer.collectionofficer Coff, collection_officer.collectioncenter Cen 
+            WHERE Coff.centerId = Cen.id
+            AND (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%')
+            AND Coff.companyId = ?
         `;
 
         let dataSql = `
@@ -925,7 +941,9 @@ exports.getAllOfficersForCCHDAO = (companyId, page, limit, status, role, searchT
                         Coff.district,
                         Coff.status
                      FROM collectionofficer Coff, collectioncenter Cen 
-                     WHERE Coff.centerId = Cen.id AND Coff.empId NOT LIKE 'CCH%' AND Coff.companyId = ?
+                     WHERE Coff.centerId = Cen.id
+                     AND (Coff.empId LIKE 'CCM%' OR Coff.empId LIKE 'COO%')
+                     AND Coff.companyId = ?
 
                  `;
 
@@ -1008,6 +1026,26 @@ exports.getCCHOwnCenters = (id) => {
             SELECT CC.id, CC.centerName, CC.regCode
             FROM collectioncenter CC, companycenter COMC
             WHERE COMC.centerId = CC.id AND COMC.companyId = ?
+            ORDER BY 
+    CC.centerName ASC;
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.getCCHOwnCentersWithRegCode = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT CC.id, CC.centerName, CC.regCode
+            FROM collectioncenter CC, companycenter COMC
+            WHERE COMC.centerId = CC.id AND COMC.companyId = ?
+            ORDER BY CC.regCode ASC, CC.centerName ASC;
         `;
 
         collectionofficer.query(sql, [id], (err, results) => {
@@ -1038,7 +1076,7 @@ exports.getCenterManagerDao = (companyId, centerId) => {
 };
 
 
-exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => {
+exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image, lastId) => {
     return new Promise(async (resolve, reject) => {
         try {
             // Debugging: Check if officerData exists
@@ -1053,10 +1091,10 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
 
 
             // Generate QR Code
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: lastId });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${lastId}.png`, "collectionofficer/QRcode");
 
 
             // Define SQL Query before execution
@@ -1089,7 +1127,7 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image) => 
                     officerData.lastNameSinhala,
                     officerData.lastNameTamil,
                     officerData.jobRole,
-                    officerData.empId,
+                    lastId,
                     officerData.employeeType,
                     officerData.phoneNumber01Code,
                     officerData.phoneNumber01,
@@ -1145,10 +1183,10 @@ exports.CCHupdateOfficerDetails = (id, officerData, image) => {
             // Generate QR Code
             await deleteFromS3(officerData.previousQR);
 
-            const qrData = JSON.stringify({ empId: officerData.empId });
+            const qrData = JSON.stringify({ empId: officerData.empIdPrefix });
             const qrCodeBase64 = await QRCode.toDataURL(qrData);
             const qrCodeBuffer = Buffer.from(qrCodeBase64.replace(/^data:image\/png;base64,/, ""), "base64");
-            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empId}.png`, "collectionofficer/QRcode");
+            const qrcodeURL = await uploadFileToS3(qrCodeBuffer, `${officerData.empIdPrefix}.png`, "collectionofficer/QRcode");
 
 
 
@@ -1199,7 +1237,7 @@ exports.CCHupdateOfficerDetails = (id, officerData, image) => {
                 officerData.lastNameSinhala,
                 officerData.lastNameTamil,
                 officerData.jobRole,
-                officerData.empId,
+                officerData.empIdPrefix,
                 officerData.employeeType,
                 officerData.phoneCode01,
                 officerData.phoneNumber01,
@@ -1476,9 +1514,10 @@ exports.getExistingEmail = (email, id) => {
 exports.getExistingPhone1 = (phone1, id) => {
     return new Promise((resolve, reject) => {
         const dataSql = `
-            SELECT id 
-            FROM collection_officer.collectionofficer co 
-            WHERE co.phoneNumber01 = ? OR co.phoneNumber02 = ? AND co.id != ?
+        SELECT id 
+        FROM collection_officer.collectionofficer co 
+        WHERE (co.phoneNumber01 = ? OR co.phoneNumber02 = ?) 
+          AND co.id != ?
         `;
         const dataParams = [phone1, phone1, id];
 
@@ -1502,9 +1541,10 @@ exports.getExistingPhone1 = (phone1, id) => {
 exports.getExistingPhone2 = (phone2, id) => {
     return new Promise((resolve, reject) => {
         const dataSql = `
-            SELECT id 
-            FROM collection_officer.collectionofficer co 
-            WHERE co.phoneNumber01 = ? OR co.phoneNumber02 = ? AND co.id != ?
+        SELECT id 
+        FROM collection_officer.collectionofficer co 
+        WHERE (co.phoneNumber01 = ? OR co.phoneNumber02 = ?) 
+          AND co.id != ?
         `;
         const dataParams = [phone2, phone2, id];
 
@@ -1550,6 +1590,116 @@ exports.ProfileImageBase64ByIdDAO = (id) => {
             resolve({
                 results
             });
+        });
+    });
+};
+
+exports.getDCHOwnCenters = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT DC.id, DC.centerName, DC.regCode
+            FROM distributedcenter DC, distributedcompanycenter DCC
+            WHERE DCC.centerId = DC.id AND DCC.companyId = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.getDistributionCenterManagerDao = (companyId, centerId) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT id, firstNameEnglish, lastNameEnglish
+            FROM collectionofficer
+            WHERE companyId = ? AND distributedCenterId = ? AND empId LIKE 'DCM%'
+        `;
+
+        collectionofficer.query(sql, [companyId, centerId], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+exports.getCCIDforCreateEmpIdDao = (employee) => {
+    console.log('employee', employee)
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT empId 
+        FROM collectionofficer
+        WHERE jobRole = ?
+        ORDER BY 
+          CAST(SUBSTRING(empId FROM 4) AS UNSIGNED) DESC
+        LIMIT 1
+      `;
+      const values = [employee];
+  
+      collectionofficer.query(sql, values, (err, results) => {
+        if (err) {
+          return reject(err);
+        }
+  
+        if (results.length === 0) {
+          if (employee === "Collection Center Head") {
+            return resolve("CCH00001");
+          } else if (employee === "Collection Center Manager") {
+            return resolve("CCM00001");
+          } else if (employee === "Collection Officer") {
+            return resolve("COO00001");
+          } else if (employee === "Distribution Manager") {
+            return resolve("DCM00001");
+          }
+            else if (employee === "Distribution Office") {
+            return resolve("DIO00001");
+          }
+        }
+        console.log('results', results)
+  
+        const highestId = results[0].empId;
+  
+        const prefix = highestId.substring(0, 3); // e.g., "CCM"
+        const numberStr = highestId.substring(3); // e.g., "00007"
+        const number = parseInt(numberStr, 10);
+  
+        const nextNumber = number + 1;
+        const nextId = `${prefix}${nextNumber.toString().padStart(5, "0")}`; // e.g., "CCM00008"
+        console.log('nextId', nextId)
+  
+        resolve(nextId);
+      });
+    });
+  };
+
+
+  exports.getManagerByIdDAO = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT 
+                COF.firstNameEnglish, COF.lastNameEnglish
+            FROM 
+                collectionofficer COF
+            WHERE 
+                COF.id = ?
+        `;
+
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            if (results.length === 0) {
+                return resolve(null);
+            }
+            resolve(
+                results[0]
+            )
         });
     });
 };

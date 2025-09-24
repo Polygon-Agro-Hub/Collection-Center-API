@@ -1,5 +1,6 @@
 const ManageOfficerValidate = require('../validations/ManageOfficer-validation')
 const ManageOfficerDAO = require('../dao/ManageOfficer-dao')
+const DistributedManageOfficerDAO = require('../dao/Distributed-ManageOfficers-dao')
 const bcrypt = require("bcryptjs");
 const uploadFileToS3 = require("../middlewares/s3upload");
 const deleteFromS3 = require("../middlewares/s3delete");
@@ -80,6 +81,8 @@ exports.createOfficer = async (req, res) => {
     const companyId = req.user.companyId;
     const managerID = req.user.userId;
 
+    console.log('managerID', managerID)
+
     const base64String = req.body.file.split(",")[1]; // Extract the Base64 content
     const mimeType = req.body.file.match(/data:(.*?);base64,/)[1]; // Extract MIME type
     const fileBuffer = Buffer.from(base64String, "base64"); // Decode Base64 to buffer
@@ -89,7 +92,9 @@ exports.createOfficer = async (req, res) => {
 
     const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
 
-    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl);
+    const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
+
+    const result = await ManageOfficerDAO.createCollectionOfficerPersonal(officerData, centerId, companyId, managerID, profileImageUrl, lastId);
 
     if (result.affectedRows === 0) {
       return res.json({ message: "User not found or no changes were made.", status: false });
@@ -257,15 +262,29 @@ exports.UpdateStatusAndSendPassword = async (req, res) => {
 
 
 exports.getOfficerById = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.params);
     const officerData = await ManageOfficerDAO.getOfficerByIdDAO(id);
+
+    console.log('officerData', officerData)
 
     if (!officerData) {
       return res.status(404).json({ error: "Collection Officer not found" });
     }
 
-    console.log(officerData);
+    let managerName = null; 
+
+    console.log('managerName', managerName)
+
+if (officerData.collectionOfficer.irmId) {
+  managerName = await ManageOfficerDAO.getManagerByIdDAO(
+    officerData.collectionOfficer.irmId
+  );
+}
+
+    
 
     // If image URL exists, fetch and convert to Base64
     // if (officerData.collectionOfficer.image) {
@@ -321,7 +340,7 @@ exports.getOfficerById = async (req, res) => {
 
     console.log(`Response size: ${sizeInBytes} bytes`);
 
-    res.json({ officerData });
+    res.json({ officerData, managerName });
   } catch (err) {
     if (err.isJoi) {
       return res.status(400).json({ error: err.details[0].message });
@@ -386,6 +405,14 @@ exports.updateCollectionOfficer = async (req, res) => {
 
     const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
 
+    if (officerData.jobRole && officerData.previousJobRole && officerData.jobRole !== officerData.previousJobRole) {
+      console.log('making')
+      const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
+      officerData.empIdPrefix = lastId;
+      console.log('Triggered getCCIDforCreateEmpIdDao:', officerData.empIdPrefix);
+      // You can assign or store lastId if needed
+    }
+
     const result = await ManageOfficerDAO.updateOfficerDetails(id, officerData, profileImageUrl);
 
     res.json({ message: 'Collection officer details updated successfully' });
@@ -396,9 +423,18 @@ exports.updateCollectionOfficer = async (req, res) => {
 };
 
 exports.disclaimOfficer = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(`${fullUrl}`);
   try {
+    console.log(req.params)
     const { id } = req.params;
-    const result = await ManageOfficerDAO.disclaimOfficerDetailsDao(id);
+    const jobRole = req.user.role;
+
+    if (jobRole === 'Collection Center Manager') {
+      results = await ManageOfficerDAO.disclaimOfficerDetailsDao(id)
+    } else {
+      results = await DistributedManageOfficerDAO.disclaimOfficerDetailsDIODao(id)
+    }
 
     res.json({ message: 'Collection officer details updated successfully' });
   } catch (err) {
@@ -410,10 +446,14 @@ exports.disclaimOfficer = async (req, res) => {
 
 exports.getOfficerByEmpId = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
-    const { id } = await ManageOfficerValidate.getparmasEmpIdSchema.validateAsync(req.params);
 
-    const result = await ManageOfficerDAO.getOfficerByEmpIdDao(id)
+    companyId = req.user.companyId
+    const { id } = await ManageOfficerValidate.getparmasEmpIdSchema.validateAsync(req.params);
+    console.log('id', id)
+
+    const result = await ManageOfficerDAO.getOfficerByEmpIdDao(id, companyId)
     if (result.length === 0) {
       return res.json({ message: "no data found!", status: false })
     }
@@ -438,10 +478,17 @@ exports.claimOfficer = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   try {
     const { id } = await ManageOfficerValidate.getOfficerByIdSchema.validateAsync(req.body);
+    console.log(req.user)
     const userId = req.user.userId;
+    const jobRole = req.user.role;
     const centerId = req.user.centerId;
+    const distributedCenterId = req.user.distributedCenterId;
 
-    const results = await ManageOfficerDAO.claimOfficerDao(id, userId, centerId)
+    if (jobRole === 'Collection Center Manager') {
+      results = await ManageOfficerDAO.claimOfficerDao(id, userId, centerId)
+    } else {
+      results = await DistributedManageOfficerDAO.distributedClaimOfficerDao(id, userId, distributedCenterId)
+    }
 
     if (results.affectedRows > 0) {
       res.status(200).json({ results: results, status: true });
@@ -532,12 +579,14 @@ exports.editOfficerTarget = async (req, res) => {
 
 exports.getAllOfficersForCCH = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     // Validate query parameters      
     const validatedQuery = await ManageOfficerValidate.getAllOfficersSchema.validateAsync(req.query);
     const companyId = req.user.companyId;
     const { page, limit, status, role, searchText, center } = validatedQuery;
     const { items, total } = await ManageOfficerDAO.getAllOfficersForCCHDAO(companyId, page, limit, status, role, searchText, center);
+    console.log('ietms', items, 'total', total)
     return res.status(200).json({ items, total });
   } catch (error) {
     if (error.isJoi) {
@@ -552,9 +601,29 @@ exports.getAllOfficersForCCH = async (req, res) => {
 
 exports.getCCHOwnCenters = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
     const companyId = req.user.companyId;
+    console.log('companyId', companyId)
     const result = await ManageOfficerDAO.getCCHOwnCenters(companyId);
+    console.log('result', result)
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+exports.getCCHOwnCentersWithRegCode = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+    const companyId = req.user.companyId;
+    console.log('companyId', companyId)
+    const result = await ManageOfficerDAO.getCCHOwnCentersWithRegCode(companyId);
+    console.log('result', result)
     return res.status(200).json(result);
   } catch (error) {
     if (error.isJoi) {
@@ -590,11 +659,36 @@ exports.CCHcreateOfficer = async (req, res) => {
     if (!req.body.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
+
+    // const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
+    // if (checkUserExist) {
+    //   return res.json({ message: "This NIC Number already exist.", status: false });
+    // }
+
+    
     const officerData = JSON.parse(req.body.officerData);
     const companyId = req.user.companyId;
     const checkUserExist = await ManageOfficerDAO.checkExistOfficersDao(officerData.nic);
     if (checkUserExist) {
-      return res.json({ message: "This NIC Number already exist.", status: false });
+      return res.json({ message: "This NIC Number already exist for another user.", status: false });
+    }
+
+    const checkEmailExist = await ManageOfficerDAO.checkExistEmailsDao(officerData.email);
+    if (checkEmailExist) {
+      return res.json({ message: "This Email already exist for another user.", status: false });
+    }
+
+    const checkPhoneExist = await ManageOfficerDAO.checkExistPhoneDao(officerData.phoneNumber01);
+    if (checkPhoneExist) {
+      return res.json({ message: "This Phone Number - 1 already exist for another user.", status: false });
+    }
+
+    if (officerData.phoneNumber02) {
+      console.log('phonenumber 2')
+      const checkPhone2Exist = await ManageOfficerDAO.checkExistPhone2Dao(officerData.phoneNumber02);
+      if (checkPhone2Exist) {
+        return res.json({ message: "This Phone Number - 2 already exist for another user.", status: false });
+      }
     }
 
     let profileImageUrl = null;
@@ -608,8 +702,11 @@ exports.CCHcreateOfficer = async (req, res) => {
       profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
     }
 
+    console.log('officerData', officerData)
+    
+    const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
 
-    const result = await ManageOfficerDAO.createCollectionOfficerPersonalCCH(officerData, companyId, profileImageUrl);
+    const result = await ManageOfficerDAO.createCollectionOfficerPersonalCCH(officerData, companyId, profileImageUrl, lastId);
 
     if (result.affectedRows === 0) {
       return res.json({ message: "User not found or no changes were made.", status: false });
@@ -686,9 +783,11 @@ exports.CCHcreateOfficer = async (req, res) => {
 
 
 exports.CCHupdateCollectionOfficer = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
 
-    console.log(req.body);
+    // console.log(req.body);
     const { id } = req.params;
 
     let result;
@@ -699,7 +798,20 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
     const officerData = JSON.parse(req.body.officerData);
     const nic = officerData.nic;
     const email = officerData.email;
-    console.log(officerData);
+    // console.log(officerData);
+
+    console.log('job role', officerData.jobRole, 'previous job role', officerData.previousJobRole, )
+
+    if (officerData.jobRole && officerData.previousJobRole && officerData.jobRole !== officerData.previousJobRole) {
+      console.log('making')
+      const lastId = await ManageOfficerDAO.getCCIDforCreateEmpIdDao(officerData.jobRole)
+      officerData.empIdPrefix = lastId;
+      console.log('Triggered getCCIDforCreateEmpIdDao:', officerData.empIdPrefix);
+      // You can assign or store lastId if needed
+    }
+
+    console.log('officerData.empIdPrefix', officerData.empIdPrefix)
+
     const existingNic = await ManageOfficerDAO.getExistingNic(nic, id); // assuming you'll check by NIC and exclude by ID
     console.log('starts functions')
     if (existingNic) {
@@ -710,6 +822,20 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
     if (existingEmail) {
       console.log('Email exists');
       return res.status(410).json({ status: false, message: "Email already exists for another collection officer" });
+    }
+
+    const existingPhone1 = await ManageOfficerDAO.getExistingPhone1(officerData.phoneNumber01, id);
+    if (existingPhone1) {
+      console.log('phone exists');
+      return res.status(411).json({ status: false, message: "Phone Number - 1 already exists for another collection officer" });
+    }
+
+    if (officerData.phoneNumber02) {
+      const existingPhone2 = await ManageOfficerDAO.getExistingPhone2(officerData.phoneNumber02, id);
+      if (existingPhone2) {
+        console.log('phone exists');
+        return res.status(412).json({ status: false, message: "Phone Number - 2 already exists for another collection officer" });
+      }
     }
 
     if (req.body.file === "null") {
@@ -726,6 +852,10 @@ exports.CCHupdateCollectionOfficer = async (req, res) => {
       const profileImageUrl = await uploadFileToS3(fileBuffer, fileName, "collectionofficer/image");
       await deleteFromS3(officerData.previousImage);
 
+      console.log('officerData', officerData)
+
+      
+  
       result = await ManageOfficerDAO.CCHupdateOfficerDetails(id, officerData, profileImageUrl);
 
     }
@@ -929,6 +1059,42 @@ exports.getProfileImageBase64ById = async (req, res) => {
     }
     console.error("Error executing query:", err);
     res.status(500).send("An error occurred while fetching data.");
+  }
+};
+
+exports.getDCHOwnCenters = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
+  try {
+    const companyId = req.user.companyId;
+    console.log('companyId', companyId)
+    const result = await ManageOfficerDAO.getDCHOwnCenters(companyId);
+    console.log('result', result)
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
+  }
+};
+
+exports.getDistributionCenterManager = async (req, res) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log(fullUrl)
+  try {
+    // const { id } = await ManageOfficerValidate.IdValidationSchema.validateAsync(req.params);
+    const { id } = req.params
+    const companyId = req.user.companyId
+    const result = await ManageOfficerDAO.getDistributionCenterManagerDao(companyId, id);
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    console.error("Error fetching collection officers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching collection officers" });
   }
 };
 

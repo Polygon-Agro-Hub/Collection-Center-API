@@ -107,6 +107,12 @@ router.get(
     ManageOfficerEP.getCCHOwnCenters
 )
 
+router.get(
+    "/get-centers-with-reg-cch-own",
+    authMiddleware,
+    ManageOfficerEP.getCCHOwnCentersWithRegCode
+)
+
 
 router.get(
     "/get-center-managers/:id",
@@ -153,6 +159,18 @@ router.get(
     authMiddleware,
     ManageOfficerEP.getProfileImageBase64ById
 );
+
+router.get(
+    "/get-centers-dch-own",
+    authMiddleware,
+    ManageOfficerEP.getDCHOwnCenters
+)
+
+router.get(
+    "/get-distribution-center-managers/:id",
+    authMiddleware,
+    ManageOfficerEP.getDistributionCenterManager
+)
 
 
 module.exports = router;
