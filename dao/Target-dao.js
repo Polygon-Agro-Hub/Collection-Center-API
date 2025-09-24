@@ -1615,14 +1615,14 @@ exports.getSavedCenterCropsDao = (id, date, state, searchText) => {
     });
 };
 
-exports.updateCenterTargeQtyDao = (id, qty) => {
+exports.updateCenterTargeQtyDao = (id, qty, officerId) => {
     return new Promise((resolve, reject) => {
         let dataSql = `
            UPDATE dailytarget 
-           SET target = ?, assignStatus = 0
+           SET target = ?, assignBy = ?, assignTime = CURRENT_TIMESTAMP, assignStatus = 0
            WHERE id = ?
         `;
-        const dataParams = [qty, id];
+        const dataParams = [qty, officerId, id];
         collectionofficer.query(dataSql, dataParams, (err, results) => {
             if (err) {
                 return reject(err);
@@ -1632,16 +1632,17 @@ exports.updateCenterTargeQtyDao = (id, qty) => {
     });
 };
 
-exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date) => {
+exports.addNewCenterTargetDao = (companyCenterId, varietyId, grade, target, date, officerId) => {
+    console.log('officerId', officerId)
     return new Promise((resolve, reject) => {
         let dataSql = `
-           INSERT INTO dailytarget (companyCenterId, varietyId, grade, target,complete, date, assignStatus)
-           VALUES (?, ?, ?, ?, ?, ?, 0)
+           INSERT INTO dailytarget (companyCenterId, varietyId, grade, target,complete, date, assignBy, assignTime, assignStatus)
+           VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 0)
         `;
 
         const dateParam = new Date(date).toISOString().split('T')[0];
 
-        const dataParams = [companyCenterId, varietyId, grade, target, 0, dateParam];
+        const dataParams = [companyCenterId, varietyId, grade, target, 0, dateParam, officerId];
         collectionofficer.query(dataSql, dataParams, (err, results) => {
             if (err) {
                 return reject(err);

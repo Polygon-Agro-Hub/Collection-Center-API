@@ -654,15 +654,19 @@ exports.getSavedCenterCrops = async (req, res) => {
 
 exports.updateTargetQty = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
+    console.log('user', req.user)
+    const officerId = req.user.userId
+    console.log('officerId', officerId)
     const { id, qty, date, companyCenterId, grade, varietyId } = await TargetValidate.updateTargetQtySchema.validateAsync(req.body);
     if (id !== null) {
-      const resultUpdate = await TargetDAO.updateCenterTargeQtyDao(id, qty, date);
+      const resultUpdate = await TargetDAO.updateCenterTargeQtyDao(id, qty, officerId, date );
       if (resultUpdate.affectedRows === 0) {
         return res.json({ status: false, message: "Failed to update target quantity" });
       }
     } else {
-      const resultInsert = await TargetDAO.addNewCenterTargetDao(companyCenterId, varietyId, grade, qty, date)
+      const resultInsert = await TargetDAO.addNewCenterTargetDao(companyCenterId, varietyId, grade, qty, date, officerId)
       if (resultInsert.affectedRows === 0) {
         return res.json({ status: false, message: "Failed to update target quantity" });
       }
@@ -682,7 +686,12 @@ exports.updateTargetQty = async (req, res) => {
 
 exports.addNewCenterTarget = async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  console.log('fullUrl', fullUrl)
   try {
+
+    const officerId = req.user.userId
+    console.log('officerId', officerId)
+
     const companyCenterId = req.body.companyCenterId
     const date = req.body.date
     const cropsData = req.body.crop
@@ -691,9 +700,9 @@ exports.addNewCenterTarget = async (req, res) => {
     let resultB
     let resultC
     for (let i = 0; i < cropsData.length; i++) {
-      resultA = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date);
-      resultB = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date);
-      resultC = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date);
+      resultA = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'A', cropsData[i].targetA, date, officerId);
+      resultB = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'B', cropsData[i].targetB, date, officerId);
+      resultC = await TargetDAO.addNewCenterTargetDao(companyCenterId, cropsData[i].varietyId, 'C', cropsData[i].targetC, date, officerId);
     }
 
     res.status(200).json({ status: true, message: "Successfully Added New target quantity" });
