@@ -396,7 +396,7 @@ exports.createDistributionOfficerPersonal = (officerData, centerId, companyId, m
                 [
                     officerData.centerId,
                     companyId,
-                    officerData.jobRole === 'Distribution Center Manager' ? null : officerData.irmId,
+                    officerData.jobRole === 'Distribution Centre Manager' ? null : officerData.irmId,
                     officerData.firstNameEnglish,
                     officerData.firstNameSinhala,
                     officerData.firstNameTamil,
@@ -551,10 +551,10 @@ exports.getCCIDforCreateEmpIdDao = (employee) => {
             return resolve("CCM00001");
           } else if (employee === "Collection Officer") {
             return resolve("COO00001");
-          } else if (employee === "Distribution Manager") {
+          } else if (employee === "Distribution Centre Manager") {
             return resolve("DCM00001");
           }
-            else if (employee === "Distribution Office") {
+            else if (employee === "Distribution Officer") {
             return resolve("DIO00001");
           }
         }
