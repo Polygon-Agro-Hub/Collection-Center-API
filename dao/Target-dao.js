@@ -208,7 +208,7 @@ exports.getCenterDetailsDaoNew = (companyId, province, district, searchText, pag
                 CC.contact02,
                 COALESCE(SUM(CASE WHEN COF.jobRole = 'Collection Officer' THEN 1 ELSE 0 END), 0) AS collectionOfficerCount,
                 COALESCE(SUM(CASE WHEN COF.jobRole = 'Customer Officer' THEN 1 ELSE 0 END), 0) AS customerOfficerCount,
-                COALESCE(SUM(CASE WHEN COF.jobRole = 'Collection Center Manager' THEN 1 ELSE 0 END), 0) AS collectionCenterManagerCount,
+                COALESCE(SUM(CASE WHEN COF.jobRole = 'Collection Centre Manager' THEN 1 ELSE 0 END), 0) AS collectionCenterManagerCount,
                 COALESCE(SUM(CASE WHEN COF.jobRole = 'Customer Service' THEN 1 ELSE 0 END), 0) AS customerServiceCount
             FROM 
                 companycenter COMC
@@ -660,7 +660,7 @@ exports.getCenterDetailsDao = (companyId, province, district, searchText, page, 
                 return reject(dataErr);
             }
 
-            const jobRoles = ["Collection Officer", "Customer Officer", "Collection Center Manager"];
+            const jobRoles = ["Collection Officer", "Customer Officer", "Collection Centre Manager"];
 
             const transformedResults = dataResults.reduce((acc, row) => {
                 const { centerId, centerName, province, district, city, contact01, regCode, jobRole, totCount } = row;

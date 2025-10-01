@@ -274,11 +274,11 @@ exports.getOfficerById = async (req, res) => {
       return res.status(404).json({ error: "Collection Officer not found" });
     }
 
-    let managerName = null; 
+    let managerName = ''; 
 
     console.log('managerName', managerName)
 
-if (officerData.collectionOfficer.irmId) {
+if (officerData.collectionOfficer.irmId != null) {
   managerName = await ManageOfficerDAO.getManagerByIdDAO(
     officerData.collectionOfficer.irmId
   );
@@ -430,7 +430,7 @@ exports.disclaimOfficer = async (req, res) => {
     const { id } = req.params;
     const jobRole = req.user.role;
 
-    if (jobRole === 'Collection Center Manager') {
+    if (jobRole === 'Collection Centre Manager') {
       results = await ManageOfficerDAO.disclaimOfficerDetailsDao(id)
     } else {
       results = await DistributedManageOfficerDAO.disclaimOfficerDetailsDIODao(id)
@@ -484,7 +484,7 @@ exports.claimOfficer = async (req, res) => {
     const centerId = req.user.centerId;
     const distributedCenterId = req.user.distributedCenterId;
 
-    if (jobRole === 'Collection Center Manager') {
+    if (jobRole === 'Collection Centre Manager') {
       results = await ManageOfficerDAO.claimOfficerDao(id, userId, centerId)
     } else {
       results = await DistributedManageOfficerDAO.distributedClaimOfficerDao(id, userId, distributedCenterId)

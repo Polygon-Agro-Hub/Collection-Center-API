@@ -32,7 +32,7 @@ exports.loginUser = async (req, res) => {
     const comapny = await AuthDAO.getCompanyImages(user.companyId);
     
 
-    if (user.jobRole !== 'Collection Center Manager' && user.jobRole !== 'Collection Center Head' && user.jobRole !== 'Distribution Center Head' && user.jobRole !== 'Distribution Center Manager') {
+    if (user.jobRole !== 'Collection Centre Manager' && user.jobRole !== 'Collection Centre Head' && user.jobRole !== 'Distribution Centre Head' && user.jobRole !== 'Distribution Centre Manager') {
       return res.status(401).json({ error: "User have not access for this web" });
     }
 
@@ -67,6 +67,8 @@ exports.loginUser = async (req, res) => {
           companyFavicon: comapny ? comapny.favicon : null,
           expiresIn: 18000,
         };
+
+        console.log('data', data)
 
         return res.json(data);
       }

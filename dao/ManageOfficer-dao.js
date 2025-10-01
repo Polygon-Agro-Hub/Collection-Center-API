@@ -1084,7 +1084,7 @@ exports.createCollectionOfficerPersonalCCH = (officerData, companyId, image, las
                 return reject(new Error("Officer data is missing or incomplete"));
             }
 
-            if (officerData.jobRole === 'Collection Center Manager' || officerData.jobRole === 'Driver') {
+            if (officerData.jobRole === 'Collection Centre Manager' || officerData.jobRole === 'Driver') {
                 officerData.irmId = null;
             }
 
@@ -1647,13 +1647,13 @@ exports.getCCIDforCreateEmpIdDao = (employee) => {
         }
   
         if (results.length === 0) {
-          if (employee === "Collection Center Head") {
+          if (employee === "Collection Centre Head") {
             return resolve("CCH00001");
-          } else if (employee === "Collection Center Manager") {
+          } else if (employee === "Collection Centre Manager") {
             return resolve("CCM00001");
           } else if (employee === "Collection Officer") {
             return resolve("COO00001");
-          } else if (employee === "Distribution Manager") {
+          } else if (employee === "Distribution Centre Manager") {
             return resolve("DCM00001");
           }
             else if (employee === "Distribution Office") {

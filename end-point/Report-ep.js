@@ -155,7 +155,7 @@ exports.getAllPayments = async (req, res) => {
     const centerId = req.user.centerId;
     const { page, limit, fromDate, toDate, searchText, center } = validatedQuery;
 
-    if (user.role === "Collection Center Manager") {
+    if (user.role === "Collection Centre Manager") {
       const { items, total } = await ReportDAO.getAllPaymentsForCCMDAO(
         companyId, page, limit, fromDate, toDate, searchText, centerId, user.userId
       );
@@ -193,7 +193,7 @@ exports.getAllCollection = async (req, res) => {
 
     const { page, limit, fromDate, toDate, center, searchText } = validatedQuery;
 
-    if (user.role === "Collection Center Manager") {
+    if (user.role === "Collection Centre Manager") {
       const { items, total } = await ReportDAO.getAllCollectionsForCCMDAO(
         companyId, page, limit, fromDate, toDate, searchText, centerId, user.userId
       );
@@ -228,7 +228,7 @@ exports.downloadAllPayments = async (req, res) => {
     const { fromDate, toDate, center, searchText } = validatedQuery;
     let data;
 
-    if (user.role === "Collection Center Manager") {
+    if (user.role === "Collection Centre Manager") {
       data = await ReportDAO.downloadPaymentReportForCCM(
         fromDate,
         toDate,
@@ -328,7 +328,7 @@ exports.downloadAllCollections = async (req, res) => {
 
     let data;
 
-    if (user.role === "Collection Center Manager") {
+    if (user.role === "Collection Centre Manager") {
       data = await ReportDAO.downloadCollectionReportForCCM(
         fromDate,
         toDate,

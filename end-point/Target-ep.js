@@ -1039,29 +1039,6 @@ exports.downloadOfficerTargets = async (req, res) => {
     const data = await TargetDAO.downloadOfficerTargets(officerId, status, searchText)
     console.log('dta', data)
 
-    // let data;
-
-    // if (user.role === "Collection Center Manager") {
-    //   data = await ReportDAO.downloadPaymentReportForCCM(
-    //     fromDate,
-    //     toDate,
-    //     centerId,
-    //     searchText,
-    //     companyId,
-    //     user.userId
-    //   );
-
-    // } else {
-    //   data = await ReportDAO.downloadPaymentReport(
-    //     fromDate,
-    //     toDate,
-    //     center,
-    //     searchText,
-    //     companyId
-    //   );
-    // }
-
-
     // Format data for Excel
     const formattedData = data.flatMap(item => [
       {
@@ -1132,29 +1109,6 @@ exports.downloadOfficerTargets = async (req, res) => {
 
     const data = await TargetDAO.downloadOfficerTargets(officerId, status, searchText)
     console.log('dta', data)
-
-    // let data;
-
-    // if (user.role === "Collection Center Manager") {
-    //   data = await ReportDAO.downloadPaymentReportForCCM(
-    //     fromDate,
-    //     toDate,
-    //     centerId,
-    //     searchText,
-    //     companyId,
-    //     user.userId
-    //   );
-
-    // } else {
-    //   data = await ReportDAO.downloadPaymentReport(
-    //     fromDate,
-    //     toDate,
-    //     center,
-    //     searchText,
-    //     companyId
-    //   );
-    // }
-
 
     // Format data for Excel
     const formattedData = data.flatMap(item => [
@@ -1228,29 +1182,6 @@ exports.downloadMyTarget = async (req, res) => {
 
     const data = await TargetDAO.downloadMyTargetDao(userId, status, searchText)
     console.log('dta', data)
-
-    // let data;
-
-    // if (user.role === "Collection Center Manager") {
-    //   data = await ReportDAO.downloadPaymentReportForCCM(
-    //     fromDate,
-    //     toDate,
-    //     centerId,
-    //     searchText,
-    //     companyId,
-    //     user.userId
-    //   );
-
-    // } else {
-    //   data = await ReportDAO.downloadPaymentReport(
-    //     fromDate,
-    //     toDate,
-    //     center,
-    //     searchText,
-    //     companyId
-    //   );
-    // }
-
 
     // Format data for Excel
     const formattedData = data.flatMap(item => [
