@@ -40,7 +40,7 @@ exports.getDistributionCenterDetailsDao = (companyId, province, district, search
         dc.longitude,
         COALESCE(SUM(CASE WHEN cof.jobRole = 'Distribution Officer' THEN 1 ELSE 0 END), 0) AS distributionOfficerCount,
         COALESCE(SUM(CASE WHEN cof.jobRole = 'Customer Officer' THEN 1 ELSE 0 END), 0) AS customerOfficerCount,
-        COALESCE(SUM(CASE WHEN cof.jobRole = 'Distribution Center Manager' THEN 1 ELSE 0 END), 0) AS distributionCenterManagerCount,
+        COALESCE(SUM(CASE WHEN cof.jobRole = 'Distribution Centre Manager' THEN 1 ELSE 0 END), 0) AS distributionCenterManagerCount,
         COALESCE(SUM(CASE WHEN cof.jobRole = 'Customer Service' THEN 1 ELSE 0 END), 0) AS customerServiceCount
     FROM 
         distributedcompanycenter dcc
