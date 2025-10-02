@@ -545,9 +545,9 @@ exports.getCCIDforCreateEmpIdDao = (employee) => {
         }
   
         if (results.length === 0) {
-          if (employee === "Collection Center Head") {
+          if (employee === "Collection Centre Head") {
             return resolve("CCH00001");
-          } else if (employee === "Collection Center Manager") {
+          } else if (employee === "Collection Centre Manager") {
             return resolve("CCM00001");
           } else if (employee === "Collection Officer") {
             return resolve("COO00001");
