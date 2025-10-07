@@ -6,6 +6,7 @@ exports.getAllPrices = async (req, res) => {
     try {
         const centerId = req.user.centerId
         const companyId = req.user.companyId
+        console.log('centerId', centerId, 'companyId', companyId)
         const { page, limit, grade, searchText } = await PriceListValidate.getAllPriceListSchema.validateAsync(req.query);
         const { items, total } = await PriceListDAO.getAllPriceListDao(companyId, centerId, page, limit, grade, searchText);
 
@@ -82,3 +83,86 @@ exports.changeRequestStatus = async (req, res) => {
     }
 };
 
+
+exports.forwardRequestEp = async (req, res) => {
+    try {
+        // const { id } = await PriceListValidate.forwardRequestSchema.validateAsync(req.params);
+
+        const id = req.params.id
+
+        const result = await PriceListDAO.forwrdRequestDao(id);
+
+        if (result.affectedRows === 0) {
+            return res.json({ status: false, message: "Faild to forward request" })
+
+        }
+        res.json({ status: true, message: 'request forward successfully' });
+    } catch (err) {
+        console.error('Error forwarding request:', err);
+        res.status(500).json({ error: 'Failed to forward request' });
+    }
+};
+
+exports.getAllCropGroupEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('fullUrl', fullUrl)
+    try {
+        const centerId = req.user.centerId
+        const companyId = req.user.companyId
+        console.log('centerId', centerId, 'companyId', companyId)
+        const { items } = await PriceListDAO.getAllCropGroupDao(companyId, centerId);
+
+        res.status(200).json({ items });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error retrieving price list:", error);
+        return res.status(500).json({ error: "An error occurred while fetching the price list" });
+    }
+};
+
+exports.getAllCropVarietyEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('fullUrl', fullUrl)
+    try {
+        const { cropGroupId } = await PriceListValidate.getCropVarietySchema.validateAsync(req.params);
+
+        // const {cropGroupId} = req.params;
+
+        const { items } = await PriceListDAO.getSelectedCropVarietyDao(cropGroupId);
+
+        res.status(200).json({ items });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error retrieving price list:", error);
+        return res.status(500).json({ error: "An error occurred while fetching the price list" });
+    }
+};
+
+
+exports.getCurrentPriceEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('fullUrl', fullUrl)
+    try {
+        const { cropGroupId, cropVarietyId, grade } = await PriceListValidate.getCurrentPriceSchema.validateAsync(req.params);
+
+        // const {cropGroupId} = req.params;
+
+        const { items } = await PriceListDAO.getCurrentPriceDao(cropGroupId, cropVarietyId, grade);
+        console.log('iemts', items)
+
+        res.status(200).json({ items });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error retrieving price list:", error);
+        return res.status(500).json({ error: "An error occurred while fetching the price list" });
+    }
+};

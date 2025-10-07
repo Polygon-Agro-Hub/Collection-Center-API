@@ -16,3 +16,17 @@ exports.getRequestPriceSchema = Joi.object({
     
 });
 
+exports.forwardRequestSchema = Joi.object({
+    id: Joi.number().integer().required(),
+});
+
+exports.getCropVarietySchema = Joi.object({
+    cropGroupId: Joi.number().integer().required(),
+});
+
+exports.getCurrentPriceSchema = Joi.object({
+    cropGroupId: Joi.number().integer().required(),
+    cropVarietyId: Joi.number().integer().required(),
+    grade: Joi.string().optional(),
+});
+

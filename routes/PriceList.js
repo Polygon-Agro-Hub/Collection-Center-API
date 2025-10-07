@@ -29,6 +29,30 @@ router.patch(
     PriceListEP.changeRequestStatus
 )
 
+router.patch(
+    '/forward-request/:id',
+    authMiddleware,
+    PriceListEP.forwardRequestEp
+)
+
+router.get(
+    '/get-all-crop-group',
+    authMiddleware,
+    PriceListEP.getAllCropGroupEp
+)
+router.get(
+    '/get-all-crop-variety/:cropGroupId',
+    authMiddleware,
+    PriceListEP.getAllCropVarietyEp
+)
+
+router.get(
+    '/get-current-price/:cropGroupId/:cropVarietyId/:grade',
+    authMiddleware,
+    PriceListEP.getCurrentPriceEp
+)
+
+
 
 module.exports = router;
 

@@ -111,7 +111,8 @@ exports.getAllPriceRequestDao = (centerId, page, limit, grade, status, searchTex
                 CG.cropNameEnglish, 
                 CG.id AS cropGroupId,  -- Added for better grouping
                 CV.id AS varietyId,    -- Added for better ordering
-                MPR.createdAt
+                MPR.createdAt,
+                MPR.assignRole
             FROM marketpricerequest MPR
             JOIN marketprice MP ON MPR.marketPriceId = MP.id
             JOIN collectionofficer COF ON MPR.empId = COF.id
@@ -196,5 +197,98 @@ exports.ChangeRequestStatusDao = (id, status) => {
             }
             resolve(results);
         });
+    });
+};
+
+exports.forwrdRequestDao = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            UPDATE marketpricerequest 
+            SET assignRole = 'CCH'
+            WHERE id = ?
+        `
+        collectionofficer.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(results);
+        });
+    });
+};
+
+
+exports.getAllCropGroupDao = (companyId, centerId) => {
+    return new Promise((resolve, reject) => {
+
+        let dataSql = `
+        SELECT DISTINCT  CG.id, CG.cropNameEnglish
+        FROM collection_officer.marketprice MP, collection_officer.marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
+        WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.companyCenterId = (SELECT id FROM collection_officer.companycenter WHERE companyId = ? AND centerId = ?)
+        `;
+
+        const dataParams = [companyId, centerId];
+
+        dataSql += " ORDER BY CG.cropNameEnglish"
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults });
+            });
+    });
+};
+
+
+exports.getSelectedCropVarietyDao = (cropGroupId) => {
+    return new Promise((resolve, reject) => {
+
+        let dataSql = `
+        SELECT CV.id, CV.varietyNameEnglish
+            FROM plant_care.cropvariety CV
+            WHERE CV.cropGroupId = ?
+        `;
+
+        const dataParams = [cropGroupId];
+
+        dataSql += " ORDER BY CV.varietyNameEnglish"
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+
+                resolve({ items: dataResults });
+            });
+    });
+};
+
+
+exports.getCurrentPriceDao = (cropGroupId, cropVarietyId, grade) => {
+    return new Promise((resolve, reject) => {
+
+        let dataSql = `
+        SELECT MP.price
+            FROM collection_officer.marketprice MP, collection_officer.marketpriceserve MPS, plant_care.cropvariety CV, plant_care.cropgroup CG
+            WHERE MPS.marketPriceId = MP.id AND MP.varietyId = CV.id AND CV.cropGroupId = CG.id AND MPS.companyCenterId = (SELECT id FROM collection_officer.companycenter WHERE companyId = 1 AND centerId = 59)
+            AND CV.id = ? AND CG.id = ? AND MP.grade = ?
+        `;
+
+        const dataParams = [cropVarietyId, cropGroupId, grade];
+
+            // Execute data query
+            collectionofficer.query(dataSql, dataParams, (dataErr, dataResults) => {
+                if (dataErr) {
+                    console.error('Error in data query:', dataErr);
+                    return reject(dataErr);
+                }
+                console.log('dataResults', dataResults)
+                resolve({ items: dataResults });
+            });
     });
 };
