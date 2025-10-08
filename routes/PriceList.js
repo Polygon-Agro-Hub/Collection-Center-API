@@ -52,7 +52,40 @@ router.get(
     PriceListEP.getCurrentPriceEp
 )
 
+router.put(
+    '/add-request',
+    authMiddleware,
+    PriceListEP.addRequestEp
+)
 
+router.get(
+    '/get-all-price-request-cch',
+    authMiddleware,
+    PriceListEP.getAllRequestCCHEp
+)
 
+router.get(
+    '/get-selected-price-request-cch/:requestId',
+    authMiddleware,
+    PriceListEP.getSelectedRequestCCHEp
+)
+
+router.get(
+    '/view-all-price-cch',
+    authMiddleware,
+    PriceListEP.getAllPricesCCHEp
+)
+
+router.patch(
+    '/change-status/:requestId/:requestPrice/:centerId',
+    authMiddleware,
+    PriceListEP.changeStatusEp
+)
+
+router.patch(
+    '/reject-status/:requestId',
+    authMiddleware,
+    PriceListEP.rejectStatusEp
+)
 module.exports = router;
 

@@ -166,3 +166,138 @@ exports.getCurrentPriceEp = async (req, res) => {
         return res.status(500).json({ error: "An error occurred while fetching the price list" });
     }
 };
+
+exports.addRequestEp = async (req, res) => {
+    try {
+        const { id, cropGroupId, cropVarietyId, grade, currentPrice, requstPrice } = await PriceListValidate.addRequestSchema.validateAsync(req.body);
+
+        const centerId = req.user.centerId;
+        console.log('user', req.user)
+
+        const result = await PriceListDAO.addRequestDao(id, centerId, req.user.userId, requstPrice);
+
+        if (result.affectedRows === 0) {
+            return res.json({ status: false, message: "Faild to add request" })
+
+        }
+        res.json({ status: true, message: 'request added successfully' });
+    } catch (err) {
+        console.error('Error adding request:', err);
+        res.status(500).json({ error: 'Failed to add request' });
+    }
+};
+
+exports.getAllRequestCCHEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl)
+    try {
+        const { page, limit, grade, status, searchText } = await PriceListValidate.getRequestPriceSchema.validateAsync(req.query);
+        console.log(page, limit)
+        const { items, total } = await PriceListDAO.getAllPriceRequestCCHDao(page, limit, grade, status, searchText);
+        console.log(total)
+
+        res.status(200).json({ items, total });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+        console.error("Error retrieving price list:", error);
+        return res.status(500).json({ error: "An error occurred while fetching the price list" });
+    }
+};
+
+
+exports.getSelectedRequestCCHEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log(fullUrl)
+    try {
+
+        const { requestId } = await PriceListValidate.selectedRequestSchema.validateAsync(req.params);
+
+        const { items } = await PriceListDAO.getSelectedPriceRequestCCHDao(requestId);
+
+        res.status(200).json({ items });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+        console.error("Error retrieving price list:", error);
+        return res.status(500).json({ error: "An error occurred while fetching the price list" });
+    }
+};
+
+exports.getAllPricesCCHEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('fullUrl', fullUrl)
+    try {
+
+        const { userId, page, limit, grade, searchText } = await PriceListValidate.getPriceListCCHSchema.validateAsync(req.query);
+
+        const companyCenterId = await PriceListDAO.getCompanyCenterId(userId);
+        console.log('companyCenterId', companyCenterId)
+
+        const { items, total } = await PriceListDAO.getAllPriceListCCHDao(companyCenterId, page, limit, grade, searchText);
+
+        res.status(200).json({ items, total });
+    } catch (error) {
+        if (error.isJoi) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
+
+        console.error("Error retrieving price list:", error);
+        return res.status(500).json({ error: "An error occurred while fetching the price list" });
+    }
+};
+
+
+
+exports.changeStatusEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('fullUrl', fullUrl)
+    try {
+        const { requestId, requestPrice, centerId } = await PriceListValidate.changeStatusSchema.validateAsync(req.params);
+
+        const companyId = req.user.companyId
+
+        console.log('companyId', companyId)
+
+        const companyCenterId = await PriceListDAO.getCompanyCenterDao(centerId, companyId);
+
+        console.log('companyCenterId', companyCenterId)
+
+        const marketPriceId = await PriceListDAO.changeStatusDao(requestId);
+
+        console.log('marketPriceId', marketPriceId)
+
+        const result = await PriceListDAO.updateMarketPriceCCHDao(marketPriceId, companyCenterId, requestPrice)
+        console.log('marketPriceId', marketPriceId, 'companyCenterId', companyCenterId)
+
+        if (result.affectedRows === 0) {
+            return res.json({ status: false, message: "Faild to update request" })
+
+        }
+        res.json({ status: true, message: 'request updateed successfully' });
+    } catch (err) {
+        console.error('Error adding request:', err);
+        res.status(500).json({ error: 'Failed to update request' });
+    }
+};
+
+exports.rejectStatusEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('fullUrl', fullUrl)
+    try {
+        const { requestId } = await PriceListValidate.changeStatusSchema.validateAsync(req.params);
+
+        const result = await PriceListDAO.rejectStatusDao(requestId);
+
+        if (result.affectedRows === 0) {
+            return res.json({ status: false, message: "Faild to reject the request" })
+
+        }
+        res.json({ status: true, message: 'request rejected successfully' });
+    } catch (err) {
+        console.error('Error adding request:', err);
+        res.status(500).json({ error: 'Failed to reject request' });
+    }
+};
