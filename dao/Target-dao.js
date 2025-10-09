@@ -777,7 +777,7 @@ exports.getAssingTargetForOfficersDao = (id) => {
         const sql = `
         SELECT id, empId, jobRole, firstNameEnglish, lastNameEnglish
         FROM collectionofficer 
-        WHERE irmId = ? OR id = ?
+        WHERE (irmId = ? OR id = ?) AND status = 'Approved' 
         `
         collectionofficer.query(sql, [id, id], (err, results) => {
             if (err) {

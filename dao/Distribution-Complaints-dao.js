@@ -122,7 +122,7 @@ exports.dcmReplyComplainDao = (data, userId) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE distributedcomplains
-           SET reply = ?, DCMStatus = 'Closed', DIOStatus = 'Closed', replyBy = ?
+           SET reply = ?, DCMStatus = 'Closed', DIOStatus = 'Closed', replyBy = ?, replyTime = NOW()
            WHERE id = ?
         `;
         collectionofficer.query(sql, [data.reply, userId, data.id ], (err, results) => {
@@ -441,6 +441,7 @@ exports.DCHReplyComplainDao = (data, userId) => {
         UPDATE distributedcomplains
         SET reply = ?,
             replyBy = ?,
+            replyTime = NOW(),
             DCMStatus = 'Closed',
             DCHStatus = 'Closed',
             DIOStatus = CASE 

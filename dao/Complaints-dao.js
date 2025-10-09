@@ -103,7 +103,7 @@ exports.replyComplainDao = (data) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed'
+           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed', replyTime = NOW()
            WHERE id = ?
         `;
         collectionofficer.query(sql, [data.reply, data.id], (err, results) => {
@@ -487,7 +487,7 @@ exports.CCHReplyComplainDao = (data) => {
     return new Promise((resolve, reject) => {
         const sql = `
            UPDATE officercomplains
-           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed', CCHStatus = 'Closed'
+           SET reply = ?, CCMStatus = 'Closed', COOStatus = 'Closed', CCHStatus = 'Closed', replyTime = NOW()
            WHERE id = ?
         `;
         collectionofficer.query(sql, [data.reply, data.id], (err, results) => {
