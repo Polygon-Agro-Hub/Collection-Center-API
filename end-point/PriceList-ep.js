@@ -287,7 +287,7 @@ exports.rejectStatusEp = async (req, res) => {
     const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     console.log('fullUrl', fullUrl)
     try {
-        const { requestId } = await PriceListValidate.changeStatusSchema.validateAsync(req.params);
+        const { requestId } = await PriceListValidate.rejectStatusSchema.validateAsync(req.params);
 
         const result = await PriceListDAO.rejectStatusDao(requestId);
 
@@ -299,5 +299,33 @@ exports.rejectStatusEp = async (req, res) => {
     } catch (err) {
         console.error('Error adding request:', err);
         res.status(500).json({ error: 'Failed to reject request' });
+    }
+};
+
+exports.changeStatusCCMEp = async (req, res) => {
+    const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    console.log('fullUrl', fullUrl)
+    try {
+        const { requestId, requestPrice } = await PriceListValidate.changeStatusCCMSchema.validateAsync(req.params);
+
+        const companyCenterId = await PriceListDAO.getCompanyCenterId(req.user.userId);
+
+        console.log('companyCenterId', companyCenterId)
+
+        const marketPriceId = await PriceListDAO.changeStatusDao(requestId);
+
+        console.log('marketPriceId', marketPriceId)
+
+        const result = await PriceListDAO.updateMarketPriceCCHDao(marketPriceId, companyCenterId, requestPrice)
+        console.log('marketPriceId', marketPriceId, 'companyCenterId', companyCenterId)
+
+        if (result.affectedRows === 0) {
+            return res.json({ status: false, message: "Faild to update request" })
+
+        }
+        res.json({ status: true, message: 'request updateed successfully' });
+    } catch (err) {
+        console.error('Error adding request:', err);
+        res.status(500).json({ error: 'Failed to update request' });
     }
 };

@@ -58,5 +58,19 @@ exports.getPriceListCCHSchema = Joi.object({
 
 exports.changeStatusSchema = Joi.object({
     requestId: Joi.number().integer().required(),
+    requestPrice: Joi.string().required(),
+    centerId: Joi.number().integer().required(),
 });
+
+exports.rejectStatusSchema = Joi.object({
+    requestId: Joi.number().integer().required(),
+   
+});
+
+
+exports.changeStatusCCMSchema = Joi.object({
+    requestId: Joi.number().integer().required(),
+    requestPrice: Joi.string().required()
+});
+
 

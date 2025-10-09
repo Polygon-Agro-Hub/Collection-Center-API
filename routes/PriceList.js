@@ -87,5 +87,11 @@ router.patch(
     authMiddleware,
     PriceListEP.rejectStatusEp
 )
+
+router.patch(
+    '/change-status-ccm/:requestId/:requestPrice',
+    authMiddleware,
+    PriceListEP.changeStatusCCMEp
+)
 module.exports = router;
 
